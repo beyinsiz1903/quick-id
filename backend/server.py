@@ -491,7 +491,8 @@ async def check_duplicate(
     return {"has_duplicates": len(duplicates) > 0, "duplicates": duplicates, "count": len(duplicates)}
 
 @app.post("/api/guests")
-async def create_guest(guest: GuestCreate, user=Depends(require_auth)):
+@limiter.limit("30/minute")
+async def create_guest(request: Request, guest: GuestCreate, user=Depends(require_auth)):
     if not guest.force_create:
         duplicates = await find_duplicates(guest.id_number, guest.first_name, guest.last_name, guest.birth_date)
         if duplicates:
