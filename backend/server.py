@@ -318,7 +318,8 @@ async def health():
     return {"status": "healthy", "service": "Quick ID Reader"}
 
 @app.post("/api/auth/login")
-async def login(req: LoginRequest):
+@limiter.limit("5/minute")
+async def login(request: Request, req: LoginRequest):
     user = await users_col.find_one({"email": req.email})
     if not user or not verify_password(req.password, user["password_hash"]):
         raise HTTPException(status_code=401, detail="Geçersiz e-posta veya şifre")
