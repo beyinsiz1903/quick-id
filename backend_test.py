@@ -563,12 +563,23 @@ class QuickIDAPITester:
 
     def test_cleanup(self):
         """Clean up test data"""
-        if self.guest_id:
-            success, response = self.run_test("Delete Test Guest", "DELETE", f"api/guests/{self.guest_id}", 200)
+        success_count = 0
+        
+        # Clean up created user
+        if self.created_user_id and self.admin_token:
+            success, response = self.run_test("Delete Created User", "DELETE", f"api/users/{self.created_user_id}", 200, token=self.admin_token)
+            if success:
+                self.log(f"   🗑️  Cleaned up user {self.created_user_id}")
+                success_count += 1
+                
+        # Clean up guest
+        if self.guest_id and self.reception_token:
+            success, response = self.run_test("Delete Test Guest", "DELETE", f"api/guests/{self.guest_id}", 200, token=self.reception_token)
             if success:
                 self.log(f"   🗑️  Cleaned up guest {self.guest_id}")
-            return success
-        return True
+                success_count += 1
+                
+        return success_count > 0 or (not self.created_user_id and not self.guest_id)
 
     def run_all_tests(self):
         """Run all backend API tests"""
