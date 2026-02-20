@@ -22,6 +22,17 @@ export const api = {
     return res.json();
   },
 
+  // Duplicate check
+  async checkDuplicate(params = {}) {
+    const query = new URLSearchParams();
+    Object.entries(params).forEach(([k, v]) => {
+      if (v !== null && v !== undefined && v !== '') query.set(k, v);
+    });
+    const res = await fetch(`${BACKEND_URL}/api/guests/check-duplicate?${query.toString()}`);
+    if (!res.ok) throw new Error('Duplicate check failed');
+    return res.json();
+  },
+
   // Guests
   async createGuest(data) {
     const res = await fetch(`${BACKEND_URL}/api/guests`, {
@@ -77,6 +88,19 @@ export const api = {
   async checkoutGuest(id) {
     const res = await fetch(`${BACKEND_URL}/api/guests/${id}/checkout`, { method: 'POST' });
     if (!res.ok) throw new Error('Check-out failed');
+    return res.json();
+  },
+
+  // Audit Trail
+  async getGuestAudit(guestId) {
+    const res = await fetch(`${BACKEND_URL}/api/guests/${guestId}/audit`);
+    if (!res.ok) throw new Error('Failed to fetch audit logs');
+    return res.json();
+  },
+
+  async getRecentAudit(limit = 50) {
+    const res = await fetch(`${BACKEND_URL}/api/audit/recent?limit=${limit}`);
+    if (!res.ok) throw new Error('Failed to fetch audit logs');
     return res.json();
   },
 
