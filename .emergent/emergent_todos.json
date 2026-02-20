@@ -1,14 +1,18 @@
 [
   {
-    "content": "Phase 5: Backend - Rate limiting (per-user) with slowapi",
-    "status": "completed"
+    "content": "Fix: AI prompt to detect multiple IDs in single image",
+    "status": "in_progress"
   },
   {
-    "content": "Phase 5: Frontend - Rate limit error handling (429 toast)",
-    "status": "completed"
+    "content": "Fix: Backend scan endpoint returns array of extracted documents",
+    "status": "pending"
   },
   {
-    "content": "Phase 5: End to End Testing",
-    "status": "completed"
+    "content": "Fix: Frontend bulk scan handles multiple extractions per capture",
+    "status": "pending"
+  },
+  {
+    "content": "Fix: End to End Testing",
+    "status": "pending"
   }
 ]
