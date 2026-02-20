@@ -1,5 +1,6 @@
-from fastapi import FastAPI, HTTPException, Query, Depends
+from fastapi import FastAPI, HTTPException, Query, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from dotenv import load_dotenv
 import os
 import json
@@ -10,16 +11,41 @@ from pydantic import BaseModel
 from motor.motor_asyncio import AsyncIOMotorClient
 from bson import ObjectId
 import uuid
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 
 load_dotenv()
 
 from auth import (
     hash_password, verify_password, create_token,
-    require_auth, require_admin, get_current_user, security
+    require_auth, require_admin, get_current_user, security, decode_token
 )
 from kvkk import get_settings, update_settings, run_data_cleanup, anonymize_guest
 
+
+# --- Rate Limiter Setup ---
+def get_user_or_ip(request: Request) -> str:
+    """Rate limit key: use authenticated user email if available, else IP."""
+    auth_header = request.headers.get("authorization", "")
+    if auth_header.startswith("Bearer "):
+        token = auth_header[7:]
+        payload = decode_token(token)
+        if payload and payload.get("email"):
+            return payload["email"]
+    return get_remote_address(request)
+
+limiter = Limiter(key_func=get_user_or_ip)
+
 app = FastAPI(title="Quick ID Reader")
+app.state.limiter = limiter
+
+@app.exception_handler(RateLimitExceeded)
+async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
+    return JSONResponse(
+        status_code=429,
+        content={"detail": "İstek limiti aşıldı. Lütfen biraz bekleyin ve tekrar deneyin.", "retry_after": str(exc.detail)}
+    )
 
 # CORS
 app.add_middleware(
