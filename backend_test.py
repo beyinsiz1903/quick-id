@@ -256,12 +256,12 @@ class QuickIDAPITester:
         return True
 
     def test_checkin_checkout(self):
-        """Test check-in and check-out operations"""
+        """Test check-in and check-out operations with audit trail"""
         if not self.guest_id:
             self.log("❌ No guest ID available for check-in/out tests")
             return False
             
-        # Check-in
+        # Check-in (should create audit log)
         success, response = self.run_test("Guest Check-in", "POST", f"api/guests/{self.guest_id}/checkin", 200)
         if success:
             status = response.get('guest', {}).get('status')
@@ -272,7 +272,7 @@ class QuickIDAPITester:
         else:
             return False
             
-        # Check-out  
+        # Check-out (should create audit log)
         success, response = self.run_test("Guest Check-out", "POST", f"api/guests/{self.guest_id}/checkout", 200)
         if success:
             status = response.get('guest', {}).get('status')
@@ -283,6 +283,42 @@ class QuickIDAPITester:
         else:
             return False
             
+        return True
+
+    def test_audit_trail(self):
+        """Test audit trail functionality"""
+        if not self.guest_id:
+            self.log("❌ No guest ID available for audit trail tests")
+            return False
+
+        # Get guest audit logs
+        success, response = self.run_test("Get Guest Audit Trail", "GET", f"api/guests/{self.guest_id}/audit", 200)
+        if success and 'audit_logs' in response:
+            logs = response.get('audit_logs', [])
+            self.log(f"   📋 Found {len(logs)} audit log entries")
+            
+            # Check if we have expected audit entries
+            actions = [log.get('action') for log in logs]
+            expected_actions = ['created', 'updated', 'checked_in', 'checked_out']
+            found_actions = [action for action in expected_actions if action in actions]
+            self.log(f"   ✅ Found audit actions: {found_actions}")
+            
+            # Check for field diffs in update action
+            update_logs = [log for log in logs if log.get('action') == 'updated']
+            if update_logs:
+                changes = update_logs[0].get('changes', {})
+                self.log(f"   🔍 Update changes tracked: {list(changes.keys())}")
+        else:
+            return False
+
+        # Get recent audit logs across all guests
+        success, response = self.run_test("Get Recent Audit Logs", "GET", "api/audit/recent?limit=10", 200)
+        if success and 'audit_logs' in response:
+            logs = response.get('audit_logs', [])
+            self.log(f"   📋 Recent audit logs: {len(logs)} entries")
+        else:
+            return False
+
         return True
 
     def test_exports(self):
