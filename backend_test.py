@@ -134,21 +134,79 @@ class QuickIDAPITester:
             return True, response
         return False, {}
 
-    def test_guest_crud(self):
-        """Test complete guest CRUD operations"""
-        # Create guest
+    def test_duplicate_detection(self):
+        """Test duplicate guest detection functionality"""
+        # First test check duplicate endpoint
+        success, response = self.run_test(
+            "Check Duplicate with existing ID", "GET", 
+            "api/guests/check-duplicate?id_number=12345678901", 200
+        )
+        if success:
+            has_duplicates = response.get('has_duplicates', False)
+            self.log(f"   🔍 Has duplicates: {has_duplicates}")
+            if has_duplicates:
+                duplicates = response.get('duplicates', [])
+                self.log(f"   📋 Found {len(duplicates)} duplicates")
+        else:
+            return False
+
+        # Test creating guest with existing ID (should return duplicate_detected)
         guest_data = {
-            "first_name": "Test",
+            "first_name": "Mehmet",
+            "last_name": "Yilmaz", 
+            "id_number": "12345678901",  # This should trigger duplicate detection
+            "birth_date": "1985-03-15",
+            "gender": "M",
+            "nationality": "TR",
+            "document_type": "tc_kimlik"
+        }
+        
+        success, response = self.run_test("Create Duplicate Guest", "POST", "api/guests", 200, guest_data)
+        if success:
+            if response.get('duplicate_detected'):
+                self.log("   ✅ Duplicate detection working correctly")
+                duplicates = response.get('duplicates', [])
+                self.log(f"   🔍 Detected {len(duplicates)} duplicates")
+            else:
+                self.log("   ⚠️  Guest created without duplicate detection")
+        else:
+            return False
+
+        # Test force create (bypass duplicate check)
+        guest_data['force_create'] = True
+        success, response = self.run_test("Force Create Duplicate", "POST", "api/guests", 200, guest_data)
+        if success and response.get('success'):
+            guest = response.get('guest', {})
+            self.guest_id = guest.get('id')  # Store for cleanup
+            self.log(f"   ✅ Force create bypassed duplicate check - ID: {self.guest_id}")
+        else:
+            return False
+
+        return True
+
+    def test_guest_crud(self):
+        """Test complete guest CRUD operations with original_extracted_data"""
+        # Create guest with original extracted data
+        original_data = {
+            "first_name": "Original_Test",
+            "last_name": "Original_User",
+            "id_number": "98765432109",
+            "document_type": "tc_kimlik"
+        }
+        
+        guest_data = {
+            "first_name": "Test",  # Different from original (simulates manual edit)
             "last_name": "User", 
-            "id_number": "12345678901",
+            "id_number": "98765432109",
             "birth_date": "1990-01-01",
             "gender": "M",
             "nationality": "TR",
             "document_type": "tc_kimlik",
-            "notes": "Test guest created by automation"
+            "notes": "Test guest created by automation",
+            "original_extracted_data": original_data  # Store what AI originally extracted
         }
         
-        success, response = self.run_test("Create Guest", "POST", "api/guests", 200, guest_data)
+        success, response = self.run_test("Create Guest with Original Data", "POST", "api/guests", 200, guest_data)
         if not success:
             return False
             
@@ -160,13 +218,25 @@ class QuickIDAPITester:
             
         self.log(f"   👤 Created guest ID: {self.guest_id}")
         
-        # Get single guest
+        # Verify original_extracted_data is stored
+        if guest.get('original_extracted_data'):
+            self.log("   ✅ Original extracted data stored correctly")
+        else:
+            self.log("   ⚠️  Original extracted data not found")
+        
+        # Get single guest and verify original_extracted_data field
         success, response = self.run_test("Get Single Guest", "GET", f"api/guests/{self.guest_id}", 200)
         if not success:
             return False
+        
+        guest_detail = response.get('guest', {})
+        if guest_detail.get('original_extracted_data'):
+            self.log("   ✅ Guest detail includes original_extracted_data")
+        else:
+            self.log("   ⚠️  Guest detail missing original_extracted_data")
             
-        # Update guest
-        update_data = {"notes": "Updated by automation test"}
+        # Update guest (should create audit log with field diffs)
+        update_data = {"notes": "Updated by automation test", "first_name": "UpdatedTest"}
         success, response = self.run_test("Update Guest", "PATCH", f"api/guests/{self.guest_id}", 200, update_data)
         if not success:
             return False
