@@ -213,6 +213,7 @@ class SettingsUpdate(BaseModel):
 
 
 async def extract_id_data(image_base64: str) -> dict:
+    """Extract data from one or more ID documents in an image using OpenAI Vision"""
     from emergentintegrations.llm.chat import LlmChat, UserMessage, ImageContent
     chat = LlmChat(
         api_key=EMERGENT_LLM_KEY,
@@ -224,7 +225,7 @@ async def extract_id_data(image_base64: str) -> dict:
         image_base64 = image_base64.split(",")[1]
     image_content = ImageContent(image_base64=image_base64)
     user_message = UserMessage(
-        text="Analyze this identity document and extract all fields. Return ONLY the JSON structure, no markdown.",
+        text="Analyze ALL identity documents visible in this image. There may be 1 or more documents. Extract data from EACH document separately and return them in the documents array. Return ONLY the JSON structure, no markdown.",
         file_contents=[image_content]
     )
     response = await chat.send_message(user_message)
@@ -234,13 +235,24 @@ async def extract_id_data(image_base64: str) -> dict:
         json_str = "\n".join(lines[1:-1]) if len(lines) > 2 else json_str[3:-3]
         json_str = json_str.strip()
     try:
-        return json.loads(json_str)
+        result = json.loads(json_str)
     except json.JSONDecodeError:
         start = json_str.find("{")
         end = json_str.rfind("}") + 1
         if start >= 0 and end > start:
-            return json.loads(json_str[start:end])
-        raise ValueError(f"Could not parse JSON from response: {json_str[:200]}")
+            result = json.loads(json_str[start:end])
+        else:
+            raise ValueError(f"Could not parse JSON from response: {json_str[:200]}")
+    
+    # Normalize: ensure we always have a "documents" array
+    if "documents" in result and isinstance(result["documents"], list):
+        return result
+    else:
+        # Old format (single document) - wrap in array
+        return {
+            "document_count": 1,
+            "documents": [result]
+        }
 
 
 # --- Helpers ---
