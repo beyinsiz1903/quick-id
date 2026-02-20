@@ -1,18 +1,22 @@
 [
   {
-    "content": "Phase 3: Toplu tarama iyileştirmeleri - klavye kısayolları, otomatik çıkarım",
-    "status": "completed"
+    "content": "Phase 4: Backend - JWT auth, user roles (Admin/Resepsiyon), auth middleware",
+    "status": "in_progress"
   },
   {
-    "content": "Phase 3: Mükerrer misafir tespiti - duplicate detection by id_number + name+birthdate",
-    "status": "completed"
+    "content": "Phase 4: Backend - KVKK/veri saklama politikaları, retention settings, cleanup",
+    "status": "pending"
   },
   {
-    "content": "Phase 3: Denetim izi - original vs edited data tracking, audit trail",
-    "status": "completed"
+    "content": "Phase 4: Frontend - Login page, auth context, protected routes",
+    "status": "pending"
   },
   {
-    "content": "Phase 3: End to End Testing using Testing Agent",
-    "status": "completed"
+    "content": "Phase 4: Frontend - User management (admin), Settings/KVKK page",
+    "status": "pending"
+  },
+  {
+    "content": "Phase 4: End to End Testing using Testing Agent",
+    "status": "pending"
   }
 ]
