@@ -1,14 +1,14 @@
 [
   {
     "content": "Phase 5: Backend - Rate limiting (per-user) with slowapi",
-    "status": "in_progress"
+    "status": "completed"
   },
   {
     "content": "Phase 5: Frontend - Rate limit error handling (429 toast)",
-    "status": "pending"
+    "status": "completed"
   },
   {
     "content": "Phase 5: End to End Testing",
-    "status": "pending"
+    "status": "in_progress"
   }
 ]
