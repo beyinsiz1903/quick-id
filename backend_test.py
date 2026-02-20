@@ -24,10 +24,12 @@ class QuickIDAPITester:
     def log(self, message):
         print(f"[{datetime.now().strftime('%H:%M:%S')}] {message}")
         
-    def run_test(self, name, method, endpoint, expected_status, data=None, timeout=30):
-        """Run a single API test"""
+    def run_test(self, name, method, endpoint, expected_status, data=None, timeout=30, token=None):
+        """Run a single API test with optional JWT token"""
         url = f"{self.base_url}/{endpoint}"
         headers = {'Content-Type': 'application/json'}
+        if token:
+            headers['Authorization'] = f'Bearer {token}'
         
         self.tests_run += 1
         self.log(f"🔍 Testing {name}...")
