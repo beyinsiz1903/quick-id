@@ -494,12 +494,12 @@ class QuickIDAPITester:
 
     def test_audit_trail(self):
         """Test audit trail functionality"""
-        if not self.guest_id:
-            self.log("❌ No guest ID available for audit trail tests")
+        if not self.reception_token or not self.guest_id:
+            self.log("❌ No reception token or guest ID available for audit trail tests")
             return False
 
         # Get guest audit logs
-        success, response = self.run_test("Get Guest Audit Trail", "GET", f"api/guests/{self.guest_id}/audit", 200)
+        success, response = self.run_test("Get Guest Audit Trail", "GET", f"api/guests/{self.guest_id}/audit", 200, token=self.reception_token)
         if success and 'audit_logs' in response:
             logs = response.get('audit_logs', [])
             self.log(f"   📋 Found {len(logs)} audit log entries")
@@ -519,7 +519,7 @@ class QuickIDAPITester:
             return False
 
         # Get recent audit logs across all guests
-        success, response = self.run_test("Get Recent Audit Logs", "GET", "api/audit/recent?limit=10", 200)
+        success, response = self.run_test("Get Recent Audit Logs", "GET", "api/audit/recent?limit=10", 200, token=self.reception_token)
         if success and 'audit_logs' in response:
             logs = response.get('audit_logs', [])
             self.log(f"   📋 Recent audit logs: {len(logs)} entries")
