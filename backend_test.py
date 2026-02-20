@@ -15,6 +15,11 @@ class QuickIDAPITester:
         self.tests_run = 0
         self.tests_passed = 0
         self.guest_id = None
+        self.admin_token = None
+        self.reception_token = None
+        self.admin_user = None
+        self.reception_user = None
+        self.created_user_id = None
         
     def log(self, message):
         print(f"[{datetime.now().strftime('%H:%M:%S')}] {message}")
