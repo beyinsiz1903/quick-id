@@ -714,12 +714,13 @@ class QuickIDAPITester:
         return success_count > 0 or (not self.created_user_id and not self.guest_id)
 
     def run_all_tests(self):
-        """Run all backend API tests"""
-        self.log("🚀 Starting Quick ID Reader API Tests (Phase 4 - JWT Authentication)")
+        """Run all backend API tests including Phase 5 rate limiting"""
+        self.log("🚀 Starting Quick ID Reader API Tests (Phase 5 - Rate Limiting)")
         self.log(f"📍 Testing endpoint: {self.base_url}")
         
         test_results = {
             'health': self.test_health(),
+            'rate_limits_endpoint': self.test_rate_limits_endpoint(),
             'auth_login': self.test_auth_login(),
             'auth_me': self.test_auth_me(),
             'protected_endpoints_without_auth': self.test_protected_endpoints_without_auth(),
@@ -728,12 +729,15 @@ class QuickIDAPITester:
             'kvkk_settings': self.test_kvkk_settings(),
             'dashboard_stats': self.test_dashboard_stats(), 
             'scan_endpoint': self.test_scan_endpoint()[0],  # Only get success bool
+            'scan_rate_limiting': self.test_scan_rate_limiting(),
+            'guest_create_rate_limiting': self.test_guest_create_rate_limiting(),
             'duplicate_detection': self.test_duplicate_detection(),
             'guest_crud': self.test_guest_crud(),
             'checkin_checkout': self.test_checkin_checkout(),
             'audit_trail': self.test_audit_trail(),
             'guest_anonymization': self.test_guest_anonymization(),
             'exports': self.test_exports(),
+            'login_rate_limiting': self.test_login_rate_limiting(),  # Test this last to avoid lockout
             'cleanup': self.test_cleanup()
         }
         
