@@ -487,18 +487,33 @@ async def anonymize_guest_endpoint(guest_id: str, user=Depends(require_admin)):
 async def scan_id(request: Request, scan_req: ScanRequest, user=Depends(require_auth)):
     try:
         extracted = await extract_id_data(scan_req.image_base64)
+        documents = extracted.get("documents", [])
+        document_count = extracted.get("document_count", len(documents))
+        
         scan_doc = {
             "extracted_data": extracted,
-            "is_valid": extracted.get("is_valid", False),
-            "document_type": extracted.get("document_type", "other"),
+            "document_count": document_count,
+            "is_valid": any(d.get("is_valid", False) for d in documents),
+            "document_type": documents[0].get("document_type", "other") if documents else "other",
             "created_at": datetime.now(timezone.utc),
             "status": "completed",
-            "warnings": extracted.get("warnings", []),
+            "warnings": [],
             "scanned_by": user.get("email")
         }
+        # Collect all warnings
+        for doc in documents:
+            scan_doc["warnings"].extend(doc.get("warnings", []))
+        
         result = await scans_col.insert_one(scan_doc)
         scan_doc["_id"] = result.inserted_id
-        return {"success": True, "scan": serialize_doc(scan_doc), "extracted_data": extracted}
+        
+        return {
+            "success": True,
+            "scan": serialize_doc(scan_doc),
+            "extracted_data": extracted,
+            "document_count": document_count,
+            "documents": documents
+        }
     except Exception as e:
         scan_doc = {"status": "failed", "error": str(e), "created_at": datetime.now(timezone.utc), "scanned_by": user.get("email")}
         await scans_col.insert_one(scan_doc)
