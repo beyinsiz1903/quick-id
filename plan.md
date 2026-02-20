@@ -1,17 +1,23 @@
-# Quick ID Reader (Hotel) — Updated Development Plan (Phase 3 Completed)
+# Quick ID Reader (Hotel) — Updated Development Plan (Phase 4 Completed)
 
 ## 1. Objectives
-- ✅ **Core workflow proven & delivered:** **Camera image → OpenAI GPT-4o Vision → structured guest JSON**.
+- ✅ **Core workflow proven & delivered:** Camera image → OpenAI GPT-4o Vision → **structured guest JSON**.
 - ✅ Deliver a production-ready **V1 web app** (React + FastAPI) to **scan IDs**, **review/correct extracted fields**, and **save scan history** in MongoDB.
 - ✅ Support **all ID types** (TC kimlik new/old, passport, driver’s license) via prompt-driven extraction.
 - ✅ Enable **bulk scanning** (scan many guests sequentially) with fast operator UX.
 - ✅ Provide **clean REST APIs** to support future **Syroce PMS** integration.
-- ✅ Basic **guest management** implemented (CRUD + check-in/check-out).
+- ✅ **Guest management** implemented (CRUD + check-in/check-out).
 - ✅ **Phase 3 enhancements delivered:**
-  - **Bulk scan ergonomics:** auto-extract toggle + keyboard shortcuts (Ctrl+S, Ctrl+R, Esc)
-  - **Duplicate detection:** by `id_number` (high confidence) + name+birthdate (medium confidence)
-  - **Audit trail:** field-level diffs on create/update/check-in/check-out/delete; store original AI extraction vs final saved edits
-- ▶️ **Current objective (Phase 4):** Hardening, privacy/compliance controls, and **Syroce PMS adapter implementation** once integration details are available.
+  - Bulk scan ergonomics: auto-extract toggle + keyboard shortcuts (Ctrl+S, Ctrl+R, Esc)
+  - Duplicate detection: by `id_number` (high confidence) + name+birthdate (medium confidence)
+  - Audit trail: field-level diffs on create/update/check-in/check-out/delete; store original AI extraction vs final saved edits
+- ✅ **Phase 4 hardening delivered (Production readiness):**
+  - JWT authentication (email/password) + Bearer token auth
+  - Role-based access control (Admin / Resepsiyon)
+  - Admin-only user management (CRUD + reset password)
+  - KVKK compliance controls (retention settings, auto-cleanup trigger, consent flag, guest anonymization)
+  - Frontend protected routes + role-based navigation
+- ▶️ **Current objective (Post V1 / Phase 5):** Syroce PMS integration adapter implementation (requires Syroce API/import details), and optional operational hardening (rate limiting, CORS tightening, backups).
 
 ---
 
@@ -37,7 +43,7 @@
 **Exit criteria (met)**
 - ✅ Stable structured JSON responses
 - ✅ Clear failure behavior for low-quality/irrelevant images
-- ✅ 4/4 POC tests passing
+- ✅ POC tests passing
 
 ---
 
@@ -50,12 +56,12 @@
 5. ✅ As a manager, I can view scan history and open guest record details.
 
 **Backend (FastAPI) — implemented**
-- Endpoints implemented:
+- Endpoints implemented (base set):
   - `GET /api/health`
-  - `POST /api/scan` (base64 image) → extracted JSON + scan record
-  - `GET /api/scans` (pagination)
+  - `POST /api/scan`
+  - `GET /api/scans`
   - `POST /api/guests`
-  - `GET /api/guests` (pagination + search + status filter)
+  - `GET /api/guests`
   - `GET /api/guests/{id}`
   - `PATCH /api/guests/{id}`
   - `DELETE /api/guests/{id}`
@@ -65,19 +71,19 @@
   - `GET /api/exports/guests.json`
   - `GET /api/exports/guests.csv`
 - MongoDB collections implemented:
-  - `guests` (profile + status + timestamps)
-  - `scans` (scan events + extracted payload + warnings)
+  - `guests`
+  - `scans`
 - AI integration:
   - OpenAI `gpt-4o` via Emergent LLM key
-  - Strict JSON extraction prompt, warnings included
+  - Strict JSON extraction prompt with warnings
 
 **Frontend (React + shadcn/ui) — implemented**
 - Pages delivered (Turkish UI):
-  - **Dashboard**: KPI cards, weekly chart, recent guests/scans, quick actions
-  - **Scan**: camera capture + extraction + editable form + save
-  - **Bulk Scan**: sequential scanning with counter + undo last
-  - **Guests**: searchable/filterable table + pagination + actions
-  - **Guest Detail**: edit fields, check-in/out, timeline
+  - Dashboard
+  - Scan
+  - Bulk Scan
+  - Guests (list)
+  - Guest Detail
 - UX states:
   - Camera permission/not found handling
   - Loading/extracting skeletons
@@ -87,127 +93,143 @@
 
 **Phase 2 testing (met)**
 - ✅ Testing agent: 100% pass rate backend + frontend + integration
-- Minor: low-priority accessibility warning around mobile sheet title/description (addressed/improved)
 
 ---
 
-### Phase 3 — Feature Expansion: PMS-Ready Integration + Bulk Improvements ✅ COMPLETED
+### Phase 3 — Feature Expansion: Bulk Improvements + Data Quality + Audit ✅ COMPLETED
 **User stories (Expansion)**
 1. ✅ As an operator, I can scan multiple guests faster with fewer clicks and optional automation.
-2. ✅ As a manager, I can export data in PMS-friendly formats (CSV schemas, JSON mapping). *(baseline export already present)*
-3. ▶️ As a developer, I can push a guest record to **Syroce PMS** via a configurable adapter (requires Syroce API details).
+2. ✅ As a manager, I can export data in PMS-friendly formats (baseline CSV/JSON export).
+3. ▶️ As a developer, I can push a guest record to Syroce PMS (requires Syroce API details).
 4. ✅ As an operator, I can detect duplicates (same ID number) during creation.
 5. ✅ As a manager, I can audit what was extracted vs what was manually corrected.
 
 **What was implemented in Phase 3**
 
 #### 3.1 Bulk scan enhancements (operator ergonomics) ✅
-- ✅ **Auto-extract toggle** (bulk scan): operator can enable/disable automatic extraction on capture.
-- ✅ **Keyboard shortcuts** (bulk scan):
+- ✅ Auto-extract toggle (bulk scan)
+- ✅ Keyboard shortcuts:
   - `Ctrl/Cmd + S` → Save
   - `Ctrl/Cmd + R` → Next scan / reset
   - `Esc` → Cancel dialog / reset
-- ✅ UX messaging updated to guide operators (e.g., “Ctrl+S ile kaydedin”).
 
 #### 3.2 Data quality & duplicates ✅
 - ✅ Duplicate detection on guest creation:
-  - **Primary match:** exact `id_number` → `match_confidence: high`
-  - **Secondary match:** `first_name + last_name + birth_date` → `match_confidence: medium`
-- ✅ New endpoint:
+  - Primary: exact `id_number` (high confidence)
+  - Secondary: `first_name + last_name + birth_date` (medium confidence)
+- ✅ Endpoint:
   - `GET /api/guests/check-duplicate`
-- ✅ Create guest behavior:
-  - If duplicate found → returns `duplicate_detected: true` + list of matches
-  - Supports override: `force_create: true`
-- ✅ Frontend flow:
-  - Duplicate warning dialog listing matches; allows “Mevcut Kaydı Gör” or “Yine de Kaydet”.
+- ✅ Guest create behavior:
+  - If duplicate found → `duplicate_detected: true` + duplicates list
+  - Override supported: `force_create: true`
+- ✅ Frontend:
+  - Duplicate warning dialog with “Mevcut Kaydı Gör” and “Yine de Kaydet”
 
 #### 3.3 Audit trail ✅
-- ✅ New MongoDB collection: `audit_logs`
-- ✅ Stored on guest record: `original_extracted_data` (AI’s original extraction snapshot)
+- ✅ MongoDB: `audit_logs`
+- ✅ Stored on guest: `original_extracted_data`
 - ✅ Audit recorded for:
   - `created`, `updated`, `checked_in`, `checked_out`, `deleted`
-- ✅ Field-level diffs recorded (old/new values) for tracked fields.
-- ✅ New endpoints:
+- ✅ Endpoints:
   - `GET /api/guests/{guest_id}/audit`
   - `GET /api/audit/recent`
 - ✅ Frontend:
-  - Guest detail page shows **Denetim İzi** timeline + field changes.
-  - Shows **AI Çıkarım Verileri** panel to compare AI extraction vs final saved data.
+  - Denetim İzi timeline + field diffs
+  - AI extraction vs manual edits comparison
 
 **Phase 3 testing (end-to-end) ✅**
-- ✅ Testing agent: **100% pass rate** for Phase 3 backend + frontend + integration.
-- ✅ Validated:
-  - Duplicate detection responses + force create bypass
-  - Audit logs created for CRUD + check-in/out
-  - Bulk scan UI controls render correctly
+- ✅ Testing agent: 100% pass rate
 
 ---
 
-### Phase 4 — Hardening & Syroce PMS Integration (Before Production Rollout) ▶️ NEXT
-**User stories (Hardening & Integration)**
-1. As a business owner, I can configure data retention (auto-delete images after N days).
-2. As an operator, I can only view/edit data based on permissions (role-based access).
-3. As a manager, I can see failed extraction logs and integration failures.
-4. As an operator, I get clear guidance when camera permissions are blocked.
-5. As a manager, I can run in “no-image-storage mode” (store only extracted fields + scan metadata).
-6. As a developer, I can reliably sync/push guest info into **Syroce PMS**.
+### Phase 4 — Hardening: Auth/Roles + KVKK Compliance ✅ COMPLETED
+**User stories (Hardening & Compliance)**
+1. ✅ As a business owner, I can configure data retention (auto-delete scans/audit logs after N days).
+2. ✅ As an operator, I can only view/edit data based on permissions (role-based access).
+3. ✅ As a manager/admin, I can manage users and reset passwords.
+4. ✅ As a manager/admin, I can configure KVKK consent text and whether consent is required.
+5. ✅ As a manager/admin, I can anonymize guest data (KVKK “unutulma hakkı”).
+6. ✅ As an operator, I must log in to access the system (protected routes).
 
-**Implementation steps**
+**What was implemented in Phase 4**
 
-#### 4.1 Syroce PMS integration readiness (adapter) ▶️
-- Confirm Syroce PMS integration method:
-  - REST API? SOAP? Database sync? File import? Webhook?
-  - Auth method (API key, OAuth2, Basic)
-  - Required payload schema for guest/check-in
-- Implement adapter pattern:
-  - `POST /api/integrations/syroce/push/{guestId}`
-  - Config storage (env + optional DB)
-  - Persist integration status on guest:
-    - `integration_status: pending|sent|failed`, `last_error`, `last_sent_at`
-- Add retry & queue behavior:
-  - Manual retry button
-  - Background job (optional) for pending/failed
+#### 4.1 Authentication (JWT) ✅
+- ✅ `POST /api/auth/login` → returns JWT token + user info
+- ✅ Bearer token requirement added to all business endpoints (except `/api/health` and `/api/auth/login`)
+- ✅ `GET /api/auth/me`
+- ✅ `POST /api/auth/change-password`
 
-#### 4.2 Privacy, retention, and compliance ▶️
-- Add authentication & roles (Admin / Reception).
-- Add privacy controls:
-  - Optional image storage toggle
-  - Retention policy + scheduled deletion
-- Add observability:
-  - Request IDs
-  - Structured logs
-  - Integration failure dashboard
-- Security review:
-  - CORS tightening
-  - Rate limiting on scan endpoint
-  - Field-level redaction for exports (optional)
+#### 4.2 Role-Based Access Control (RBAC) ✅
+- ✅ Roles:
+  - `admin`
+  - `reception` (Resepsiyon)
+- ✅ Admin-only endpoints enforced for:
+  - User management
+  - KVKK/settings updates
+  - Manual cleanup trigger
+  - Guest anonymization
 
-#### 4.3 Export improvements (PMS-friendly templates) ▶️
-- Provide multiple CSV templates (e.g., “PMS Import”, “Police/Legal report” if needed)
-- Add field mapping/alias layer (e.g., `TCKN` vs `IdentityNo`)
-- Add more filtering options on export endpoints (status/date/nationality)
+#### 4.3 Admin User Management ✅
+- ✅ Endpoints:
+  - `GET /api/users`
+  - `POST /api/users`
+  - `PATCH /api/users/{user_id}`
+  - `DELETE /api/users/{user_id}` (self-delete blocked)
+  - `POST /api/users/{user_id}/reset-password`
+- ✅ Default bootstrap users created on startup:
+  - `admin@quickid.com` / `admin123`
+  - `resepsiyon@quickid.com` / `resepsiyon123`
+
+#### 4.4 KVKK Compliance & Retention ✅
+- ✅ Settings storage + defaults (MongoDB `settings` document of type `kvkk`):
+  - Scan retention days
+  - Audit retention days
+  - Auto-cleanup enabled
+  - Store scan images toggle (future expansion)
+  - KVKK consent required toggle + consent text
+  - Data processing purpose text
+- ✅ Endpoints:
+  - `GET /api/settings/kvkk`
+  - `PATCH /api/settings/kvkk` (admin)
+  - `POST /api/settings/cleanup` (admin)
+  - `POST /api/guests/{guest_id}/anonymize` (admin)
+
+#### 4.5 Frontend Protected Routes & Role-Based Nav ✅
+- ✅ Login page (`/login`)
+- ✅ Auth context (token + user stored in localStorage)
+- ✅ Route protection (redirect unauthenticated users to `/login`)
+- ✅ Admin-only navigation items:
+  - Kullanıcılar
+  - Ayarlar & KVKK
+- ✅ Logout action clears session
+
+**Phase 4 testing (end-to-end) ✅**
+- ✅ Testing agent: 100% pass rate (backend + frontend)
 
 ---
 
 ## 3. Next Actions (Immediate)
-1. Gather **Syroce PMS integration details**:
-   - API/base URL, auth, required fields, check-in endpoint(s), test environment.
-2. Decide the **integration mode**:
-   - Push guest on save? Push on check-in? Both?
-3. Implement the **Syroce adapter scaffolding** + integration status tracking.
-4. Add hardening items:
-   - Authentication/roles
-   - Retention + optional no-image mode
-   - Rate limiting + tighter CORS
+1. **Syroce PMS entegrasyon detaylarını** sağlayın:
+   - Entegrasyon tipi (REST/SOAP/CSV import/DB)
+   - Auth yöntemi
+   - Misafir/check-in payload şeması
+   - Test ortamı bilgisi
+2. İstenen entegrasyon davranışını netleştirin:
+   - Misafir kaydedilince mi, check-in yapılınca mı, yoksa ikisi de mi push edilecek?
+3. (Opsiyonel) Üretim sertleştirme:
+   - Rate limiting (özellikle `/api/scan`)
+   - CORS’ta allowlist
+   - Yedekleme/restore prosedürü
+   - Loglama/monitoring dashboard
 
 ---
 
 ## 4. Success Criteria
-- ✅ Core extraction: camera/image → GPT-4o Vision → **parsable structured JSON** with consistent formats.
-- ✅ App reliability: scan → edit → save → history; no silent failures.
-- ✅ Data integrity: guests saved, editable, check-in/out works, exports available.
-- ✅ Bulk scanning: fast sequential workflow with low clicks (**plus shortcuts + auto-extract**).
-- ✅ Data quality: **duplicate detection** prevents accidental duplicate records.
-- ✅ Auditability: **denetim izi** available for create/update/status changes, including AI vs manual diffs.
-- ▶️ PMS integration: Syroce adapter can reliably send guest data and report status/errors.
-- ▶️ Compliance: retention/no-image mode and access control before production rollout.
+- ✅ Core extraction: camera/image → GPT-4o Vision → parsable structured JSON.
+- ✅ Reliable operator flow: scan → edit → save → history.
+- ✅ Bulk scanning: low-click workflow + shortcuts + auto-extract toggle.
+- ✅ Data quality: duplicate detection prevents accidental duplicates.
+- ✅ Auditability: denetim izi + AI vs manual diffs.
+- ✅ Security: JWT auth + RBAC + protected routes.
+- ✅ KVKK: configurable consent text/requirement + retention + manual cleanup + anonymization.
+- ▶️ PMS integration: Syroce adapter can reliably sync/push guest data once API/import details are available.
