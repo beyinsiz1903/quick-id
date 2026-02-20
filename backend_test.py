@@ -312,13 +312,17 @@ class QuickIDAPITester:
 
     def test_scan_endpoint(self):
         """Test scan endpoint with real image"""
+        if not self.reception_token:
+            self.log("❌ No reception token available")
+            return False, {}
+            
         self.log("🖼️  Creating test image for scanning...")
         test_image = self.create_test_image()
         
         # The scan endpoint takes time, use longer timeout
         success, response = self.run_test(
             "Scan ID Document", "POST", "api/scan", 200, 
-            {"image_base64": test_image}, timeout=15
+            {"image_base64": test_image}, timeout=15, token=self.reception_token
         )
         
         if success and response.get('success'):
