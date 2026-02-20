@@ -1,18 +1,18 @@
 [
   {
     "content": "Phase 3: Toplu tarama iyileştirmeleri - klavye kısayolları, otomatik çıkarım",
-    "status": "in_progress"
+    "status": "completed"
   },
   {
     "content": "Phase 3: Mükerrer misafir tespiti - duplicate detection by id_number + name+birthdate",
-    "status": "pending"
+    "status": "completed"
   },
   {
     "content": "Phase 3: Denetim izi - original vs edited data tracking, audit trail",
-    "status": "pending"
+    "status": "completed"
   },
   {
     "content": "Phase 3: End to End Testing using Testing Agent",
-    "status": "pending"
+    "status": "in_progress"
   }
 ]
