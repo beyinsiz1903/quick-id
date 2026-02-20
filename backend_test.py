@@ -360,15 +360,17 @@ class QuickIDAPITester:
 
     def run_all_tests(self):
         """Run all backend API tests"""
-        self.log("🚀 Starting Quick ID Reader API Tests")
+        self.log("🚀 Starting Quick ID Reader API Tests (Phase 3)")
         self.log(f"📍 Testing endpoint: {self.base_url}")
         
         test_results = {
             'health': self.test_health(),
             'dashboard_stats': self.test_dashboard_stats(), 
             'scan_endpoint': self.test_scan_endpoint()[0],  # Only get success bool
+            'duplicate_detection': self.test_duplicate_detection(),
             'guest_crud': self.test_guest_crud(),
             'checkin_checkout': self.test_checkin_checkout(),
+            'audit_trail': self.test_audit_trail(),
             'exports': self.test_exports(),
             'cleanup': self.test_cleanup()
         }
