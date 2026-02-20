@@ -101,6 +101,190 @@ class QuickIDAPITester:
         img_base64 = base64.b64encode(buffer.getvalue()).decode('utf-8')
         return f"data:image/jpeg;base64,{img_base64}"
 
+    def test_auth_login(self):
+        """Test authentication with valid and invalid credentials"""
+        # Test admin login
+        admin_data = {"email": "admin@quickid.com", "password": "admin123"}
+        success, response = self.run_test("Admin Login", "POST", "api/auth/login", 200, admin_data)
+        if success and response.get('token'):
+            self.admin_token = response['token']
+            self.admin_user = response.get('user', {})
+            self.log(f"   👤 Admin logged in: {self.admin_user.get('name')} ({self.admin_user.get('role')})")
+        else:
+            self.log("❌ Failed to get admin token")
+            return False
+
+        # Test reception login
+        reception_data = {"email": "resepsiyon@quickid.com", "password": "resepsiyon123"}
+        success, response = self.run_test("Reception Login", "POST", "api/auth/login", 200, reception_data)
+        if success and response.get('token'):
+            self.reception_token = response['token']
+            self.reception_user = response.get('user', {})
+            self.log(f"   👤 Reception logged in: {self.reception_user.get('name')} ({self.reception_user.get('role')})")
+        else:
+            self.log("❌ Failed to get reception token")
+            return False
+
+        # Test invalid credentials
+        invalid_data = {"email": "invalid@test.com", "password": "wrongpass"}
+        success, response = self.run_test("Invalid Login", "POST", "api/auth/login", 401, invalid_data)
+        if success:
+            self.log("   ✅ Invalid credentials correctly rejected")
+        else:
+            return False
+
+        return True
+
+    def test_auth_me(self):
+        """Test /api/auth/me endpoint"""
+        if not self.admin_token:
+            self.log("❌ No admin token available")
+            return False
+
+        success, response = self.run_test("Get Current User", "GET", "api/auth/me", 200, token=self.admin_token)
+        if success and response.get('user'):
+            user = response['user']
+            self.log(f"   👤 Current user: {user.get('name')} ({user.get('email')})")
+            return True
+        return False
+
+    def test_protected_endpoints_without_auth(self):
+        """Test that protected endpoints require authentication"""
+        endpoints_to_test = [
+            ("Dashboard Stats", "GET", "api/dashboard/stats"),
+            ("User List", "GET", "api/users"),
+            ("KVKK Settings", "GET", "api/settings/kvkk"),
+            ("Guest List", "GET", "api/guests")
+        ]
+        
+        all_passed = True
+        for name, method, endpoint in endpoints_to_test:
+            success, response = self.run_test(f"{name} (No Auth)", method, endpoint, 401)
+            if not success:
+                all_passed = False
+                
+        return all_passed
+
+    def test_user_management_admin(self):
+        """Test user management endpoints (admin only)"""
+        if not self.admin_token:
+            self.log("❌ No admin token available")
+            return False
+
+        # Test get users (admin only)
+        success, response = self.run_test("Get Users (Admin)", "GET", "api/users", 200, token=self.admin_token)
+        if not success or not response.get('users'):
+            return False
+        
+        users = response['users']
+        self.log(f"   👥 Found {len(users)} users")
+
+        # Test create new user (admin only)
+        new_user_data = {
+            "email": "test@quickid.com",
+            "password": "test123",
+            "name": "Test User",
+            "role": "reception"
+        }
+        success, response = self.run_test("Create User (Admin)", "POST", "api/users", 200, new_user_data, token=self.admin_token)
+        if success and response.get('user'):
+            self.created_user_id = response['user']['id']
+            self.log(f"   ✅ Created user ID: {self.created_user_id}")
+        else:
+            return False
+
+        # Test update user (admin only)
+        update_data = {"name": "Updated Test User", "role": "admin"}
+        success, response = self.run_test("Update User (Admin)", "PATCH", f"api/users/{self.created_user_id}", 200, update_data, token=self.admin_token)
+        if not success:
+            return False
+
+        # Test reset user password (admin only)
+        reset_data = {"new_password": "newtest123"}
+        success, response = self.run_test("Reset User Password (Admin)", "POST", f"api/users/{self.created_user_id}/reset-password", 200, reset_data, token=self.admin_token)
+        if not success:
+            return False
+
+        return True
+
+    def test_user_management_reception_forbidden(self):
+        """Test that reception users cannot access admin-only user management"""
+        if not self.reception_token:
+            self.log("❌ No reception token available")
+            return False
+
+        # Reception should get 403 for user management endpoints
+        admin_only_endpoints = [
+            ("Get Users (Reception)", "GET", "api/users"),
+            ("Create User (Reception)", "POST", "api/users"),
+        ]
+        
+        if self.created_user_id:
+            admin_only_endpoints.extend([
+                ("Update User (Reception)", "PATCH", f"api/users/{self.created_user_id}"),
+                ("Delete User (Reception)", "DELETE", f"api/users/{self.created_user_id}"),
+            ])
+
+        all_passed = True
+        for name, method, endpoint in admin_only_endpoints:
+            test_data = {"name": "test"} if method in ["POST", "PATCH"] else None
+            success, response = self.run_test(name, method, endpoint, 403, test_data, token=self.reception_token)
+            if not success:
+                all_passed = False
+                
+        return all_passed
+
+    def test_kvkk_settings(self):
+        """Test KVKK settings endpoints"""
+        if not self.admin_token:
+            self.log("❌ No admin token available")
+            return False
+
+        # Test get KVKK settings (any authenticated user)
+        success, response = self.run_test("Get KVKK Settings", "GET", "api/settings/kvkk", 200, token=self.reception_token)
+        if not success or not response.get('settings'):
+            return False
+        
+        settings = response['settings']
+        self.log(f"   ⚙️  KVKK Settings: retention_days_scans={settings.get('retention_days_scans')}")
+
+        # Test update KVKK settings (admin only)
+        update_data = {
+            "retention_days_scans": 120,
+            "kvkk_consent_required": True
+        }
+        success, response = self.run_test("Update KVKK Settings (Admin)", "PATCH", "api/settings/kvkk", 200, update_data, token=self.admin_token)
+        if not success:
+            return False
+
+        # Test reception cannot update KVKK settings
+        success, response = self.run_test("Update KVKK Settings (Reception Forbidden)", "PATCH", "api/settings/kvkk", 403, update_data, token=self.reception_token)
+        if not success:
+            return False
+
+        # Test cleanup endpoint (admin only)
+        success, response = self.run_test("Trigger Data Cleanup (Admin)", "POST", "api/settings/cleanup", 200, token=self.admin_token)
+        if success and response.get('results'):
+            results = response['results']
+            self.log(f"   🧹 Cleanup results: {results}")
+        else:
+            return False
+
+        return True
+
+    def test_guest_anonymization(self):
+        """Test guest anonymization (admin only)"""
+        if not self.admin_token or not self.guest_id:
+            self.log("❌ No admin token or guest ID available")
+            return False
+
+        # Test anonymize guest (admin only)
+        success, response = self.run_test("Anonymize Guest (Admin)", "POST", f"api/guests/{self.guest_id}/anonymize", 200, token=self.admin_token)
+        if success and response.get('success'):
+            self.log("   🔒 Guest data anonymized successfully")
+            return True
+        return False
+
     def test_health(self):
         """Test health endpoint"""
         success, response = self.run_test("Health Check", "GET", "api/health", 200)
