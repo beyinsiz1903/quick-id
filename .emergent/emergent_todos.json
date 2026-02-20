@@ -1,22 +1,14 @@
 [
   {
-    "content": "Phase 4: Backend - JWT auth, user roles (Admin/Resepsiyon), auth middleware",
-    "status": "completed"
+    "content": "Phase 5: Backend - Rate limiting (per-user) with slowapi",
+    "status": "in_progress"
   },
   {
-    "content": "Phase 4: Backend - KVKK/veri saklama politikaları, retention settings, cleanup",
-    "status": "completed"
+    "content": "Phase 5: Frontend - Rate limit error handling (429 toast)",
+    "status": "pending"
   },
   {
-    "content": "Phase 4: Frontend - Login page, auth context, protected routes",
-    "status": "completed"
-  },
-  {
-    "content": "Phase 4: Frontend - User management (admin), Settings/KVKK page",
-    "status": "completed"
-  },
-  {
-    "content": "Phase 4: End to End Testing using Testing Agent",
-    "status": "completed"
+    "content": "Phase 5: End to End Testing",
+    "status": "pending"
   }
 ]
