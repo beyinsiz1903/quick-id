@@ -1,15 +1,15 @@
 [
   {
     "content": "Phase 1: Core POC - OpenAI Vision ID extraction test",
-    "status": "in_progress"
+    "status": "completed"
   },
   {
     "content": "Phase 1: Fix POC until extraction works reliably",
-    "status": "pending"
+    "status": "completed"
   },
   {
     "content": "Phase 2: Get design guidelines from design agent",
-    "status": "pending"
+    "status": "in_progress"
   },
   {
     "content": "Phase 2: Backend implementation (FastAPI endpoints, MongoDB models)",
