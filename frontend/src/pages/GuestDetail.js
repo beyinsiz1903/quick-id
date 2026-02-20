@@ -10,6 +10,7 @@ import { Skeleton } from '../components/ui/skeleton';
 import { Textarea } from '../components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { StatusBadge, DocTypeBadge, GenderBadge } from '../components/StatusBadges';
+import AuditTrail from '../components/AuditTrail';
 import { api } from '../lib/api';
 import {
   ArrowLeft,
@@ -25,6 +26,8 @@ import {
   MapPin,
   Globe,
   Loader2,
+  History,
+  FileText,
 } from 'lucide-react';
 
 const DOC_TYPES = [
@@ -43,9 +46,11 @@ export default function GuestDetail() {
   const [editing, setEditing] = useState(false);
   const [editData, setEditData] = useState({});
   const [saving, setSaving] = useState(false);
+  const [showOriginal, setShowOriginal] = useState(false);
 
   useEffect(() => {
     loadGuest();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const loadGuest = async () => {
@@ -174,6 +179,8 @@ export default function GuestDetail() {
     </div>
   );
 
+  const originalData = guest.original_extracted_data;
+
   return (
     <div className="space-y-4" data-testid="guest-detail-page">
       {/* Header */}
@@ -226,27 +233,28 @@ export default function GuestDetail() {
 
       {/* Two Column Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Profile Card */}
-        <Card className="bg-white">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base flex items-center gap-2">
-              <User className="w-4 h-4 text-[var(--brand-sky)]" />
-              Kişisel Bilgiler
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-0">
-            <InfoRow icon={User} label="Ad" value={guest.first_name} field="first_name" />
-            <InfoRow icon={User} label="Soyad" value={guest.last_name} field="last_name" />
-            <InfoRow icon={CreditCard} label="Kimlik No" value={guest.id_number} field="id_number" />
-            <InfoRow icon={Calendar} label="Doğum Tarihi" value={guest.birth_date} field="birth_date" type="date" />
-            <InfoRow icon={User} label="Cinsiyet" value={guest.gender === 'M' ? 'Erkek' : guest.gender === 'F' ? 'Kadın' : guest.gender} field="gender" type="select-gender" />
-            <InfoRow icon={Globe} label="Uyruk" value={guest.nationality} field="nationality" />
-            <InfoRow icon={MapPin} label="Doğum Yeri" value={guest.birth_place} field="birth_place" />
-          </CardContent>
-        </Card>
-
-        {/* Document & Status Card */}
+        {/* Left Column */}
         <div className="space-y-4">
+          {/* Profile Card */}
+          <Card className="bg-white">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                <User className="w-4 h-4 text-[var(--brand-sky)]" />
+                Kişisel Bilgiler
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-0">
+              <InfoRow icon={User} label="Ad" value={guest.first_name} field="first_name" />
+              <InfoRow icon={User} label="Soyad" value={guest.last_name} field="last_name" />
+              <InfoRow icon={CreditCard} label="Kimlik No" value={guest.id_number} field="id_number" />
+              <InfoRow icon={Calendar} label="Doğum Tarihi" value={guest.birth_date} field="birth_date" type="date" />
+              <InfoRow icon={User} label="Cinsiyet" value={guest.gender === 'M' ? 'Erkek' : guest.gender === 'F' ? 'Kadın' : guest.gender} field="gender" type="select-gender" />
+              <InfoRow icon={Globe} label="Uyruk" value={guest.nationality} field="nationality" />
+              <InfoRow icon={MapPin} label="Doğum Yeri" value={guest.birth_place} field="birth_place" />
+            </CardContent>
+          </Card>
+
+          {/* Document Card */}
           <Card className="bg-white">
             <CardHeader className="pb-2">
               <CardTitle className="text-base flex items-center gap-2">
@@ -262,6 +270,51 @@ export default function GuestDetail() {
             </CardContent>
           </Card>
 
+          {/* Original AI Extraction Data */}
+          {originalData && (
+            <Card className="bg-white">
+              <CardHeader className="pb-2">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-[var(--brand-amber)]" />
+                    AI Çıkarım Verileri
+                  </CardTitle>
+                  <Button variant="ghost" size="sm" onClick={() => setShowOriginal(!showOriginal)} className="text-xs">
+                    {showOriginal ? 'Gizle' : 'Göster'}
+                  </Button>
+                </div>
+              </CardHeader>
+              {showOriginal && (
+                <CardContent>
+                  <div className="space-y-1.5 text-xs">
+                    {Object.entries(originalData).filter(([k]) => !['is_valid', 'notes', 'document_number'].includes(k) && originalData[k]).map(([key, value]) => {
+                      const currentValue = guest[key];
+                      const isDifferent = currentValue && value && currentValue !== value;
+                      return (
+                        <div key={key} className="flex items-center gap-2">
+                          <span className="text-muted-foreground min-w-[100px] capitalize">
+                            {key.replace(/_/g, ' ')}:
+                          </span>
+                          <span className={isDifferent ? 'line-through text-[var(--brand-danger)]' : 'text-[var(--brand-ink)]'}>
+                            {value}
+                          </span>
+                          {isDifferent && (
+                            <span className="text-[var(--brand-success)] font-medium">
+                              → {currentValue}
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              )}
+            </Card>
+          )}
+        </div>
+
+        {/* Right Column */}
+        <div className="space-y-4">
           {/* Timeline */}
           <Card className="bg-white">
             <CardHeader className="pb-2">
@@ -327,6 +380,9 @@ export default function GuestDetail() {
               </CardContent>
             </Card>
           )}
+
+          {/* Audit Trail */}
+          <AuditTrail guestId={id} />
         </div>
       </div>
     </div>

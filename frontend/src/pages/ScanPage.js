@@ -1,8 +1,9 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import CameraCapture from '../components/CameraCapture';
 import ExtractionForm from '../components/ExtractionForm';
+import DuplicateWarning from '../components/DuplicateWarning';
 import { Button } from '../components/ui/button';
 import { api } from '../lib/api';
 import { ScanLine, Loader2 } from 'lucide-react';
@@ -15,6 +16,11 @@ export default function ScanPage() {
   const [scanId, setScanId] = useState(null);
   const [warnings, setWarnings] = useState([]);
   const [capturedImage, setCapturedImage] = useState(null);
+  const [originalExtracted, setOriginalExtracted] = useState(null);
+  
+  // Duplicate handling
+  const [duplicateDialogOpen, setDuplicateDialogOpen] = useState(false);
+  const [pendingDuplicates, setPendingDuplicates] = useState([]);
 
   const handleCapture = useCallback(async (imageDataUrl) => {
     setCapturedImage(imageDataUrl);
@@ -27,7 +33,7 @@ export default function ScanPage() {
       
       if (result.success && result.extracted_data) {
         const data = result.extracted_data;
-        setExtractedData({
+        const extracted = {
           first_name: data.first_name || '',
           last_name: data.last_name || '',
           id_number: data.id_number || data.document_number || '',
@@ -43,7 +49,9 @@ export default function ScanPage() {
           father_name: data.father_name || '',
           is_valid: data.is_valid,
           notes: '',
-        });
+        };
+        setExtractedData(extracted);
+        setOriginalExtracted({ ...extracted });
         setWarnings(data.warnings || []);
         setScanId(result.scan?.id || null);
         
@@ -62,15 +70,29 @@ export default function ScanPage() {
     }
   }, []);
 
-  const handleSave = useCallback(async () => {
+  const handleSave = useCallback(async (forceCreate = false) => {
     if (!extractedData) return;
     
     setSaving(true);
     try {
-      const payload = { ...extractedData, scan_id: scanId };
+      const payload = { 
+        ...extractedData, 
+        scan_id: scanId,
+        original_extracted_data: originalExtracted,
+        force_create: forceCreate
+      };
       delete payload.is_valid;
       
       const result = await api.createGuest(payload);
+      
+      // Check for duplicate detection
+      if (result.duplicate_detected && !forceCreate) {
+        setPendingDuplicates(result.duplicates || []);
+        setDuplicateDialogOpen(true);
+        setSaving(false);
+        return;
+      }
+      
       if (result.success) {
         toast.success('Misafir başarıyla kaydedildi!');
         navigate(`/guests/${result.guest.id}`);
@@ -81,7 +103,17 @@ export default function ScanPage() {
     } finally {
       setSaving(false);
     }
-  }, [extractedData, scanId, navigate]);
+  }, [extractedData, scanId, originalExtracted, navigate]);
+
+  const handleForceCreate = useCallback(async () => {
+    setDuplicateDialogOpen(false);
+    await handleSave(true);
+  }, [handleSave]);
+
+  const handleViewExisting = useCallback((guestId) => {
+    setDuplicateDialogOpen(false);
+    navigate(`/guests/${guestId}`);
+  }, [navigate]);
 
   return (
     <div className="space-y-4">
@@ -111,13 +143,22 @@ export default function ScanPage() {
           <ExtractionForm
             data={extractedData}
             onChange={setExtractedData}
-            onSave={handleSave}
+            onSave={() => handleSave(false)}
             loading={saving}
             extracting={extracting}
             warnings={warnings}
           />
         </div>
       </div>
+
+      {/* Duplicate Warning Dialog */}
+      <DuplicateWarning
+        open={duplicateDialogOpen}
+        onClose={() => setDuplicateDialogOpen(false)}
+        duplicates={pendingDuplicates}
+        onForceCreate={handleForceCreate}
+        onViewExisting={handleViewExisting}
+      />
     </div>
   );
 }
