@@ -448,9 +448,10 @@ async def anonymize_guest_endpoint(guest_id: str, user=Depends(require_admin)):
 
 # ===== SCAN ENDPOINTS =====
 @app.post("/api/scan")
-async def scan_id(request: ScanRequest, user=Depends(require_auth)):
+@limiter.limit("15/minute")
+async def scan_id(request: Request, scan_req: ScanRequest, user=Depends(require_auth)):
     try:
-        extracted = await extract_id_data(request.image_base64)
+        extracted = await extract_id_data(scan_req.image_base64)
         scan_doc = {
             "extracted_data": extracted,
             "is_valid": extracted.get("is_valid", False),
