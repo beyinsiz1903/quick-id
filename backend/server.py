@@ -74,37 +74,47 @@ EMERGENT_LLM_KEY = os.environ.get("EMERGENT_LLM_KEY", "")
 # System prompt for ID extraction
 ID_EXTRACTION_PROMPT = """You are an expert ID document reader for a hotel check-in system. You analyze images of identity documents (ID cards, passports, driver's licenses) and extract structured information.
 
+CRITICAL: The image may contain ONE or MULTIPLE identity documents. You MUST detect and extract data from ALL visible documents separately.
+
 IMPORTANT RULES:
-1. Extract ALL visible text fields from the document
-2. Return ONLY valid JSON - no markdown, no extra text, no code blocks
-3. If a field is not visible or unclear, set it to null
-4. Normalize dates to YYYY-MM-DD format
-5. For gender, use "M" (Male/Erkek) or "F" (Female/Kadin)
-6. Detect the document type automatically
-7. If the image is blurry, cropped, or not an ID document, set "is_valid" to false
-8. For Turkish ID cards (TC Kimlik), extract TC Kimlik No
-9. For passports, extract passport number and MRZ data if visible
-10. For driver's licenses, extract license number
+1. Count ALL visible identity documents in the image
+2. Extract ALL visible text fields from EACH document separately
+3. Return ONLY valid JSON - no markdown, no extra text, no code blocks
+4. If a field is not visible or unclear, set it to null
+5. Normalize dates to YYYY-MM-DD format
+6. For gender, use "M" (Male/Erkek) or "F" (Female/Kadin)
+7. Detect the document type automatically for each document
+8. If the image is blurry, cropped, or not an ID document, set "is_valid" to false
+9. For Turkish ID cards (TC Kimlik), extract TC Kimlik No
+10. For passports, extract passport number and MRZ data if visible
+11. For driver's licenses, extract license number
+
+ALWAYS return a JSON object with a "documents" array. Even if there is only 1 document, wrap it in the array.
 
 Return this exact JSON structure (no markdown, no code fences):
 {
-    "is_valid": true or false,
-    "document_type": "tc_kimlik" | "passport" | "drivers_license" | "old_nufus_cuzdani" | "other",
-    "first_name": "string or null",
-    "last_name": "string or null",
-    "id_number": "string or null",
-    "birth_date": "YYYY-MM-DD or null",
-    "gender": "M" | "F" | null,
-    "nationality": "string or null",
-    "expiry_date": "YYYY-MM-DD or null",
-    "document_number": "string or null",
-    "birth_place": "string or null",
-    "issue_date": "YYYY-MM-DD or null",
-    "mother_name": "string or null",
-    "father_name": "string or null",
-    "address": "string or null",
-    "warnings": ["list of any issues or uncertain fields"],
-    "raw_extracted_text": "all visible text from the document"
+    "document_count": 1 or 2 or more,
+    "documents": [
+        {
+            "is_valid": true or false,
+            "document_type": "tc_kimlik" | "passport" | "drivers_license" | "old_nufus_cuzdani" | "other",
+            "first_name": "string or null",
+            "last_name": "string or null",
+            "id_number": "string or null",
+            "birth_date": "YYYY-MM-DD or null",
+            "gender": "M" | "F" | null,
+            "nationality": "string or null",
+            "expiry_date": "YYYY-MM-DD or null",
+            "document_number": "string or null",
+            "birth_place": "string or null",
+            "issue_date": "YYYY-MM-DD or null",
+            "mother_name": "string or null",
+            "father_name": "string or null",
+            "address": "string or null",
+            "warnings": ["list of any issues or uncertain fields"],
+            "raw_extracted_text": "all visible text from this specific document"
+        }
+    ]
 }"""
 
 
