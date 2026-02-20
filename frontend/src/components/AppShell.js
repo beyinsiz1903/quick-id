@@ -90,10 +90,10 @@ export default function AppShell({ children }) {
               <Menu className="w-5 h-5" />
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="w-64 p-4">
+          <SheetContent side="left" className="w-64 p-4" aria-describedby="mobile-nav-description">
             <div className="mb-6">
-              <h2 className="text-lg font-semibold" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Quick ID</h2>
-              <p className="text-xs text-muted-foreground">Kimlik Okuyucu</p>
+              <h2 className="text-lg font-semibold" style={{ fontFamily: "'Space Grotesk', sans-serif" }} id="mobile-nav-title">Quick ID</h2>
+              <p className="text-xs text-muted-foreground" id="mobile-nav-description">Kimlik Okuyucu - Navigasyon</p>
             </div>
             <NavLinks onNavigate={() => setMobileOpen(false)} />
           </SheetContent>
