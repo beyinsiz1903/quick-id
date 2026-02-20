@@ -295,7 +295,11 @@ class QuickIDAPITester:
 
     def test_dashboard_stats(self):
         """Test dashboard stats endpoint"""
-        success, response = self.run_test("Dashboard Stats", "GET", "api/dashboard/stats", 200)
+        if not self.admin_token:
+            self.log("❌ No admin token available")
+            return False
+            
+        success, response = self.run_test("Dashboard Stats", "GET", "api/dashboard/stats", 200, token=self.admin_token)
         if success and isinstance(response, dict):
             required_fields = ['total_guests', 'today_checkins', 'today_checkouts', 'pending_reviews']
             missing_fields = [f for f in required_fields if f not in response]
