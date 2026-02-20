@@ -389,6 +389,10 @@ class QuickIDAPITester:
 
     def test_guest_crud(self):
         """Test complete guest CRUD operations with original_extracted_data"""
+        if not self.reception_token:
+            self.log("❌ No reception token available")
+            return False
+            
         # Create guest with original extracted data
         original_data = {
             "first_name": "Original_Test",
@@ -409,7 +413,7 @@ class QuickIDAPITester:
             "original_extracted_data": original_data  # Store what AI originally extracted
         }
         
-        success, response = self.run_test("Create Guest with Original Data", "POST", "api/guests", 200, guest_data)
+        success, response = self.run_test("Create Guest with Original Data", "POST", "api/guests", 200, guest_data, token=self.reception_token)
         if not success:
             return False
             
@@ -428,7 +432,7 @@ class QuickIDAPITester:
             self.log("   ⚠️  Original extracted data not found")
         
         # Get single guest and verify original_extracted_data field
-        success, response = self.run_test("Get Single Guest", "GET", f"api/guests/{self.guest_id}", 200)
+        success, response = self.run_test("Get Single Guest", "GET", f"api/guests/{self.guest_id}", 200, token=self.reception_token)
         if not success:
             return False
         
@@ -440,19 +444,19 @@ class QuickIDAPITester:
             
         # Update guest (should create audit log with field diffs)
         update_data = {"notes": "Updated by automation test", "first_name": "UpdatedTest"}
-        success, response = self.run_test("Update Guest", "PATCH", f"api/guests/{self.guest_id}", 200, update_data)
+        success, response = self.run_test("Update Guest", "PATCH", f"api/guests/{self.guest_id}", 200, update_data, token=self.reception_token)
         if not success:
             return False
             
         # Get guest list
-        success, response = self.run_test("Get Guest List", "GET", "api/guests?page=1&limit=10", 200)
+        success, response = self.run_test("Get Guest List", "GET", "api/guests?page=1&limit=10", 200, token=self.reception_token)
         if success and 'guests' in response:
             self.log(f"   📋 Found {len(response['guests'])} guests, total: {response.get('total', 0)}")
         else:
             return False
             
         # Test search
-        success, response = self.run_test("Search Guests", "GET", "api/guests?search=Test&status=pending", 200)
+        success, response = self.run_test("Search Guests", "GET", "api/guests?search=Test&status=pending", 200, token=self.reception_token)
         if not success:
             return False
             
