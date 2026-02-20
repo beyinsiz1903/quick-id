@@ -464,12 +464,12 @@ class QuickIDAPITester:
 
     def test_checkin_checkout(self):
         """Test check-in and check-out operations with audit trail"""
-        if not self.guest_id:
-            self.log("❌ No guest ID available for check-in/out tests")
+        if not self.reception_token or not self.guest_id:
+            self.log("❌ No reception token or guest ID available for check-in/out tests")
             return False
             
         # Check-in (should create audit log)
-        success, response = self.run_test("Guest Check-in", "POST", f"api/guests/{self.guest_id}/checkin", 200)
+        success, response = self.run_test("Guest Check-in", "POST", f"api/guests/{self.guest_id}/checkin", 200, token=self.reception_token)
         if success:
             status = response.get('guest', {}).get('status')
             self.log(f"   ✅ Guest status after check-in: {status}")
@@ -480,7 +480,7 @@ class QuickIDAPITester:
             return False
             
         # Check-out (should create audit log)
-        success, response = self.run_test("Guest Check-out", "POST", f"api/guests/{self.guest_id}/checkout", 200)
+        success, response = self.run_test("Guest Check-out", "POST", f"api/guests/{self.guest_id}/checkout", 200, token=self.reception_token)
         if success:
             status = response.get('guest', {}).get('status')
             self.log(f"   ✅ Guest status after check-out: {status}")
