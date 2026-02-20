@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useAuth } from '../lib/AuthContext';
 import { Button } from './ui/button';
 import { Sheet, SheetContent, SheetTrigger } from './ui/sheet';
+import { Badge } from './ui/badge';
 import {
   LayoutDashboard,
   ScanLine,
@@ -9,18 +11,27 @@ import {
   Layers,
   Menu,
   CreditCard,
+  Settings,
+  UserCog,
+  LogOut,
+  Shield,
 } from 'lucide-react';
-
-const navItems = [
-  { path: '/', label: 'Genel Bakış', icon: LayoutDashboard },
-  { path: '/scan', label: 'Tara', icon: ScanLine },
-  { path: '/bulk-scan', label: 'Toplu Tarama', icon: Layers },
-  { path: '/guests', label: 'Misafirler', icon: Users },
-];
 
 export default function AppShell({ children }) {
   const location = useLocation();
+  const { user, logout, isAdmin } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  const navItems = [
+    { path: '/', label: 'Genel Bakış', icon: LayoutDashboard },
+    { path: '/scan', label: 'Tara', icon: ScanLine },
+    { path: '/bulk-scan', label: 'Toplu Tarama', icon: Layers },
+    { path: '/guests', label: 'Misafirler', icon: Users },
+    ...(isAdmin ? [
+      { path: '/users', label: 'Kullanıcılar', icon: UserCog },
+      { path: '/settings', label: 'Ayarlar & KVKK', icon: Settings },
+    ] : []),
+  ];
 
   const isActive = (path) => {
     if (path === '/') return location.pathname === '/';
@@ -67,10 +78,35 @@ export default function AppShell({ children }) {
         <div className="flex-1 p-3 overflow-y-auto">
           <NavLinks />
         </div>
+        {/* User info + logout */}
         <div className="p-4 border-t border-[hsl(var(--border))]">
-          <p className="text-xs text-[var(--brand-slate)]">
-            Quick ID Reader v1.0
-          </p>
+          {user && (
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-8 h-8 rounded-full bg-[var(--brand-sky-soft)] flex items-center justify-center">
+                <span className="text-xs font-semibold text-[var(--brand-sky)]">
+                  {user.name?.[0] || 'U'}
+                </span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-medium truncate">{user.name}</p>
+                <div className="flex items-center gap-1">
+                  <Badge variant="outline" className="text-[9px] px-1 py-0 h-4">
+                    {user.role === 'admin' ? 'Admin' : 'Resepsiyon'}
+                  </Badge>
+                </div>
+              </div>
+            </div>
+          )}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={logout}
+            className="w-full justify-start text-muted-foreground hover:text-[var(--brand-danger)]"
+            data-testid="logout-button"
+          >
+            <LogOut className="w-4 h-4 mr-2" />
+            Çıkış Yap
+          </Button>
         </div>
       </aside>
 
@@ -84,20 +120,32 @@ export default function AppShell({ children }) {
             Quick ID
           </span>
         </Link>
-        <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-          <SheetTrigger asChild>
-            <Button variant="ghost" size="icon" data-testid="mobile-nav-sheet-trigger">
-              <Menu className="w-5 h-5" />
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="left" className="w-64 p-4" aria-describedby="mobile-nav-description">
-            <div className="mb-6">
-              <h2 className="text-lg font-semibold" style={{ fontFamily: "'Space Grotesk', sans-serif" }} id="mobile-nav-title">Quick ID</h2>
-              <p className="text-xs text-muted-foreground" id="mobile-nav-description">Kimlik Okuyucu - Navigasyon</p>
-            </div>
-            <NavLinks onNavigate={() => setMobileOpen(false)} />
-          </SheetContent>
-        </Sheet>
+        <div className="flex items-center gap-2">
+          {user && (
+            <Badge variant="outline" className="text-[10px] h-6 px-2">
+              {user.name}
+            </Badge>
+          )}
+          <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" data-testid="mobile-nav-sheet-trigger">
+                <Menu className="w-5 h-5" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-64 p-4" aria-describedby="mobile-nav-description">
+              <div className="mb-6">
+                <h2 className="text-lg font-semibold" style={{ fontFamily: "'Space Grotesk', sans-serif" }} id="mobile-nav-title">Quick ID</h2>
+                <p className="text-xs text-muted-foreground" id="mobile-nav-description">Kimlik Okuyucu - Navigasyon</p>
+              </div>
+              <NavLinks onNavigate={() => setMobileOpen(false)} />
+              <div className="mt-6 pt-4 border-t">
+                <Button variant="ghost" size="sm" onClick={() => { logout(); setMobileOpen(false); }} className="w-full justify-start text-muted-foreground">
+                  <LogOut className="w-4 h-4 mr-2" /> Çıkış Yap
+                </Button>
+              </div>
+            </SheetContent>
+          </Sheet>
+        </div>
       </header>
 
       {/* Main Content */}
