@@ -1,18 +1,18 @@
 [
   {
     "content": "Fix: AI prompt to detect multiple IDs in single image",
-    "status": "in_progress"
+    "status": "completed"
   },
   {
     "content": "Fix: Backend scan endpoint returns array of extracted documents",
-    "status": "pending"
+    "status": "completed"
   },
   {
     "content": "Fix: Frontend bulk scan handles multiple extractions per capture",
-    "status": "pending"
+    "status": "completed"
   },
   {
     "content": "Fix: End to End Testing",
-    "status": "pending"
+    "status": "completed"
   }
 ]
