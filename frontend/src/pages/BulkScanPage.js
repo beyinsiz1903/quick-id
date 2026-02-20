@@ -9,13 +9,13 @@ import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { Switch } from '../components/ui/switch';
 import { Label } from '../components/ui/label';
-import { StatusBadge } from '../components/StatusBadges';
 import { api } from '../lib/api';
-import { Layers, Undo2, Check, Camera, Loader2, Users, Keyboard, Zap } from 'lucide-react';
+import { Layers, Undo2, Check, Loader2, Users, Keyboard, Zap, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export default function BulkScanPage() {
   const navigate = useNavigate();
-  const [extractedData, setExtractedData] = useState(null);
+  const [allDocuments, setAllDocuments] = useState([]);
+  const [currentDocIndex, setCurrentDocIndex] = useState(0);
   const [extracting, setExtracting] = useState(false);
   const [saving, setSaving] = useState(false);
   const [scanId, setScanId] = useState(null);
@@ -24,33 +24,41 @@ export default function BulkScanPage() {
   const [cameraKey, setCameraKey] = useState(0);
   const [autoExtract, setAutoExtract] = useState(true);
   const [showShortcuts, setShowShortcuts] = useState(false);
-  const [originalExtracted, setOriginalExtracted] = useState(null);
-  
+  const [originalExtractedList, setOriginalExtractedList] = useState([]);
+
   // Duplicate handling
   const [duplicateDialogOpen, setDuplicateDialogOpen] = useState(false);
   const [pendingDuplicates, setPendingDuplicates] = useState([]);
-  
+
+  const currentData = allDocuments[currentDocIndex] || null;
+
+  const setCurrentData = (data) => {
+    setAllDocuments(prev => {
+      const updated = [...prev];
+      updated[currentDocIndex] = data;
+      return updated;
+    });
+  };
+
   const saveRef = useRef(null);
-  saveRef.current = { extractedData, scanId, originalExtracted };
+  saveRef.current = { allDocuments, currentDocIndex, scanId, originalExtractedList };
 
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e) => {
-      // Ctrl/Cmd + S = Save
       if ((e.ctrlKey || e.metaKey) && e.key === 's') {
         e.preventDefault();
-        if (saveRef.current.extractedData && !saving && !extracting) {
+        const { allDocuments: docs, currentDocIndex: idx } = saveRef.current;
+        if (docs[idx] && !saving && !extracting) {
           handleSave();
         }
       }
-      // Ctrl/Cmd + R = Reset/Retake (only when not in input)
       if ((e.ctrlKey || e.metaKey) && e.key === 'r') {
         if (document.activeElement?.tagName !== 'INPUT' && document.activeElement?.tagName !== 'TEXTAREA') {
           e.preventDefault();
           resetForNextScan();
         }
       }
-      // Escape = Cancel/Reset
       if (e.key === 'Escape') {
         if (duplicateDialogOpen) {
           setDuplicateDialogOpen(false);
@@ -59,35 +67,42 @@ export default function BulkScanPage() {
         }
       }
     };
-    
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [saving, extracting, duplicateDialogOpen]);
 
   const resetForNextScan = useCallback(() => {
-    setExtractedData(null);
+    setAllDocuments([]);
+    setCurrentDocIndex(0);
     setScanId(null);
     setWarnings([]);
-    setOriginalExtracted(null);
+    setOriginalExtractedList([]);
     setCameraKey(prev => prev + 1);
   }, []);
 
   const handleCapture = useCallback(async (imageDataUrl) => {
-    if (!autoExtract) {
-      // Just capture, don't extract yet
-      return;
-    }
-    
+    if (!autoExtract) return;
+
     setExtracting(true);
-    setExtractedData(null);
+    setAllDocuments([]);
+    setCurrentDocIndex(0);
     setWarnings([]);
-    
+
     try {
       const result = await api.scanId(imageDataUrl);
-      
-      if (result.success && result.extracted_data) {
-        const data = result.extracted_data;
-        const extracted = {
+
+      if (result.success) {
+        const documents = result.documents || [];
+        const docCount = result.document_count || documents.length;
+
+        if (documents.length === 0) {
+          toast.error('Kimlik belgesi algılanamadı.');
+          setExtracting(false);
+          return;
+        }
+
+        const extractedList = documents.map(data => ({
           first_name: data.first_name || '',
           last_name: data.last_name || '',
           id_number: data.id_number || data.document_number || '',
@@ -101,14 +116,17 @@ export default function BulkScanPage() {
           issue_date: data.issue_date || '',
           is_valid: data.is_valid,
           notes: '',
-        };
-        setExtractedData(extracted);
-        // Store original for audit trail
-        setOriginalExtracted({ ...extracted });
-        setWarnings(data.warnings || []);
+        }));
+
+        setAllDocuments(extractedList);
+        setOriginalExtractedList(extractedList.map(d => ({ ...d })));
+        setWarnings(documents.flatMap(d => d.warnings || []));
         setScanId(result.scan?.id || null);
-        
-        if (data.is_valid) {
+        setCurrentDocIndex(0);
+
+        if (docCount > 1) {
+          toast.success(`${docCount} kimlik algılandı! Sırayla kaydedin.`);
+        } else if (documents[0]?.is_valid) {
           toast.success('Kimlik okundu! Ctrl+S ile kaydedin.');
         } else {
           toast.warning('Kısmi bilgi alındı, kontrol edin.');
@@ -122,35 +140,42 @@ export default function BulkScanPage() {
   }, [autoExtract]);
 
   const handleSave = useCallback(async (forceCreate = false) => {
-    const currentData = saveRef.current.extractedData;
-    const currentScanId = saveRef.current.scanId;
-    const currentOriginal = saveRef.current.originalExtracted;
-    if (!currentData) return;
-    
+    const { allDocuments: docs, currentDocIndex: idx, scanId: sid, originalExtractedList: origList } = saveRef.current;
+    const data = docs[idx];
+    if (!data) return;
+
     setSaving(true);
     try {
-      const payload = { 
-        ...currentData, 
-        scan_id: currentScanId,
-        original_extracted_data: currentOriginal,
-        force_create: forceCreate
+      const original = origList[idx] || null;
+      const payload = {
+        ...data,
+        scan_id: sid,
+        original_extracted_data: original,
+        force_create: forceCreate,
       };
       delete payload.is_valid;
-      
+
       const result = await api.createGuest(payload);
-      
-      // Check for duplicate detection
+
       if (result.duplicate_detected && !forceCreate) {
         setPendingDuplicates(result.duplicates || []);
         setDuplicateDialogOpen(true);
         setSaving(false);
         return;
       }
-      
+
       if (result.success) {
         setScannedGuests(prev => [result.guest, ...prev]);
-        toast.success(`${currentData.first_name} ${currentData.last_name} kaydedildi! (Ctrl+R: Sonraki)`);
-        resetForNextScan();
+        toast.success(`${data.first_name} ${data.last_name} kaydedildi!`);
+
+        // If there are more documents to save, go to next
+        if (idx < docs.length - 1) {
+          setCurrentDocIndex(idx + 1);
+          toast.info(`Sonraki kimlik (${idx + 2}/${docs.length}). Ctrl+S ile kaydedin.`);
+        } else {
+          // All documents saved, reset for next scan
+          resetForNextScan();
+        }
       }
     } catch (err) {
       toast.error(`Kaydetme hatası: ${err.message}`);
@@ -190,7 +215,7 @@ export default function BulkScanPage() {
             Toplu Tarama
           </h1>
           <p className="text-sm text-muted-foreground mt-0.5">
-            Ardı ardına kimlik tarayın, hızlıca kaydedin
+            Ardı ardına kimlik tarayın, çoklu kimlik destekli
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -211,29 +236,20 @@ export default function BulkScanPage() {
       <Card className="bg-white">
         <CardContent className="p-3">
           <div className="flex flex-wrap items-center gap-4 sm:gap-6">
-            {/* Auto Extract Toggle */}
             <div className="flex items-center gap-2">
-              <Switch
-                id="auto-extract"
-                checked={autoExtract}
-                onCheckedChange={setAutoExtract}
-                data-testid="auto-extract-toggle"
-              />
+              <Switch id="auto-extract" checked={autoExtract} onCheckedChange={setAutoExtract} data-testid="auto-extract-toggle" />
               <Label htmlFor="auto-extract" className="text-sm flex items-center gap-1.5 cursor-pointer">
                 <Zap className="w-3.5 h-3.5 text-[var(--brand-amber)]" />
                 Otomatik Çıkarım
               </Label>
             </div>
-            
-            {/* Keyboard Shortcuts Info */}
-            <button 
+            <button
               onClick={() => setShowShortcuts(!showShortcuts)}
               className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-[var(--brand-sky)] transition-colors"
             >
               <Keyboard className="w-3.5 h-3.5" />
               Klavye Kısayolları
             </button>
-            
             {showShortcuts && (
               <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
                 <span className="flex items-center gap-1">
@@ -267,10 +283,50 @@ export default function BulkScanPage() {
               AI kimlik okuma yapılıyor...
             </div>
           )}
-          
+
+          {/* Multi-document navigator */}
+          {allDocuments.length > 1 && (
+            <Card className="bg-white">
+              <CardContent className="p-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Users className="w-4 h-4 text-[var(--brand-sky)]" />
+                    <span className="text-sm font-medium">{allDocuments.length} kimlik algılandı</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" size="icon" className="h-8 w-8" disabled={currentDocIndex === 0} onClick={() => setCurrentDocIndex(i => i - 1)}>
+                      <ChevronLeft className="w-4 h-4" />
+                    </Button>
+                    <Badge variant="outline" className="bg-[var(--brand-sky-soft)] text-[var(--brand-sky)] border-[var(--brand-sky)] px-3 font-semibold">
+                      {currentDocIndex + 1} / {allDocuments.length}
+                    </Badge>
+                    <Button variant="outline" size="icon" className="h-8 w-8" disabled={currentDocIndex === allDocuments.length - 1} onClick={() => setCurrentDocIndex(i => i + 1)}>
+                      <ChevronRight className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+                <div className="flex gap-1.5 mt-2">
+                  {allDocuments.map((doc, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setCurrentDocIndex(i)}
+                      className={`flex-1 text-xs py-1.5 px-2 rounded-md transition-colors ${
+                        i === currentDocIndex
+                          ? 'bg-[var(--brand-sky)] text-white'
+                          : 'bg-[hsl(var(--secondary))] text-muted-foreground hover:bg-[hsl(var(--border))]'
+                      }`}
+                    >
+                      {doc.first_name || doc.last_name ? `${doc.first_name} ${doc.last_name}`.trim() : `Kimlik ${i + 1}`}
+                    </button>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           <ExtractionForm
-            data={extractedData}
-            onChange={setExtractedData}
+            data={currentData}
+            onChange={setCurrentData}
             onSave={() => handleSave(false)}
             loading={saving}
             extracting={extracting}
@@ -291,12 +347,8 @@ export default function BulkScanPage() {
                         <Check className="w-3.5 h-3.5 text-[var(--brand-success)]" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">
-                          {guest.first_name} {guest.last_name}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {guest.id_number || '—'}
-                        </p>
+                        <p className="text-sm font-medium truncate">{guest.first_name} {guest.last_name}</p>
+                        <p className="text-xs text-muted-foreground">{guest.id_number || '—'}</p>
                       </div>
                       <span className="text-xs text-muted-foreground">#{scannedGuests.length - i}</span>
                     </div>
@@ -308,7 +360,7 @@ export default function BulkScanPage() {
         </div>
       </div>
 
-      {/* Duplicate Warning Dialog */}
+      {/* Duplicate Warning */}
       <DuplicateWarning
         open={duplicateDialogOpen}
         onClose={() => setDuplicateDialogOpen(false)}
