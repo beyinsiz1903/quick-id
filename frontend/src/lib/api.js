@@ -16,6 +16,9 @@ async function handleResponse(res) {
     window.location.href = '/login';
     throw new Error('Oturum süresi doldu');
   }
+  if (res.status === 429) {
+    throw new Error('İstek limiti aşıldı. Lütfen biraz bekleyin ve tekrar deneyin.');
+  }
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: 'İşlem başarısız' }));
     throw new Error(err.detail || 'İşlem başarısız');
