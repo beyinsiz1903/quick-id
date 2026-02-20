@@ -583,17 +583,24 @@ class QuickIDAPITester:
 
     def run_all_tests(self):
         """Run all backend API tests"""
-        self.log("🚀 Starting Quick ID Reader API Tests (Phase 3)")
+        self.log("🚀 Starting Quick ID Reader API Tests (Phase 4 - JWT Authentication)")
         self.log(f"📍 Testing endpoint: {self.base_url}")
         
         test_results = {
             'health': self.test_health(),
+            'auth_login': self.test_auth_login(),
+            'auth_me': self.test_auth_me(),
+            'protected_endpoints_without_auth': self.test_protected_endpoints_without_auth(),
+            'user_management_admin': self.test_user_management_admin(),
+            'user_management_reception_forbidden': self.test_user_management_reception_forbidden(),
+            'kvkk_settings': self.test_kvkk_settings(),
             'dashboard_stats': self.test_dashboard_stats(), 
             'scan_endpoint': self.test_scan_endpoint()[0],  # Only get success bool
             'duplicate_detection': self.test_duplicate_detection(),
             'guest_crud': self.test_guest_crud(),
             'checkin_checkout': self.test_checkin_checkout(),
             'audit_trail': self.test_audit_trail(),
+            'guest_anonymization': self.test_guest_anonymization(),
             'exports': self.test_exports(),
             'cleanup': self.test_cleanup()
         }
