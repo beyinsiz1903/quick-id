@@ -1,5 +1,19 @@
 /* Quick ID Reader - App Styles */
 
+/* Hide external badge */
+#emergent-badge {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  overflow: hidden !important;
+  position: fixed !important;
+  bottom: -9999px !important;
+  right: -9999px !important;
+}
+
 /* Smooth scrolling */
 html {
   scroll-behavior: smooth;
