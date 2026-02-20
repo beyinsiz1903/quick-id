@@ -317,6 +317,19 @@ async def create_default_admin():
 async def health():
     return {"status": "healthy", "service": "Quick ID Reader"}
 
+@app.get("/api/rate-limits")
+async def get_rate_limits():
+    """Return rate limit configuration for the frontend"""
+    return {
+        "limits": {
+            "scan": {"limit": 15, "window": "dakika", "description": "Kimlik tarama (AI)"},
+            "login": {"limit": 5, "window": "dakika", "description": "Giriş denemesi"},
+            "guest_create": {"limit": 30, "window": "dakika", "description": "Misafir oluşturma"},
+        },
+        "note": "Limitler kullanıcı bazında uygulanır. Her kullanıcının kendi limiti vardır."
+    }
+
+
 @app.post("/api/auth/login")
 @limiter.limit("5/minute")
 async def login(request: Request, req: LoginRequest):
