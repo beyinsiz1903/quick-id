@@ -1,34 +1,18 @@
 [
   {
-    "content": "Phase 1: Core POC - OpenAI Vision ID extraction test",
-    "status": "completed"
+    "content": "Phase 3: Toplu tarama iyileştirmeleri - klavye kısayolları, otomatik çıkarım",
+    "status": "in_progress"
   },
   {
-    "content": "Phase 1: Fix POC until extraction works reliably",
-    "status": "completed"
+    "content": "Phase 3: Mükerrer misafir tespiti - duplicate detection by id_number + name+birthdate",
+    "status": "pending"
   },
   {
-    "content": "Phase 2: Get design guidelines from design agent",
-    "status": "completed"
+    "content": "Phase 3: Denetim izi - original vs edited data tracking, audit trail",
+    "status": "pending"
   },
   {
-    "content": "Phase 2: Backend implementation (FastAPI endpoints, MongoDB models)",
-    "status": "completed"
-  },
-  {
-    "content": "Phase 2: Frontend implementation (Camera, Scan UI, History, Guest Detail)",
-    "status": "completed"
-  },
-  {
-    "content": "Phase 2: All user stories covered in Development and testing",
-    "status": "completed"
-  },
-  {
-    "content": "Phase 2: End to End Testing using Testing Agent",
-    "status": "completed"
-  },
-  {
-    "content": "Phase 3: PMS integration, export, bulk improvements",
+    "content": "Phase 3: End to End Testing using Testing Agent",
     "status": "pending"
   }
 ]
