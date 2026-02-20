@@ -335,10 +335,14 @@ class QuickIDAPITester:
 
     def test_duplicate_detection(self):
         """Test duplicate guest detection functionality"""
+        if not self.reception_token:
+            self.log("❌ No reception token available")
+            return False
+            
         # First test check duplicate endpoint
         success, response = self.run_test(
             "Check Duplicate with existing ID", "GET", 
-            "api/guests/check-duplicate?id_number=12345678901", 200
+            "api/guests/check-duplicate?id_number=12345678901", 200, token=self.reception_token
         )
         if success:
             has_duplicates = response.get('has_duplicates', False)
@@ -360,7 +364,7 @@ class QuickIDAPITester:
             "document_type": "tc_kimlik"
         }
         
-        success, response = self.run_test("Create Duplicate Guest", "POST", "api/guests", 200, guest_data)
+        success, response = self.run_test("Create Duplicate Guest", "POST", "api/guests", 200, guest_data, token=self.reception_token)
         if success:
             if response.get('duplicate_detected'):
                 self.log("   ✅ Duplicate detection working correctly")
@@ -373,7 +377,7 @@ class QuickIDAPITester:
 
         # Test force create (bypass duplicate check)
         guest_data['force_create'] = True
-        success, response = self.run_test("Force Create Duplicate", "POST", "api/guests", 200, guest_data)
+        success, response = self.run_test("Force Create Duplicate", "POST", "api/guests", 200, guest_data, token=self.reception_token)
         if success and response.get('success'):
             guest = response.get('guest', {})
             self.guest_id = guest.get('id')  # Store for cleanup
