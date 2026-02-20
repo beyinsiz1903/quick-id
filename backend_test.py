@@ -530,8 +530,12 @@ class QuickIDAPITester:
 
     def test_exports(self):
         """Test export functionality"""
+        if not self.reception_token:
+            self.log("❌ No reception token available")
+            return False
+            
         # Test JSON export
-        success, response = self.run_test("Export Guests JSON", "GET", "api/exports/guests.json", 200)
+        success, response = self.run_test("Export Guests JSON", "GET", "api/exports/guests.json", 200, token=self.reception_token)
         if success and 'guests' in response:
             self.log(f"   📄 JSON Export: {len(response['guests'])} guests")
         else:
@@ -540,7 +544,8 @@ class QuickIDAPITester:
         # Test CSV export (returns different response type)
         try:
             url = f"{self.base_url}/api/exports/guests.csv"
-            response = requests.get(url, timeout=10)
+            headers = {'Authorization': f'Bearer {self.reception_token}'}
+            response = requests.get(url, headers=headers, timeout=10)
             if response.status_code == 200:
                 self.tests_passed += 1
                 self.log("✅ Export Guests CSV - Status: 200")
