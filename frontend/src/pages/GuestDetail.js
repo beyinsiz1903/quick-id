@@ -28,6 +28,8 @@ import {
   Loader2,
   History,
   FileText,
+  Camera,
+  DoorOpen,
 } from 'lucide-react';
 
 const DOC_TYPES = [
@@ -47,6 +49,9 @@ export default function GuestDetail() {
   const [editData, setEditData] = useState({});
   const [saving, setSaving] = useState(false);
   const [showOriginal, setShowOriginal] = useState(false);
+  const [photoCapturing, setPhotoCapturing] = useState(false);
+  const [guestPhoto, setGuestPhoto] = useState(null);
+  const [roomAssigning, setRoomAssigning] = useState(false);
 
   useEffect(() => {
     loadGuest();
