@@ -378,6 +378,43 @@ class OfflineSyncRequest(BaseModel):
     data: list
     device_id: Optional[str] = None
 
+class RoomCreate(BaseModel):
+    room_number: str
+    room_type: str = "standard"
+    floor: int = 1
+    capacity: int = 2
+    property_id: Optional[str] = "default"
+    features: Optional[list] = []
+
+class RoomUpdate(BaseModel):
+    room_type: Optional[str] = None
+    floor: Optional[int] = None
+    capacity: Optional[int] = None
+    status: Optional[str] = None
+    features: Optional[list] = None
+
+class RoomAssignRequest(BaseModel):
+    room_id: str
+    guest_id: str
+
+class AutoAssignRequest(BaseModel):
+    guest_id: str
+    property_id: Optional[str] = None
+    preferred_type: Optional[str] = None
+
+class GroupCheckinRequest(BaseModel):
+    guest_ids: List[str]
+    room_id: Optional[str] = None
+
+class GuestPhotoRequest(BaseModel):
+    image_base64: str
+
+class BackupCreateRequest(BaseModel):
+    description: Optional[str] = ""
+
+class BackupRestoreRequest(BaseModel):
+    backup_id: str
+
 
 async def extract_id_data(image_base64: str) -> dict:
     """Extract data from one or more ID documents in an image using OpenAI Vision"""
