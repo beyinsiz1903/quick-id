@@ -374,7 +374,12 @@ metadata:
   run_ui: true
 
 test_plan:
-  current_focus: []
+  current_focus:
+    - "TC Kimlik Page"
+    - "Properties Page"
+    - "Kiosk & Offline Page"
+    - "Face Match Page"
+    - "Navigation Updates"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
@@ -383,4 +388,6 @@ agent_communication:
     - agent: "main"
     - message: "8 büyük özellik backend ve frontend eklendi. Yeni endpoint'ler: 1) POST /api/biometric/face-compare, GET /api/biometric/liveness-challenge, POST /api/biometric/liveness-check 2) POST /api/tc-kimlik/validate, POST /api/tc-kimlik/emniyet-bildirimi, GET /api/tc-kimlik/emniyet-bildirimleri 3) POST/GET /api/precheckin/*, GET /api/precheckin/{id}/qr 4) CRUD /api/properties 5) POST /api/kiosk/session, GET /api/kiosk/sessions, POST /api/kiosk/scan 6) POST /api/sync/upload, GET /api/sync/pending, POST /api/sync/{id}/process 7) GET /api/kvkk/consent-info (public). Backend testlerini çalıştırın, özellikle yeni endpoint'leri test edin. Auth: admin@quickid.com / admin123"
     - agent: "testing"
-    - message: "✅ BACKEND TESTING COMPLETE - 22/22 tests PASSED (100% success rate). All v3.0 endpoints are working correctly: KVKK public consent ✅, TC Kimlik validation ✅ (all scenarios), Multi-property CRUD ✅, Pre-checkin QR system ✅ (including PNG QR generation), Kiosk sessions ✅, Offline sync workflow ✅, Biometric liveness challenges ✅, Emniyet bildirimleri ✅, Health & API guide ✅. Auth working with admin@quickid.com. Ready for production!"
+    - message: "✅ BACKEND TESTING COMPLETE - 22/22 tests PASSED (100% success rate). All v3.0 endpoints are working correctly."
+    - agent: "main"
+    - message: "Kullanıcı frontend testi istedi. Lütfen yeni sayfaları test edin: 1) TC Kimlik & Emniyet (/tc-kimlik) - TC doğrulama tabı, 10000000146 numarasını girip doğrulama sonucunu kontrol edin, Emniyet Bildirimi tabını kontrol edin 2) Tesisler (/properties) - Tesis listesi (zaten Test Otel var), Ön Check-in tabında QR oluşturma 3) Kiosk & Offline (/kiosk) - Kiosk Modu tabı (Lobby Terminal 1 mevcut), Offline Sync tabı 4) Yüz Eşleştirme (/face-match) - Yüz Eşleştirme ve Canlılık Testi tabları 5) Navigation: Sidebar'da yeni menü öğeleri (Yüz Eşleştirme, TC Kimlik & Emniyet, Tesisler, Kiosk & Offline). Login: admin@quickid.com / admin123"
