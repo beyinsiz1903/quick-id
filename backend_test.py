@@ -10,7 +10,7 @@ from io import BytesIO
 from PIL import Image
 
 class QuickIDAPITester:
-    def __init__(self, base_url="https://quick-id-scan.preview.emergentagent.com"):
+    def __init__(self, base_url="https://early-stage-build.preview.emergentagent.com"):
         self.base_url = base_url
         self.tests_run = 0
         self.tests_passed = 0
@@ -761,7 +761,7 @@ class QuickIDAPITester:
 
 def main():
     """Main test runner"""
-    backend_url = os.environ.get('REACT_APP_BACKEND_URL', 'https://quick-id-scan.preview.emergentagent.com')
+    backend_url = os.environ.get('REACT_APP_BACKEND_URL', 'https://early-stage-build.preview.emergentagent.com')
     tester = QuickIDAPITester(backend_url)
     return tester.run_all_tests()
 
