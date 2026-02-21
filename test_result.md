@@ -122,15 +122,18 @@ backend:
 
   - task: "Enhanced Image Quality Control"
     implemented: true
-    working: "NA"
+    working: true
     file: "image_quality.py, server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "NA"
         - agent: "main"
         - comment: "Geliştirildi: parlama/yansıma (glare) tespiti, belge kenar tespiti, eğiklik tespiti, otomatik iyileştirme önerileri, ağırlıklı puanlama, provider önerisi. POST /api/scan/quality-check endpoint güncellendi."
+        - working: true
+        - agent: "testing"
+        - comment: "✅ WORKING: POST /api/scan/quality-check returns all enhanced features including glare, document_edges, skew checks, recommendations, and suggested_provider. Fixed numpy serialization issue for JSON compatibility."
 
   - task: "Enhanced MRZ Parsing"
     implemented: true
