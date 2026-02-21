@@ -190,7 +190,7 @@ export default function ScanPage() {
         }
       }
     } catch (err) {
-      toast.error(`Kaydetme hatasi: ${err.message}`);
+      toast.error(`Kaydetme hatası: ${err.message}`);
     } finally {
       setSaving(false);
     }
