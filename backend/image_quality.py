@@ -453,6 +453,17 @@ def preprocess_image_for_ocr(image_base64: str) -> Optional[str]:
         return None
 
 
+def convert_numpy_types(obj):
+    """Convert numpy types to native Python types for JSON serialization"""
+    if hasattr(obj, 'dtype'):  # numpy scalar
+        return obj.item()
+    elif isinstance(obj, dict):
+        return {k: convert_numpy_types(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [convert_numpy_types(v) for v in obj]
+    else:
+        return obj
+
 def assess_image_quality(image_base64: str) -> dict:
     """Tam görüntü kalite değerlendirmesi (geliştirilmiş)"""
     if not CV2_AVAILABLE:
@@ -476,66 +487,84 @@ def assess_image_quality(image_base64: str) -> dict:
             "recommendations": [],
         }
 
-    # Tüm kontrolleri yap
-    blur = check_blur(img)
-    brightness = check_brightness(img)
-    resolution = check_resolution(img)
-    contrast = check_contrast(img)
-    glare = check_glare(img)
-    edges = check_document_edges(img)
-    skew = check_skew(img)
+    try:
+        # Tüm kontrolleri yap
+        blur = check_blur(img)
+        brightness = check_brightness(img)
+        resolution = check_resolution(img)
+        contrast = check_contrast(img)
+        glare = check_glare(img)
+        edges = check_document_edges(img)
+        skew = check_skew(img)
 
-    checks = {
-        "blur": blur,
-        "brightness": brightness,
-        "resolution": resolution,
-        "contrast": contrast,
-        "glare": glare,
-        "document_edges": edges,
-        "skew": skew,
-    }
+        checks = {
+            "blur": blur,
+            "brightness": brightness,
+            "resolution": resolution,
+            "contrast": contrast,
+            "glare": glare,
+            "document_edges": edges,
+            "skew": skew,
+        }
 
-    # Ağırlıklı puanlama
-    total_penalty = sum(c.get("score_penalty", 0) for c in checks.values())
-    score = max(0, 100 - total_penalty)
+        # Ağırlıklı puanlama
+        total_penalty = sum(c.get("score_penalty", 0) for c in checks.values())
+        score = max(0, 100 - total_penalty)
 
-    # Uyarıları topla
-    warnings = []
-    for check_name, check_result in checks.items():
-        if check_result.get("score_penalty", 0) > 0:
-            warnings.append(check_result["message"])
+        # Uyarıları topla
+        warnings = []
+        for check_name, check_result in checks.items():
+            if check_result.get("score_penalty", 0) > 0:
+                warnings.append(check_result["message"])
 
-    # İyileştirme önerileri
-    recommendations = get_enhancement_recommendations(checks)
+        # İyileştirme önerileri
+        recommendations = get_enhancement_recommendations(checks)
 
-    # Genel kalite
-    if score >= 80:
-        overall = "good"
-    elif score >= 50:
-        overall = "acceptable"
-    else:
-        overall = "poor"
+        # Genel kalite
+        if score >= 80:
+            overall = "good"
+        elif score >= 50:
+            overall = "acceptable"
+        else:
+            overall = "poor"
 
-    # Provider önerisi
-    if score >= 80:
-        suggested_provider = "gpt-4o-mini"
-        provider_reason = "Yüksek kaliteli görüntü - hızlı/ucuz provider yeterli"
-    elif score >= 50:
-        suggested_provider = "gpt-4o"
-        provider_reason = "Orta kaliteli görüntü - yüksek doğruluklu provider önerilir"
-    else:
-        suggested_provider = "gpt-4o"
-        provider_reason = "Düşük kaliteli görüntü - en iyi provider gerekli"
+        # Provider önerisi
+        if score >= 80:
+            suggested_provider = "gpt-4o-mini"
+            provider_reason = "Yüksek kaliteli görüntü - hızlı/ucuz provider yeterli"
+        elif score >= 50:
+            suggested_provider = "gpt-4o"
+            provider_reason = "Orta kaliteli görüntü - yüksek doğruluklu provider önerilir"
+        else:
+            suggested_provider = "gpt-4o"
+            provider_reason = "Düşük kaliteli görüntü - en iyi provider gerekli"
 
-    return {
-        "quality_checked": True,
-        "overall_quality": overall,
-        "overall_score": score,
-        "pass": score >= 40,
-        "warnings": warnings,
-        "checks": checks,
-        "recommendations": recommendations,
-        "suggested_provider": suggested_provider,
-        "provider_reason": provider_reason,
-        "can_enhance": score < 80,
-    }
+        result = {
+            "quality_checked": True,
+            "overall_quality": overall,
+            "overall_score": score,
+            "pass": score >= 40,
+            "warnings": warnings,
+            "checks": checks,
+            "recommendations": recommendations,
+            "suggested_provider": suggested_provider,
+            "provider_reason": provider_reason,
+            "can_enhance": score < 80,
+        }
+
+        # Convert numpy types to native Python types
+        return convert_numpy_types(result)
+        
+    except Exception as e:
+        # Return error-safe result if image processing fails
+        return {
+            "quality_checked": False,
+            "overall_quality": "error",
+            "overall_score": 0,
+            "warnings": [f"Görüntü kalite kontrolü hatası: {str(e)}"],
+            "checks": {},
+            "recommendations": [],
+            "suggested_provider": "gpt-4o",
+            "provider_reason": "Kalite kontrol hatası - güvenli seçim",
+            "can_enhance": False,
+        }
