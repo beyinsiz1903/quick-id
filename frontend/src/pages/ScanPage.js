@@ -228,7 +228,7 @@ export default function ScanPage() {
             className={`${selectedProviderOption?.bg} ${selectedProviderOption?.border} ${selectedProviderOption?.color}`}
           >
             {selectedProviderOption && <selectedProviderOption.icon className="w-4 h-4 mr-1.5" />}
-            {selectedProviderOption?.label || 'Provider Sec'}
+            {selectedProviderOption?.label || 'Provider Seç'}
             <Settings2 className="w-3.5 h-3.5 ml-1.5 opacity-60" />
           </Button>
 
