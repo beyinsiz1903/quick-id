@@ -198,4 +198,72 @@ export const api = {
     Object.entries(params).forEach(([k, v]) => { if (v) query.set(k, v); });
     return `${BACKEND_URL}/api/exports/guests.csv?${query.toString()}`;
   },
+
+  // KVKK Compliance
+  async getVerbisReport() {
+    const res = await fetch(`${BACKEND_URL}/api/kvkk/verbis-report`, { headers: authHeaders() });
+    return handleResponse(res);
+  },
+
+  async getDataInventory() {
+    const res = await fetch(`${BACKEND_URL}/api/kvkk/data-inventory`, { headers: authHeaders() });
+    return handleResponse(res);
+  },
+
+  async getRetentionWarnings() {
+    const res = await fetch(`${BACKEND_URL}/api/kvkk/retention-warnings`, { headers: authHeaders() });
+    return handleResponse(res);
+  },
+
+  async getRightsRequests(params = {}) {
+    const query = new URLSearchParams();
+    Object.entries(params).forEach(([k, v]) => { if (v) query.set(k, v); });
+    const res = await fetch(`${BACKEND_URL}/api/kvkk/rights-requests?${query.toString()}`, { headers: authHeaders() });
+    return handleResponse(res);
+  },
+
+  async createRightsRequest(data) {
+    const res = await fetch(`${BACKEND_URL}/api/kvkk/rights-request`, {
+      method: 'POST', headers: authHeaders(), body: JSON.stringify(data),
+    });
+    return handleResponse(res);
+  },
+
+  async processRightsRequest(requestId, data) {
+    const res = await fetch(`${BACKEND_URL}/api/kvkk/rights-requests/${requestId}`, {
+      method: 'PATCH', headers: authHeaders(), body: JSON.stringify(data),
+    });
+    return handleResponse(res);
+  },
+
+  async getGuestKvkkData(guestId) {
+    const res = await fetch(`${BACKEND_URL}/api/kvkk/guest-data/${guestId}`, { headers: authHeaders() });
+    return handleResponse(res);
+  },
+
+  async getGuestPortableData(guestId) {
+    const res = await fetch(`${BACKEND_URL}/api/kvkk/guest-data/${guestId}/portable`, { headers: authHeaders() });
+    return handleResponse(res);
+  },
+
+  // API Guide
+  async getApiGuide() {
+    const res = await fetch(`${BACKEND_URL}/api/guide`, { headers: authHeaders() });
+    return handleResponse(res);
+  },
+
+  // Review Queue
+  async getReviewQueue(params = {}) {
+    const query = new URLSearchParams();
+    Object.entries(params).forEach(([k, v]) => { if (v) query.set(k, v); });
+    const res = await fetch(`${BACKEND_URL}/api/scans/review-queue?${query.toString()}`, { headers: authHeaders() });
+    return handleResponse(res);
+  },
+
+  async updateScanReview(scanId, reviewStatus) {
+    const res = await fetch(`${BACKEND_URL}/api/scans/${scanId}/review?review_status=${reviewStatus}`, {
+      method: 'PATCH', headers: authHeaders(),
+    });
+    return handleResponse(res);
+  },
 };
