@@ -5,11 +5,26 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
-import { Progress } from '../components/ui/progress';
 import {
   BarChart3, Activity, AlertTriangle, DollarSign, RefreshCw, TrendingUp,
   CheckCircle2, XCircle, Clock, Database, HardDrive, Shield, Download,
 } from 'lucide-react';
+
+const BACKEND = process.env.REACT_APP_BACKEND_URL || '';
+function authHeaders() {
+  const token = localStorage.getItem('quickid_token');
+  return token ? { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } : { 'Content-Type': 'application/json' };
+}
+async function fetchJSON(path) {
+  const res = await fetch(`${BACKEND}${path}`, { headers: authHeaders() });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+async function postJSON(path, body) {
+  const res = await fetch(`${BACKEND}${path}`, { method: 'POST', headers: authHeaders(), body: JSON.stringify(body) });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
 
 export default function MonitoringPage() {
   const { token } = useAuth();
