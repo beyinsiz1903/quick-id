@@ -416,7 +416,7 @@ export default function ScanPage() {
             <div className="flex items-start gap-2">
               <CheckCircle2 className="w-5 h-5 text-green-500 mt-0.5 shrink-0" />
               <div className="flex-1">
-                <p className="font-medium text-sm text-green-700">MRZ Bolgesi Okundu</p>
+                <p className="font-medium text-sm text-green-700">MRZ Bölgesi Okundu</p>
                 <p className="text-xs text-green-600">{mrzResults[0]?.message}</p>
                 <div className="flex flex-wrap gap-1 mt-1.5">
                   {mrzResults[0]?.mrz_type && (
