@@ -336,22 +336,27 @@ frontend:
 
 metadata:
   created_by: "main_agent"
-  version: "3.0"
-  test_sequence: 5
+  version: "4.0"
+  test_sequence: 6
   run_ui: true
 
 test_plan:
-  current_focus: []
+  current_focus:
+    - "Room Management CRUD + Auto-assign"
+    - "Group Check-in"
+    - "Guest Photo Capture"
+    - "Form-C"
+    - "Monitoring Dashboard API"
+    - "Backup/Restore"
+    - "Offline OCR Fallback"
+    - "Image Quality Control"
+    - "MRZ Parsing"
+    - "Security Hardening + CORS"
+    - "Compliance Reports"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
 
 agent_communication:
     - agent: "main"
-    - message: "8 büyük özellik backend ve frontend eklendi. Yeni endpoint'ler: 1) POST /api/biometric/face-compare, GET /api/biometric/liveness-challenge, POST /api/biometric/liveness-check 2) POST /api/tc-kimlik/validate, POST /api/tc-kimlik/emniyet-bildirimi, GET /api/tc-kimlik/emniyet-bildirimleri 3) POST/GET /api/precheckin/*, GET /api/precheckin/{id}/qr 4) CRUD /api/properties 5) POST /api/kiosk/session, GET /api/kiosk/sessions, POST /api/kiosk/scan 6) POST /api/sync/upload, GET /api/sync/pending, POST /api/sync/{id}/process 7) GET /api/kvkk/consent-info (public). Backend testlerini çalıştırın, özellikle yeni endpoint'leri test edin. Auth: admin@quickid.com / admin123"
-    - agent: "testing"
-    - message: "✅ BACKEND TESTING COMPLETE - 22/22 tests PASSED (100% success rate). All v3.0 endpoints are working correctly."
-    - agent: "main"
-    - message: "Kullanıcı frontend testi istedi. Lütfen yeni sayfaları test edin: 1) TC Kimlik & Emniyet (/tc-kimlik) - TC doğrulama tabı, 10000000146 numarasını girip doğrulama sonucunu kontrol edin, Emniyet Bildirimi tabını kontrol edin 2) Tesisler (/properties) - Tesis listesi (zaten Test Otel var), Ön Check-in tabında QR oluşturma 3) Kiosk & Offline (/kiosk) - Kiosk Modu tabı (Lobby Terminal 1 mevcut), Offline Sync tabı 4) Yüz Eşleştirme (/face-match) - Yüz Eşleştirme ve Canlılık Testi tabları 5) Navigation: Sidebar'da yeni menü öğeleri (Yüz Eşleştirme, TC Kimlik & Emniyet, Tesisler, Kiosk & Offline). Login: admin@quickid.com / admin123"
-    - agent: "testing"
-    - message: "✅ FRONTEND TESTING COMPLETE - ALL 5 NEW PAGES PASSED (100% success). Comprehensive testing of v3.0 frontend features complete. Navigation sidebar (12/12 items), TC Kimlik page (validation working), Properties page (Test Otel displayed, QR creation ready), Kiosk & Offline page (Lobby Terminal 1 shown, sync functional), Face Match page (both tabs operational). Dashboard, KVKK, and API Rehberi sanity checks passed. Minor: React hydration warnings in KioskPage (select/option) - non-critical UI issue."
+    - message: "v4.0 - Tüm eksiklikler eklendi. Yeni endpoint'ler: 1) POST/GET/PATCH /api/rooms + /api/rooms/assign + /api/rooms/auto-assign + /api/rooms/{id}/release + /api/rooms/stats + /api/rooms/types 2) POST /api/guests/group-checkin 3) POST/GET /api/guests/{id}/photo 4) GET /api/tc-kimlik/form-c/{guest_id} 5) GET /api/monitoring/dashboard + /scan-stats + /error-log + /ai-costs 6) POST /api/admin/backup + GET /api/admin/backups + POST /api/admin/restore + GET /api/admin/backup-schedule 7) POST /api/scan/ocr-fallback + POST /api/scan/quality-check + GET /api/scan/ocr-status 8) GET /api/compliance/reports. Ayrıca: SecurityHeadersMiddleware, CORS whitelist, Scan endpoint'e image quality + MRZ entegrasyonu. Auth: admin@quickid.com / admin123"
