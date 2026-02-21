@@ -318,7 +318,7 @@ export default function ScanPage() {
               <div className="flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
                   <p className="font-medium text-sm">
-                    Goruntu Kalitesi: {imageQuality.overall_quality === 'good' ? 'Iyi' : imageQuality.overall_quality === 'acceptable' ? 'Kabul Edilebilir' : 'Dusuk'}
+                    Görüntü Kalitesi: {imageQuality.overall_quality === 'good' ? 'İyi' : imageQuality.overall_quality === 'acceptable' ? 'Kabul Edilebilir' : 'Düşük'}
                   </p>
                   <Badge variant="outline" className={`text-xs ${
                     imageQuality.overall_score >= 80 ? 'text-green-600 border-green-200' :
