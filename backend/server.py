@@ -36,7 +36,7 @@ from multi_property import (
     store_offline_data, get_pending_syncs, process_sync,
     create_precheckin_token, get_precheckin_token, use_precheckin_token, list_precheckin_tokens,
 )
-from image_quality import assess_image_quality
+from image_quality import assess_image_quality, preprocess_image_for_ocr
 from mrz_parser import parse_mrz_from_text, detect_and_parse_mrz
 from room_assignment import (
     create_room, list_rooms, get_room, update_room,
@@ -51,6 +51,11 @@ from backup_restore import (
     create_backup, list_backups, restore_backup, get_backup_schedule,
 )
 from ocr_fallback import ocr_scan_document, is_tesseract_available
+from ocr_providers import (
+    list_providers, get_provider_info, extract_with_provider,
+    smart_scan, get_provider_stats, estimate_scan_cost,
+    get_smart_provider_chain, update_provider_health, PROVIDERS,
+)
 import qrcode
 import io
 
