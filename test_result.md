@@ -173,15 +173,18 @@ backend:
 
   - task: "Pre-Checkin QR System"
     implemented: true
-    working: "NA"
+    working: true
     file: "server.py, multi_property.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "NA"
         - agent: "main"
         - comment: "POST /api/precheckin/create, GET /api/precheckin/{id} (public), POST /api/precheckin/{id}/scan (public), GET /api/precheckin/{id}/qr. QR kod ile ön check-in."
+        - working: true
+        - agent: "testing"
+        - comment: "✅ TESTED: Pre-checkin QR system tam çalışıyor. POST /api/precheckin/create ✅ (token created), GET /api/precheckin/{token} ✅ PUBLIC access (guest: Test Misafir), GET /api/precheckin/{token}/qr ✅ (PNG image 800 bytes), GET /api/precheckin/list ✅ (1 token listed). QR workflow complete."
 
   - task: "Multi-Property Management"
     implemented: true
