@@ -90,7 +90,7 @@ class QuickIDTester:
         # 2. Create room
         print("Testing POST /api/rooms...")
         room_data = {
-            "room_number": "101",
+            "room_number": "102",  # Use different room number to avoid conflict
             "room_type": "standard",
             "floor": 1,
             "capacity": 2
