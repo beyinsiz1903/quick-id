@@ -527,7 +527,7 @@ def detect_and_parse_mrz(text: str) -> Optional[dict]:
 
         # Try TD3 (passport - 2 lines x 44 chars)
         if len(mrz_lines) >= 2:
-            td3_lines = [l for l in mrz_lines if len(l) == 44]
+            td3_lines = [ln for ln in mrz_lines if len(ln) == 44]
             if len(td3_lines) >= 2:
                 result = parse_td3_passport(td3_lines[:2])
                 if result:
@@ -535,7 +535,7 @@ def detect_and_parse_mrz(text: str) -> Optional[dict]:
 
         # Try TD2 (visa/ID - 2 lines x 36 chars)
         if len(mrz_lines) >= 2:
-            td2_lines = [l for l in mrz_lines if len(l) == 36]
+            td2_lines = [ln for ln in mrz_lines if len(ln) == 36]
             if len(td2_lines) >= 2:
                 result = parse_td2_document(td2_lines[:2])
                 if result:
@@ -543,7 +543,7 @@ def detect_and_parse_mrz(text: str) -> Optional[dict]:
 
         # Try TD1 (ID card - 3 lines x 30 chars)
         if len(mrz_lines) >= 3:
-            td1_lines = [l for l in mrz_lines if len(l) == 30]
+            td1_lines = [ln for ln in mrz_lines if len(ln) == 30]
             if len(td1_lines) >= 3:
                 result = parse_td1_id_card(td1_lines[:3])
                 if result:
@@ -555,31 +555,31 @@ def detect_and_parse_mrz(text: str) -> Optional[dict]:
             continue
 
         # TD3 yakın eşleşme (42-46 karakter)
-        td3_close = [l for l in mrz_lines if 42 <= len(l) <= 46]
+        td3_close = [ln for ln in mrz_lines if 42 <= len(ln) <= 46]
         if len(td3_close) >= 2:
             # Tam 44 karaktere kes/doldur
             adjusted = []
-            for l in td3_close[:2]:
-                if len(l) > 44:
-                    l = l[:44]
-                elif len(l) < 44:
-                    l = l + '<' * (44 - len(l))
-                adjusted.append(l)
+            for ln in td3_close[:2]:
+                if len(ln) > 44:
+                    ln = ln[:44]
+                elif len(ln) < 44:
+                    ln = ln + '<' * (44 - len(ln))
+                adjusted.append(ln)
             result = parse_td3_passport(adjusted)
             if result:
                 result["fuzzy_matched"] = True
                 return result
 
         # TD2 yakın eşleşme (34-38 karakter)
-        td2_close = [l for l in mrz_lines if 34 <= len(l) <= 38]
+        td2_close = [ln for ln in mrz_lines if 34 <= len(ln) <= 38]
         if len(td2_close) >= 2:
             adjusted = []
-            for l in td2_close[:2]:
-                if len(l) > 36:
-                    l = l[:36]
-                elif len(l) < 36:
-                    l = l + '<' * (36 - len(l))
-                adjusted.append(l)
+            for ln in td2_close[:2]:
+                if len(ln) > 36:
+                    ln = ln[:36]
+                elif len(ln) < 36:
+                    ln = ln + '<' * (36 - len(ln))
+                adjusted.append(ln)
             result = parse_td2_document(adjusted)
             if result:
                 result["fuzzy_matched"] = True
