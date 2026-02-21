@@ -257,6 +257,19 @@ class SettingsUpdate(BaseModel):
     data_processing_purpose: Optional[str] = None
     auto_cleanup_enabled: Optional[bool] = None
 
+class RightsRequestCreate(BaseModel):
+    request_type: str  # access, rectification, erasure, portability, objection
+    guest_id: Optional[str] = None
+    requester_name: str
+    requester_email: str
+    requester_id_number: Optional[str] = None
+    description: str
+
+class RightsRequestProcess(BaseModel):
+    status: str  # in_progress, completed, rejected
+    response_note: str
+    response_data: Optional[dict] = None
+
 
 async def extract_id_data(image_base64: str) -> dict:
     """Extract data from one or more ID documents in an image using OpenAI Vision"""
