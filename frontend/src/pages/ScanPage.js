@@ -242,7 +242,7 @@ export default function ScanPage() {
           {selectedProvider === 'tesseract' && (
             <Badge variant="outline" className="text-amber-600 border-amber-200 bg-amber-50">
               <WifiOff className="w-3 h-3 mr-1" />
-              Offline OCR - Dusuk dogruluk
+              Offline OCR - Düşük doğruluk
             </Badge>
           )}
 
