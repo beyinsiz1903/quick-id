@@ -22,6 +22,12 @@ from auth import (
     require_auth, require_admin, get_current_user, security, decode_token
 )
 from kvkk import get_settings, update_settings, run_data_cleanup, anonymize_guest
+from kvkk_compliance import (
+    create_rights_request, list_rights_requests, process_rights_request,
+    get_guest_data_for_access, export_guest_data_portable,
+    generate_verbis_report, get_data_inventory, get_retention_warnings,
+    calculate_confidence_score, VALID_REQUEST_TYPES, VALID_REQUEST_STATUSES
+)
 
 
 # --- Rate Limiter Setup ---
