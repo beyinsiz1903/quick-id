@@ -366,10 +366,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Multi-Provider OCR (GPT-4o, GPT-4o-mini, Gemini Flash, Tesseract)"
-    - "Enhanced Image Quality Control"
-    - "Enhanced MRZ Parsing"
-    - "Enhanced Offline OCR Fallback"
+    - "ScanPage - Multi-Provider + Quality + MRZ"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
