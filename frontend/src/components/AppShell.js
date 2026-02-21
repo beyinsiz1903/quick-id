@@ -31,6 +31,8 @@ export default function AppShell({ children }) {
     ...(isAdmin ? [
       { path: '/users', label: 'Kullanıcılar', icon: UserCog },
       { path: '/settings', label: 'Ayarlar & KVKK', icon: Settings },
+      { path: '/kvkk', label: 'KVKK Uyumluluk', icon: Shield },
+      { path: '/api-docs', label: 'API Rehberi', icon: BookOpen },
     ] : []),
   ];
 
