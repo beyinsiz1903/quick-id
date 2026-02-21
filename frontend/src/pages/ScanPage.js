@@ -140,7 +140,7 @@ export default function ScanPage() {
 
         // Fallback notification
         if (result.fallback_used) {
-          toast.warning('AI tarama basarisiz oldu, Tesseract OCR ile tarandi. Sonuclari kontrol edin.');
+          toast.warning('AI tarama başarısız oldu, Tesseract OCR ile tarandı. Sonuçları kontrol edin.');
         } else if (docCount > 1) {
           toast.success(`${docCount} kimlik algilandi! Aralarinda gecis yapabilirsiniz.`);
         } else if (documents[0]?.is_valid) {
