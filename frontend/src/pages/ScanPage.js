@@ -109,7 +109,7 @@ export default function ScanPage() {
         });
 
         if (documents.length === 0) {
-          toast.error('Kimlik belgesi algilanamadi.');
+          toast.error('Kimlik belgesi algılanamadı.');
           setExtracting(false);
           return;
         }
