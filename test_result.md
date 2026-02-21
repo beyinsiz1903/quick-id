@@ -375,21 +375,14 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Room Management CRUD + Auto-assign"
-    - "Group Check-in"
-    - "Guest Photo Capture"
-    - "Form-C"
-    - "Monitoring Dashboard API"
-    - "Backup/Restore"
-    - "Offline OCR Fallback"
-    - "Image Quality Control"
-    - "MRZ Parsing"
-    - "Security Hardening + CORS"
-    - "Compliance Reports"
-  stuck_tasks: []
+    - "Room Management CRUD + Auto-assign"  # Only assignment endpoints failing
+  stuck_tasks:
+    - "Room Management CRUD + Auto-assign"  # Room assignment and auto-assign endpoints
   test_all: false
   test_priority: "high_first"
 
 agent_communication:
     - agent: "main"
     - message: "v4.0 - Tüm eksiklikler eklendi. Yeni endpoint'ler: 1) POST/GET/PATCH /api/rooms + /api/rooms/assign + /api/rooms/auto-assign + /api/rooms/{id}/release + /api/rooms/stats + /api/rooms/types 2) POST /api/guests/group-checkin 3) POST/GET /api/guests/{id}/photo 4) GET /api/tc-kimlik/form-c/{guest_id} 5) GET /api/monitoring/dashboard + /scan-stats + /error-log + /ai-costs 6) POST /api/admin/backup + GET /api/admin/backups + POST /api/admin/restore + GET /api/admin/backup-schedule 7) POST /api/scan/ocr-fallback + POST /api/scan/quality-check + GET /api/scan/ocr-status 8) GET /api/compliance/reports. Ayrıca: SecurityHeadersMiddleware, CORS whitelist, Scan endpoint'e image quality + MRZ entegrasyonu. Auth: admin@quickid.com / admin123"
+    - agent: "testing"
+    - message: "BACKEND TESTING COMPLETE - 92% Success Rate (23/25 endpoints working). 🎉 EXCELLENT RESULTS: Group Check-in ✅, Guest Photo ✅, Form-C ✅, Monitoring ✅, Backup/Restore ✅, OCR/Quality ✅, Compliance ✅, Security Headers ✅, MRZ parsing ✅. 🚨 CRITICAL: Only Room Assignment failing - Manual assign (400 'Oda bulunamadı') and Auto-assign (520 server error). Issue: ID mismatch between API layer and room_assignment.py functions. Functions use room_id UUID field but API passes MongoDB _id. Need main agent to fix this database layer inconsistency."
