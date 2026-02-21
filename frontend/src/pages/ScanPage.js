@@ -178,7 +178,54 @@ export default function ScanPage() {
         <p className="text-sm text-muted-foreground mt-0.5">
           Kimlik kartını kameraya gösterin, bilgiler otomatik çıkarılacak (çoklu kimlik destekli)
         </p>
+        {/* OCR Fallback Toggle */}
+        <div className="flex items-center gap-3 mt-2">
+          <Button variant={ocrFallbackMode ? "default" : "outline"} size="sm" onClick={() => setOcrFallbackMode(!ocrFallbackMode)}>
+            {ocrFallbackMode ? <WifiOff className="w-4 h-4 mr-1" /> : <Wifi className="w-4 h-4 mr-1" />}
+            {ocrFallbackMode ? 'Offline OCR Modu (Aktif)' : 'AI Tarama Modu'}
+          </Button>
+          {ocrFallbackMode && (
+            <Badge variant="outline" className="text-amber-600 border-amber-200 bg-amber-50">
+              Tesseract OCR - Düşük doğruluk
+            </Badge>
+          )}
+        </div>
       </div>
+
+      {/* Image Quality Warning */}
+      {imageQuality && imageQuality.quality_checked && imageQuality.warnings?.length > 0 && (
+        <Card className={`border-2 ${imageQuality.overall_quality === 'poor' ? 'border-red-200 bg-red-50/50' : 'border-amber-200 bg-amber-50/50'}`}>
+          <CardContent className="p-3">
+            <div className="flex items-start gap-2">
+              <AlertTriangle className={`w-5 h-5 mt-0.5 ${imageQuality.overall_quality === 'poor' ? 'text-red-500' : 'text-amber-500'}`} />
+              <div>
+                <p className="font-medium text-sm">
+                  Görüntü Kalitesi: {imageQuality.overall_quality === 'good' ? 'İyi' : imageQuality.overall_quality === 'acceptable' ? 'Kabul Edilebilir' : 'Düşük'}
+                  <span className="ml-2 text-muted-foreground">({imageQuality.overall_score}/100)</span>
+                </p>
+                <ul className="text-xs text-muted-foreground mt-1 space-y-0.5">
+                  {imageQuality.warnings.map((w, i) => <li key={i}>• {w}</li>)}
+                </ul>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* MRZ Results */}
+      {mrzResults.length > 0 && (
+        <Card className="border-green-200 bg-green-50/50">
+          <CardContent className="p-3">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="w-5 h-5 text-green-500" />
+              <div>
+                <p className="font-medium text-sm text-green-700">MRZ Bölgesi Okundu</p>
+                <p className="text-xs text-green-600">{mrzResults[0]?.message}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Split Layout */}
       <div className="grid grid-cols-1 xl:grid-cols-[minmax(520px,1fr)_520px] gap-4">
