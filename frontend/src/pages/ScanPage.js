@@ -473,7 +473,7 @@ export default function ScanPage() {
                   <div className="flex items-center gap-2">
                     <Users className="w-4 h-4 text-[var(--brand-sky)]" />
                     <span className="text-sm font-medium">
-                      {allDocuments.length} kimlik algilandi
+                      {allDocuments.length} kimlik algılandı
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
