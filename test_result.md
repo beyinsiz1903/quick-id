@@ -348,22 +348,20 @@ frontend:
 
 metadata:
   created_by: "main_agent"
-  version: "4.0"
-  test_sequence: 7
+  version: "5.0"
+  test_sequence: 8
   run_ui: true
 
 test_plan:
   current_focus:
-    - "Room Management CRUD + Auto-assign"  # Only assignment endpoints failing
-  stuck_tasks:
-    - "Room Management CRUD + Auto-assign"  # Room assignment and auto-assign endpoints
+    - "Multi-Provider OCR (GPT-4o, GPT-4o-mini, Gemini Flash, Tesseract)"
+    - "Enhanced Image Quality Control"
+    - "Enhanced MRZ Parsing"
+    - "Enhanced Offline OCR Fallback"
+  stuck_tasks: []
   test_all: false
   test_priority: "high_first"
 
 agent_communication:
     - agent: "main"
-    - message: "v4.0 - Tüm eksiklikler eklendi. Yeni endpoint'ler: 1) POST/GET/PATCH /api/rooms + /api/rooms/assign + /api/rooms/auto-assign + /api/rooms/{id}/release + /api/rooms/stats + /api/rooms/types 2) POST /api/guests/group-checkin 3) POST/GET /api/guests/{id}/photo 4) GET /api/tc-kimlik/form-c/{guest_id} 5) GET /api/monitoring/dashboard + /scan-stats + /error-log + /ai-costs 6) POST /api/admin/backup + GET /api/admin/backups + POST /api/admin/restore + GET /api/admin/backup-schedule 7) POST /api/scan/ocr-fallback + POST /api/scan/quality-check + GET /api/scan/ocr-status 8) GET /api/compliance/reports. Ayrıca: SecurityHeadersMiddleware, CORS whitelist, Scan endpoint'e image quality + MRZ entegrasyonu. Auth: admin@quickid.com / admin123"
-    - agent: "testing"
-    - message: "BACKEND TESTING COMPLETE - 92% Success Rate (23/25 endpoints working). 🎉 EXCELLENT RESULTS: Group Check-in ✅, Guest Photo ✅, Form-C ✅, Monitoring ✅, Backup/Restore ✅, OCR/Quality ✅, Compliance ✅, Security Headers ✅, MRZ parsing ✅. 🚨 CRITICAL: Only Room Assignment failing - Manual assign (400 'Oda bulunamadı') and Auto-assign (520 server error). Issue: ID mismatch between API layer and room_assignment.py functions. Functions use room_id UUID field but API passes MongoDB _id. Need main agent to fix this database layer inconsistency."
-    - agent: "testing"
-    - message: "🎉 FRONTEND TESTING COMPLETE - 100% SUCCESS! All 6 frontend tasks fully working. Tested at https://mrz-parser.preview.emergentagent.com with login admin@quickid.com. ✅ Navigation: All 3 new items present (Grup Check-in, Oda Yönetimi, Monitoring) in sidebar. ✅ Monitoring Page: Loads correctly with 5 tabs (Tarama İstatistik, Hata İzleme, AI Maliyet, Uyumluluk, Yedekleme), stat cards, backup creation button functional. ✅ Room Management: Shows room stats, grid with 9 existing rooms, successfully created new room 401 on floor 4. ✅ Group Check-in: Shows 4 pending guests, search works, selection works, action panel appears. ✅ Scan Page: OCR toggle button works, switches between 'AI Tarama Modu' and 'Offline OCR Modu (Aktif)', Tesseract badge displays correctly. ✅ Guest Detail: Fotoğraf button present, Oda Ata button correctly hidden when room assigned, room number displayed (Oda No: 302). All UI pages load fast, responsive, and functional. No console errors. Frontend v4.0 implementation is EXCELLENT!"
+    - message: "v5.0 - 4 ana özellik güncellendi: 1) Multi-Provider OCR: GPT-4o, GPT-4o-mini, Gemini Flash, Tesseract desteği. GET /api/scan/providers, GET /api/scan/cost-estimate/{id}. POST /api/scan artık provider ve smart_mode parametreleri kabul ediyor. 2) Geliştirilmiş Görüntü Kalite: parlama/yansıma, kenar, eğiklik tespiti + iyileştirme önerileri. 3) Geliştirilmiş MRZ: TD2 desteği, OCR hata düzeltme, fuzzy eşleşme, ICAO uyumluluk. 4) Geliştirilmiş OCR: OpenCV ön işleme, deskew, birden fazla PSM, güven puanı, otomatik fallback. Auth: admin@quickid.com / admin123. Test: GET /api/scan/providers (auth gerekli), GET /api/scan/ocr-status (public), POST /api/scan/quality-check (auth), GET /api/scan/cost-estimate/gpt-4o (auth)."
