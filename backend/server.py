@@ -1765,6 +1765,485 @@ async def process_sync_data(sync_id: str, user=Depends(require_admin)):
     }
 
 
+# ===== ROOM MANAGEMENT =====
+@app.post("/api/rooms", tags=["Oda Yönetimi"], summary="Yeni oda oluştur")
+async def create_new_room(req: RoomCreate, user=Depends(require_admin)):
+    try:
+        room = await create_room(
+            db, room_number=req.room_number, room_type=req.room_type,
+            floor=req.floor, capacity=req.capacity,
+            property_id=req.property_id, features=req.features
+        )
+        return {"success": True, "room": serialize_doc(room)}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.get("/api/rooms", tags=["Oda Yönetimi"], summary="Odaları listele")
+async def get_rooms(
+    property_id: Optional[str] = None,
+    status: Optional[str] = None,
+    room_type: Optional[str] = None,
+    floor: Optional[int] = None,
+    user=Depends(require_auth)
+):
+    rooms = await list_rooms(db, property_id=property_id, status=status,
+                             room_type=room_type, floor=floor)
+    return {"rooms": rooms, "total": len(rooms)}
+
+
+@app.get("/api/rooms/types", tags=["Oda Yönetimi"], summary="Oda tipleri")
+async def get_room_types():
+    return {"room_types": ROOM_TYPES, "statuses": ROOM_STATUSES}
+
+
+@app.get("/api/rooms/stats", tags=["Oda Yönetimi"], summary="Oda istatistikleri")
+async def get_rooms_stats(property_id: Optional[str] = None, user=Depends(require_auth)):
+    stats = await get_room_stats(db, property_id=property_id)
+    return stats
+
+
+@app.get("/api/rooms/{room_id}", tags=["Oda Yönetimi"], summary="Oda detayı")
+async def get_room_detail(room_id: str, user=Depends(require_auth)):
+    room = await get_room(db, room_id)
+    if not room:
+        raise HTTPException(status_code=404, detail="Oda bulunamadı")
+    return {"room": room}
+
+
+@app.patch("/api/rooms/{room_id}", tags=["Oda Yönetimi"], summary="Oda güncelle")
+async def update_room_endpoint(room_id: str, req: RoomUpdate, user=Depends(require_admin)):
+    updates = {k: v for k, v in req.model_dump().items() if v is not None}
+    room = await update_room(db, room_id, updates)
+    if not room:
+        raise HTTPException(status_code=404, detail="Oda bulunamadı")
+    return {"success": True, "room": room}
+
+
+@app.post("/api/rooms/assign", tags=["Oda Yönetimi"], summary="Oda ata",
+          description="Belirtilen misafire oda atar")
+async def assign_room_endpoint(req: RoomAssignRequest, user=Depends(require_auth)):
+    try:
+        result = await assign_room(db, room_id=req.room_id, guest_id=req.guest_id)
+        await create_audit_log(req.guest_id, "room_assigned",
+                               metadata={"room_id": req.room_id, "room_number": result["room"]["room_number"]},
+                               user_email=user.get("email"))
+        return {"success": True, **result}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.post("/api/rooms/auto-assign", tags=["Oda Yönetimi"], summary="Otomatik oda ata",
+          description="Scan sonrası müsait odayı otomatik atar")
+async def auto_assign_room_endpoint(req: AutoAssignRequest, user=Depends(require_auth)):
+    result = await auto_assign_room(db, guest_id=req.guest_id,
+                                     property_id=req.property_id,
+                                     preferred_type=req.preferred_type)
+    if not result:
+        raise HTTPException(status_code=404, detail="Müsait oda bulunamadı")
+    await create_audit_log(req.guest_id, "room_auto_assigned",
+                           metadata={"room_id": result["room"]["room_id"]},
+                           user_email=user.get("email"))
+    return {"success": True, **result}
+
+
+@app.post("/api/rooms/{room_id}/release", tags=["Oda Yönetimi"], summary="Odayı serbest bırak")
+async def release_room_endpoint(room_id: str, guest_id: Optional[str] = None, user=Depends(require_auth)):
+    try:
+        room = await release_room(db, room_id=room_id, guest_id=guest_id)
+        return {"success": True, "room": room}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+# ===== GROUP CHECK-IN =====
+@app.post("/api/guests/group-checkin", tags=["Grup Check-in"], summary="Grup check-in",
+          description="Birden fazla misafiri tek işlemde kayıt eder ve opsiyonel oda atar")
+async def group_checkin(req: GroupCheckinRequest, user=Depends(require_auth)):
+    results = {"successful": [], "failed": [], "room_assignment": None}
+    
+    for guest_id in req.guest_ids:
+        try:
+            oid = ObjectId(guest_id)
+            old_doc = await guests_col.find_one({"_id": oid})
+            if not old_doc:
+                results["failed"].append({"guest_id": guest_id, "error": "Misafir bulunamadı"})
+                continue
+            
+            now = datetime.now(timezone.utc)
+            await guests_col.update_one(
+                {"_id": oid},
+                {"$set": {"status": "checked_in", "check_in_at": now, "updated_at": now}}
+            )
+            await create_audit_log(guest_id, "group_checked_in",
+                                   {"status": {"old": old_doc.get("status"), "new": "checked_in"}},
+                                   metadata={"group_checkin": True, "group_size": len(req.guest_ids)},
+                                   user_email=user.get("email"))
+            
+            doc = await guests_col.find_one({"_id": oid})
+            results["successful"].append(serialize_doc(doc))
+        except Exception as e:
+            results["failed"].append({"guest_id": guest_id, "error": str(e)})
+    
+    # Auto-assign room if requested
+    if req.room_id and results["successful"]:
+        try:
+            for guest in results["successful"]:
+                await assign_room(db, room_id=req.room_id, guest_id=guest["id"])
+            room = await get_room(db, req.room_id)
+            results["room_assignment"] = {"success": True, "room": room}
+        except Exception as e:
+            results["room_assignment"] = {"success": False, "error": str(e)}
+    
+    return {
+        "success": len(results["successful"]) > 0,
+        "total_requested": len(req.guest_ids),
+        "successful_count": len(results["successful"]),
+        "failed_count": len(results["failed"]),
+        "results": results,
+    }
+
+
+# ===== GUEST PHOTO =====
+@app.post("/api/guests/{guest_id}/photo", tags=["Misafirler"], summary="Misafir fotoğrafı yükle",
+          description="Check-in sırasında misafir fotoğrafı çeker ve kaydeder")
+@limiter.limit("20/minute")
+async def upload_guest_photo(request: Request, guest_id: str, req: GuestPhotoRequest, user=Depends(require_auth)):
+    try:
+        oid = ObjectId(guest_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Geçersiz misafir ID")
+    
+    guest = await guests_col.find_one({"_id": oid})
+    if not guest:
+        raise HTTPException(status_code=404, detail="Misafir bulunamadı")
+    
+    # Image quality check
+    quality = assess_image_quality(req.image_base64)
+    
+    # Store photo (base64 in DB for simplicity)
+    photo_doc = {
+        "photo_id": str(uuid.uuid4()),
+        "guest_id": guest_id,
+        "image_base64": req.image_base64[:100] + "...",  # Don't store full in photo log
+        "quality": quality,
+        "captured_at": datetime.now(timezone.utc),
+        "captured_by": user.get("email"),
+    }
+    
+    # Update guest with photo flag
+    await guests_col.update_one(
+        {"_id": oid},
+        {"$set": {
+            "has_photo": True,
+            "photo_captured_at": datetime.now(timezone.utc),
+            "photo_base64": req.image_base64,
+            "updated_at": datetime.now(timezone.utc),
+        }}
+    )
+    
+    await create_audit_log(guest_id, "photo_captured",
+                           metadata={"quality": quality.get("overall_quality", "unknown")},
+                           user_email=user.get("email"))
+    
+    return {
+        "success": True,
+        "photo_id": photo_doc["photo_id"],
+        "quality": quality,
+        "message": "Misafir fotoğrafı başarıyla kaydedildi",
+    }
+
+
+@app.get("/api/guests/{guest_id}/photo", tags=["Misafirler"], summary="Misafir fotoğrafı getir")
+async def get_guest_photo(guest_id: str, user=Depends(require_auth)):
+    try:
+        oid = ObjectId(guest_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Geçersiz misafir ID")
+    
+    guest = await guests_col.find_one({"_id": oid})
+    if not guest:
+        raise HTTPException(status_code=404, detail="Misafir bulunamadı")
+    
+    if not guest.get("photo_base64"):
+        raise HTTPException(status_code=404, detail="Misafir fotoğrafı bulunamadı")
+    
+    return {
+        "success": True,
+        "guest_id": guest_id,
+        "has_photo": True,
+        "photo_base64": guest["photo_base64"],
+        "photo_captured_at": guest.get("photo_captured_at", "").isoformat() if isinstance(guest.get("photo_captured_at"), datetime) else str(guest.get("photo_captured_at", "")),
+    }
+
+
+# ===== FORM-C (Emniyet Bildirim Formatı) =====
+@app.get("/api/tc-kimlik/form-c/{guest_id}", tags=["TC Kimlik"], summary="Form-C oluştur",
+         description="Emniyet Müdürlüğü Form-C (yabancı misafir bildirim formu) formatında rapor oluşturur")
+async def generate_form_c(guest_id: str, user=Depends(require_auth)):
+    try:
+        guest = await guests_col.find_one({"_id": ObjectId(guest_id)})
+    except Exception:
+        raise HTTPException(status_code=400, detail="Geçersiz misafir ID")
+    if not guest:
+        raise HTTPException(status_code=404, detail="Misafir bulunamadı")
+    
+    guest_data = serialize_doc(guest)
+    
+    # Get property info
+    properties = await list_properties(db, is_active=True)
+    hotel_data = None
+    if properties:
+        hotel_data = {
+            "hotel_name": properties[0].get("name", ""),
+            "hotel_address": properties[0].get("address", ""),
+            "hotel_phone": properties[0].get("phone", ""),
+            "hotel_tax_no": properties[0].get("tax_no", ""),
+        }
+    
+    form_c = {
+        "form_type": "FORM-C",
+        "form_title": "YABANCI KONAKLAMA BİLDİRİM FORMU (FORM-C)",
+        "yasal_dayanak": "5682 Sayılı Pasaport Kanunu Madde 18, 6458 Sayılı YÜKK",
+        "bildirim_suresi": "Konaklama başlangıcından itibaren 24 saat",
+        
+        "tesis_bilgileri": {
+            "tesis_adi": hotel_data.get("hotel_name", "") if hotel_data else "",
+            "tesis_adresi": hotel_data.get("hotel_address", "") if hotel_data else "",
+            "tesis_telefon": hotel_data.get("hotel_phone", "") if hotel_data else "",
+            "vergi_no": hotel_data.get("hotel_tax_no", "") if hotel_data else "",
+        },
+        
+        "misafir_bilgileri": {
+            "sira_no": 1,
+            "adi": guest_data.get("first_name", ""),
+            "soyadi": guest_data.get("last_name", ""),
+            "baba_adi": guest_data.get("father_name", ""),
+            "ana_adi": guest_data.get("mother_name", ""),
+            "dogum_tarihi": guest_data.get("birth_date", ""),
+            "dogum_yeri": guest_data.get("birth_place", ""),
+            "uyrugu": guest_data.get("nationality", ""),
+            "cinsiyeti": "Erkek" if guest_data.get("gender") == "M" else "Kadın" if guest_data.get("gender") == "F" else "",
+        },
+        
+        "belge_bilgileri": {
+            "belge_turu": guest_data.get("document_type", ""),
+            "belge_no": guest_data.get("document_number", "") or guest_data.get("id_number", ""),
+            "belge_verilis_tarihi": guest_data.get("issue_date", ""),
+            "belge_gecerlilik_tarihi": guest_data.get("expiry_date", ""),
+            "vize_turu": "",
+            "vize_no": "",
+        },
+        
+        "konaklama_bilgileri": {
+            "giris_tarihi": guest_data.get("check_in_at", ""),
+            "tahmini_cikis_tarihi": guest_data.get("check_out_at", ""),
+            "oda_no": guest_data.get("room_number", ""),
+            "gelis_sebebi": "Turizm",
+        },
+        
+        "duzenleme_bilgileri": {
+            "duzenleme_tarihi": datetime.now(timezone.utc).isoformat(),
+            "duzenleyen": user.get("email", ""),
+            "imza": "",
+        },
+        
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "guest_id": guest_id,
+        "status": "generated",
+    }
+    
+    # Store Form-C
+    await db["form_c_records"].insert_one({**form_c, "created_at": datetime.now(timezone.utc)})
+    
+    return {"success": True, "form_c": form_c}
+
+
+# ===== YASAL UYUMLULUK RAPORLARI =====
+@app.get("/api/compliance/reports", tags=["KVKK Uyumluluk"], summary="Yasal uyumluluk raporları",
+         description="Emniyet bildirimi, KVKK ve konaklama yasal uyumluluk raporları")
+async def get_compliance_reports(user=Depends(require_admin)):
+    # Emniyet bildirimleri
+    emniyet_col = db["emniyet_bildirimleri"]
+    total_emniyet = await emniyet_col.count_documents({})
+    draft_emniyet = await emniyet_col.count_documents({"status": "draft"})
+    submitted_emniyet = await emniyet_col.count_documents({"status": "submitted"})
+    
+    # Form-C records
+    form_c_col = db["form_c_records"]
+    total_form_c = await form_c_col.count_documents({})
+    
+    # KVKK rights requests
+    kvkk_col = db["kvkk_rights_requests"]
+    total_kvkk = await kvkk_col.count_documents({})
+    pending_kvkk = await kvkk_col.count_documents({"status": "pending"})
+    completed_kvkk = await kvkk_col.count_documents({"status": "completed"})
+    
+    # Foreign guests without notification
+    foreign_guests = await guests_col.count_documents({
+        "nationality": {"$nin": ["TC", "TR", "Türkiye", "Turkey", "Türk", "Turkish", "T.C."]},
+        "nationality": {"$ne": None, "$exists": True},
+    })
+    
+    return {
+        "emniyet_bildirimleri": {
+            "toplam": total_emniyet,
+            "taslak": draft_emniyet,
+            "gonderilmis": submitted_emniyet,
+        },
+        "form_c": {
+            "toplam": total_form_c,
+        },
+        "kvkk": {
+            "toplam_talep": total_kvkk,
+            "bekleyen": pending_kvkk,
+            "tamamlanan": completed_kvkk,
+        },
+        "yabanci_misafir": {
+            "toplam": foreign_guests,
+        },
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+# ===== MONITORING DASHBOARD =====
+@app.get("/api/monitoring/dashboard", tags=["Monitoring"], summary="Monitoring dashboard",
+         description="Scan sayısı, başarı oranı, hata izleme, oda durumu")
+async def monitoring_dashboard(user=Depends(require_admin)):
+    dashboard = await get_monitoring_dashboard(db)
+    return dashboard
+
+
+@app.get("/api/monitoring/scan-stats", tags=["Monitoring"], summary="Tarama istatistikleri")
+async def scan_statistics(days: int = Query(30, ge=1, le=365), user=Depends(require_auth)):
+    stats = await get_scan_statistics(db, days=days)
+    return stats
+
+
+@app.get("/api/monitoring/error-log", tags=["Monitoring"], summary="Hata izleme",
+         description="Son hataları ve hata türlerini listeler")
+async def error_log(
+    limit: int = Query(50, ge=1, le=200),
+    days: int = Query(7, ge=1, le=90),
+    user=Depends(require_auth)
+):
+    errors = await get_error_log(db, limit=limit, days=days)
+    return errors
+
+
+@app.get("/api/monitoring/ai-costs", tags=["Monitoring"], summary="AI API maliyet raporu",
+         description="GPT-4o API kullanım maliyeti takibi")
+async def ai_cost_report(days: int = Query(30, ge=1, le=365), user=Depends(require_admin)):
+    costs = await get_ai_cost_summary(db, days=days)
+    return costs
+
+
+# ===== BACKUP & RESTORE =====
+@app.post("/api/admin/backup", tags=["Yedekleme"], summary="Veritabanı yedeği oluştur")
+async def create_db_backup(req: BackupCreateRequest, user=Depends(require_admin)):
+    try:
+        result = await create_backup(db, created_by=user.get("email"), description=req.description)
+        return {"success": True, "backup": result}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Yedekleme hatası: {str(e)}")
+
+
+@app.get("/api/admin/backups", tags=["Yedekleme"], summary="Yedek listesi")
+async def get_backups(user=Depends(require_admin)):
+    backups = await list_backups(db)
+    return {"backups": backups, "total": len(backups)}
+
+
+@app.post("/api/admin/restore", tags=["Yedekleme"], summary="Yedekten geri yükle",
+          description="DİKKAT: Mevcut verilerin üzerine yazar!")
+async def restore_db_backup(req: BackupRestoreRequest, user=Depends(require_admin)):
+    try:
+        result = await restore_backup(db, backup_id=req.backup_id, restore_by=user.get("email"))
+        return result
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Geri yükleme hatası: {str(e)}")
+
+
+@app.get("/api/admin/backup-schedule", tags=["Yedekleme"], summary="Yedekleme planı")
+async def backup_schedule(user=Depends(require_admin)):
+    return get_backup_schedule()
+
+
+# ===== OCR FALLBACK =====
+@app.post("/api/scan/ocr-fallback", tags=["OCR"], summary="Offline OCR tarama (Tesseract)",
+          description="İnternet kesintisinde lokal Tesseract OCR ile kimlik belgesi tarama")
+@limiter.limit("30/minute")
+async def ocr_fallback_scan(request: Request, scan_req: ScanRequest, user=Depends(require_auth)):
+    if not is_tesseract_available():
+        raise HTTPException(status_code=503, detail="Tesseract OCR sistemi mevcut değil")
+    
+    # Image quality check first
+    quality = assess_image_quality(scan_req.image_base64)
+    
+    result = ocr_scan_document(scan_req.image_base64)
+    
+    if not result.get("success"):
+        scan_doc = {
+            "status": "failed",
+            "error": result.get("error", "OCR hatası"),
+            "source": "tesseract_ocr",
+            "created_at": datetime.now(timezone.utc),
+            "scanned_by": user.get("email"),
+            "image_quality": quality,
+        }
+        await scans_col.insert_one(scan_doc)
+        raise HTTPException(status_code=500, detail={
+            "message": result.get("error", "OCR tarama başarısız"),
+            "image_quality": quality,
+            "can_retry": True,
+        })
+    
+    # Store scan
+    scan_doc = {
+        "extracted_data": {"documents": result.get("documents", []), "document_count": result.get("document_count", 0)},
+        "document_count": result.get("document_count", 0),
+        "is_valid": any(d.get("is_valid", False) for d in result.get("documents", [])),
+        "created_at": datetime.now(timezone.utc),
+        "status": "completed",
+        "source": "tesseract_ocr",
+        "scanned_by": user.get("email"),
+        "confidence_level": "low",
+        "confidence_score": 40,
+        "review_status": "needs_review",
+        "image_quality": quality,
+        "warnings": ["Offline OCR ile tarandı - sonuçları doğrulayın"],
+    }
+    await scans_col.insert_one(scan_doc)
+    
+    return {
+        "success": True,
+        "source": "tesseract_ocr",
+        "documents": result.get("documents", []),
+        "raw_text": result.get("raw_text", ""),
+        "image_quality": quality,
+        "confidence_note": result.get("confidence_note", ""),
+        "message": "Offline OCR tarama tamamlandı. Sonuçları doğrulayın.",
+    }
+
+
+@app.post("/api/scan/quality-check", tags=["OCR"], summary="Görüntü kalite kontrolü",
+          description="Tarama öncesi görüntü kalite kontrolü (bulanıklık, karanlık, çözünürlük)")
+async def image_quality_check(scan_req: ScanRequest, user=Depends(require_auth)):
+    quality = assess_image_quality(scan_req.image_base64)
+    return quality
+
+
+@app.get("/api/scan/ocr-status", tags=["OCR"], summary="OCR sistem durumu")
+async def ocr_system_status():
+    return {
+        "tesseract_available": is_tesseract_available(),
+        "supported_languages": ["tur", "eng"],
+        "note": "Tesseract OCR internet kesintisinde yedek olarak kullanılabilir",
+    }
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8001)
