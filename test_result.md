@@ -203,15 +203,18 @@ backend:
 
   - task: "Kiosk Mode"
     implemented: true
-    working: "NA"
+    working: true
     file: "server.py, multi_property.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "NA"
         - agent: "main"
         - comment: "POST /api/kiosk/session, GET /api/kiosk/sessions, POST /api/kiosk/scan. Self-servis lobby terminali."
+        - working: true
+        - agent: "testing"
+        - comment: "✅ TESTED: Kiosk mode endpoints çalışıyor. POST /api/kiosk/session ✅ (session created for Lobby Terminal 1), GET /api/kiosk/sessions ✅ (1 session listed). Kiosk session management active."
 
   - task: "Offline Sync"
     implemented: true
