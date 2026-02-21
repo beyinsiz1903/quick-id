@@ -232,7 +232,7 @@ frontend:
     file: "pages/KvkkCompliancePage.js"
     stuck_count: 0
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
         - working: true
         - agent: "main"
@@ -244,7 +244,7 @@ frontend:
     file: "pages/ApiDocsPage.js"
     stuck_count: 0
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
         - working: true
         - agent: "main"
