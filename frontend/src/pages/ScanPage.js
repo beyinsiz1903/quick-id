@@ -146,7 +146,7 @@ export default function ScanPage() {
         } else if (documents[0]?.is_valid) {
           toast.success(`Kimlik başarıyla okundu! (${result.provider || 'AI'})`);
         } else {
-          toast.warning('Kimlik okunamadi veya kismi bilgi alindi.');
+          toast.warning('Kimlik okunamadı veya kısmi bilgi alındı.');
         }
       }
     } catch (err) {
