@@ -647,9 +647,41 @@ async def scan_id(request: Request, scan_req: ScanRequest, user=Depends(require_
             "confidence": confidence,
         }
     except Exception as e:
-        scan_doc = {"status": "failed", "error": str(e), "created_at": datetime.now(timezone.utc), "scanned_by": user.get("email")}
+        error_str = str(e)
+        # Fallback: AI başarısız olursa kullanıcıya rehberlik
+        fallback_guidance = []
+        if "timeout" in error_str.lower() or "connection" in error_str.lower():
+            fallback_guidance = [
+                "Bağlantı hatası oluştu. Lütfen tekrar deneyin.",
+                "İnternet bağlantınızı kontrol edin.",
+            ]
+        elif "rate" in error_str.lower() or "limit" in error_str.lower():
+            fallback_guidance = [
+                "İstek limiti aşıldı. Lütfen biraz bekleyin.",
+            ]
+        else:
+            fallback_guidance = [
+                "Kimlik belgesi okunamadı. Lütfen şunları deneyin:",
+                "1. Belgeyi düz bir yüzeye yerleştirin",
+                "2. Flaş kullanarak fotoğraf çekin",
+                "3. Belgenin tamamının görünür olduğundan emin olun",
+                "4. Parlama ve gölge olmadığından emin olun",
+                "5. Daha iyi aydınlatma altında tekrar deneyin",
+                "6. Belge yıpranmışsa elle giriş yapabilirsiniz",
+            ]
+        scan_doc = {
+            "status": "failed", 
+            "error": error_str, 
+            "created_at": datetime.now(timezone.utc), 
+            "scanned_by": user.get("email"),
+            "fallback_guidance": fallback_guidance,
+        }
         await scans_col.insert_one(scan_doc)
-        raise HTTPException(status_code=500, detail=f"Scan failed: {str(e)}")
+        raise HTTPException(status_code=500, detail={
+            "message": f"Tarama başarısız: {error_str}",
+            "fallback_guidance": fallback_guidance,
+            "can_retry": True,
+        })
 
 @app.get("/api/scans", tags=["Tarama"], summary="Tarama geçmişi")
 async def get_scans(page: int = Query(1, ge=1), limit: int = Query(20, ge=1, le=100), user=Depends(require_auth)):
