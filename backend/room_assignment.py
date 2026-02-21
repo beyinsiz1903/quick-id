@@ -156,7 +156,7 @@ async def assign_room(db: AsyncIOMotorDatabase, room_id: str, guest_id: str) -> 
             {"_id": ObjectId(guest_id)},
             {"$set": {
                 "room_number": room["room_number"],
-                "room_id": room_id,
+                "room_id": actual_room_id,
                 "updated_at": datetime.now(timezone.utc),
             }}
         )
@@ -167,7 +167,7 @@ async def assign_room(db: AsyncIOMotorDatabase, room_id: str, guest_id: str) -> 
     assignments_col = db["room_assignments"]
     assignment = {
         "assignment_id": str(uuid.uuid4()),
-        "room_id": room_id,
+        "room_id": actual_room_id,
         "room_number": room["room_number"],
         "guest_id": guest_id,
         "assigned_at": datetime.now(timezone.utc),
@@ -176,7 +176,7 @@ async def assign_room(db: AsyncIOMotorDatabase, room_id: str, guest_id: str) -> 
     }
     await assignments_col.insert_one(assignment)
     
-    updated_room = await col.find_one({"room_id": room_id})
+    updated_room = await col.find_one({"_id": room["_id"]})
     if updated_room:
         updated_room["id"] = str(updated_room.pop("_id"))
     return {"room": updated_room, "assignment": assignment}
@@ -185,9 +185,11 @@ async def assign_room(db: AsyncIOMotorDatabase, room_id: str, guest_id: str) -> 
 async def release_room(db: AsyncIOMotorDatabase, room_id: str, guest_id: str = None) -> dict:
     """Odayı serbest bırak"""
     col = db["rooms"]
-    room = await col.find_one({"room_id": room_id})
+    room = await find_room_by_any_id(col, room_id)
     if not room:
         raise ValueError("Oda bulunamadı")
+    
+    actual_room_id = room.get("room_id", room_id)
     
     current_guests = room.get("current_guest_ids", [])
     if guest_id:
