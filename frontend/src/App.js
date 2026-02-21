@@ -13,6 +13,11 @@ import UserManagement from './pages/UserManagement';
 import SettingsPage from './pages/SettingsPage';
 import KvkkCompliancePage from './pages/KvkkCompliancePage';
 import ApiDocsPage from './pages/ApiDocsPage';
+import FaceMatchPage from './pages/FaceMatchPage';
+import TcKimlikPage from './pages/TcKimlikPage';
+import PropertiesPage from './pages/PropertiesPage';
+import KioskPage from './pages/KioskPage';
+import PreCheckinPage from './pages/PreCheckinPage';
 import './App.css';
 
 function ProtectedRoute({ children, adminOnly = false }) {
@@ -28,15 +33,27 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/login" element={isAuthenticated ? <Navigate to="/" replace /> : <LoginPage />} />
+      
+      {/* Public routes - No auth needed */}
+      <Route path="/precheckin/:tokenId" element={<PreCheckinPage />} />
+      
+      {/* Protected routes */}
       <Route path="/" element={<ProtectedRoute><AppShell><Dashboard /></AppShell></ProtectedRoute>} />
       <Route path="/scan" element={<ProtectedRoute><AppShell><ScanPage /></AppShell></ProtectedRoute>} />
       <Route path="/bulk-scan" element={<ProtectedRoute><AppShell><BulkScanPage /></AppShell></ProtectedRoute>} />
       <Route path="/guests" element={<ProtectedRoute><AppShell><GuestList /></AppShell></ProtectedRoute>} />
       <Route path="/guests/:id" element={<ProtectedRoute><AppShell><GuestDetail /></AppShell></ProtectedRoute>} />
+      <Route path="/face-match" element={<ProtectedRoute><AppShell><FaceMatchPage /></AppShell></ProtectedRoute>} />
+      <Route path="/tc-kimlik" element={<ProtectedRoute><AppShell><TcKimlikPage /></AppShell></ProtectedRoute>} />
+      
+      {/* Admin only routes */}
       <Route path="/users" element={<ProtectedRoute adminOnly><AppShell><UserManagement /></AppShell></ProtectedRoute>} />
       <Route path="/settings" element={<ProtectedRoute adminOnly><AppShell><SettingsPage /></AppShell></ProtectedRoute>} />
       <Route path="/kvkk" element={<ProtectedRoute adminOnly><AppShell><KvkkCompliancePage /></AppShell></ProtectedRoute>} />
       <Route path="/api-docs" element={<ProtectedRoute adminOnly><AppShell><ApiDocsPage /></AppShell></ProtectedRoute>} />
+      <Route path="/properties" element={<ProtectedRoute adminOnly><AppShell><PropertiesPage /></AppShell></ProtectedRoute>} />
+      <Route path="/kiosk" element={<ProtectedRoute adminOnly><AppShell><KioskPage /></AppShell></ProtectedRoute>} />
+      
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
