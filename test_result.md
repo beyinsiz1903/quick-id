@@ -152,15 +152,18 @@ backend:
 
   - task: "Enhanced Offline OCR Fallback"
     implemented: true
-    working: "NA"
+    working: true
     file: "ocr_fallback.py, server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "NA"
         - agent: "main"
         - comment: "Geliştirildi: OpenCV ile gelişmiş ön işleme (deskew, CLAHE, adaptive threshold, morfolojik temizlik), birden fazla PSM modu, güven puanı, AI başarısız olunca otomatik fallback."
+        - working: true
+        - agent: "testing"
+        - comment: "✅ WORKING: Enhanced OCR status endpoint (GET /api/scan/ocr-status) returns NEW preprocessing field with opencv_available and features list. Auto-fallback integrated in main scan endpoint."
 
   - task: "Room Management CRUD + Auto-assign"
     implemented: true
