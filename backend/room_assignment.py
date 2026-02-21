@@ -78,10 +78,27 @@ async def list_rooms(db: AsyncIOMotorDatabase, property_id: str = None,
     return rooms
 
 
+async def find_room_by_any_id(col, room_id: str):
+    """room_id (UUID) veya _id (ObjectId) ile oda bul"""
+    # First try room_id (UUID)
+    room = await col.find_one({"room_id": room_id})
+    if room:
+        return room
+    # Try as ObjectId
+    try:
+        from bson import ObjectId
+        room = await col.find_one({"_id": ObjectId(room_id)})
+        if room:
+            return room
+    except Exception:
+        pass
+    return None
+
+
 async def get_room(db: AsyncIOMotorDatabase, room_id: str) -> Optional[dict]:
     """Oda detayını getir"""
     col = db["rooms"]
-    doc = await col.find_one({"room_id": room_id})
+    doc = await find_room_by_any_id(col, room_id)
     if doc:
         doc["id"] = str(doc.pop("_id"))
     return doc
@@ -90,11 +107,12 @@ async def get_room(db: AsyncIOMotorDatabase, room_id: str) -> Optional[dict]:
 async def update_room(db: AsyncIOMotorDatabase, room_id: str, updates: dict) -> Optional[dict]:
     """Oda bilgilerini güncelle"""
     col = db["rooms"]
-    updates["updated_at"] = datetime.now(timezone.utc)
-    result = await col.update_one({"room_id": room_id}, {"$set": updates})
-    if result.matched_count == 0:
+    room = await find_room_by_any_id(col, room_id)
+    if not room:
         return None
-    doc = await col.find_one({"room_id": room_id})
+    updates["updated_at"] = datetime.now(timezone.utc)
+    await col.update_one({"_id": room["_id"]}, {"$set": updates})
+    doc = await col.find_one({"_id": room["_id"]})
     if doc:
         doc["id"] = str(doc.pop("_id"))
     return doc
@@ -103,9 +121,11 @@ async def update_room(db: AsyncIOMotorDatabase, room_id: str, updates: dict) -> 
 async def assign_room(db: AsyncIOMotorDatabase, room_id: str, guest_id: str) -> dict:
     """Misafire oda ata"""
     col = db["rooms"]
-    room = await col.find_one({"room_id": room_id})
+    room = await find_room_by_any_id(col, room_id)
     if not room:
         raise ValueError("Oda bulunamadı")
+    
+    actual_room_id = room.get("room_id", room_id)
     
     if room["status"] not in ("available", "reserved"):
         raise ValueError(f"Oda müsait değil (durum: {room['status']})")
@@ -120,7 +140,7 @@ async def assign_room(db: AsyncIOMotorDatabase, room_id: str, guest_id: str) -> 
     status = "occupied" if len(current_guests) > 0 else "available"
     
     await col.update_one(
-        {"room_id": room_id},
+        {"_id": room["_id"]},
         {"$set": {
             "current_guest_ids": current_guests,
             "status": status,
