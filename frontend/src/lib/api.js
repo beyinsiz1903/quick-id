@@ -21,7 +21,14 @@ async function handleResponse(res) {
   }
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: 'İşlem başarısız' }));
-    throw new Error(err.detail || 'İşlem başarısız');
+    const detail = err.detail;
+    if (typeof detail === 'object' && detail.message) {
+      const error = new Error(detail.message);
+      error.fallback_guidance = detail.fallback_guidance;
+      error.can_retry = detail.can_retry;
+      throw error;
+    }
+    throw new Error(typeof detail === 'string' ? detail : 'İşlem başarısız');
   }
   return res.json();
 }
@@ -194,7 +201,6 @@ export const api = {
 
   getExportCsvUrl(params = {}) {
     const query = new URLSearchParams();
-    const token = getToken();
     Object.entries(params).forEach(([k, v]) => { if (v) query.set(k, v); });
     return `${BACKEND_URL}/api/exports/guests.csv?${query.toString()}`;
   },
@@ -246,6 +252,12 @@ export const api = {
     return handleResponse(res);
   },
 
+  // KVKK Consent Info (public)
+  async getKvkkConsentInfo() {
+    const res = await fetch(`${BACKEND_URL}/api/kvkk/consent-info`);
+    return handleResponse(res);
+  },
+
   // API Guide
   async getApiGuide() {
     const res = await fetch(`${BACKEND_URL}/api/guide`, { headers: authHeaders() });
@@ -263,6 +275,147 @@ export const api = {
   async updateScanReview(scanId, reviewStatus) {
     const res = await fetch(`${BACKEND_URL}/api/scans/${scanId}/review?review_status=${reviewStatus}`, {
       method: 'PATCH', headers: authHeaders(),
+    });
+    return handleResponse(res);
+  },
+
+  // ===== NEW: Biometric Face Matching =====
+  async compareFaces(documentImageBase64, selfieImageBase64) {
+    const res = await fetch(`${BACKEND_URL}/api/biometric/face-compare`, {
+      method: 'POST', headers: authHeaders(),
+      body: JSON.stringify({ document_image_base64: documentImageBase64, selfie_image_base64: selfieImageBase64 }),
+    });
+    return handleResponse(res);
+  },
+
+  async getLivenessChallenge() {
+    const res = await fetch(`${BACKEND_URL}/api/biometric/liveness-challenge`, { headers: authHeaders() });
+    return handleResponse(res);
+  },
+
+  async checkLiveness(imageBase64, challengeId, sessionId) {
+    const res = await fetch(`${BACKEND_URL}/api/biometric/liveness-check`, {
+      method: 'POST', headers: authHeaders(),
+      body: JSON.stringify({ image_base64: imageBase64, challenge_id: challengeId, session_id: sessionId }),
+    });
+    return handleResponse(res);
+  },
+
+  // ===== NEW: TC Kimlik =====
+  async validateTcKimlik(tcNo) {
+    const res = await fetch(`${BACKEND_URL}/api/tc-kimlik/validate`, {
+      method: 'POST', headers: authHeaders(),
+      body: JSON.stringify({ tc_no: tcNo }),
+    });
+    return handleResponse(res);
+  },
+
+  async createEmniyetBildirimi(guestId) {
+    const res = await fetch(`${BACKEND_URL}/api/tc-kimlik/emniyet-bildirimi`, {
+      method: 'POST', headers: authHeaders(),
+      body: JSON.stringify({ guest_id: guestId }),
+    });
+    return handleResponse(res);
+  },
+
+  async getEmniyetBildirimleri(params = {}) {
+    const query = new URLSearchParams();
+    Object.entries(params).forEach(([k, v]) => { if (v) query.set(k, v); });
+    const res = await fetch(`${BACKEND_URL}/api/tc-kimlik/emniyet-bildirimleri?${query.toString()}`, { headers: authHeaders() });
+    return handleResponse(res);
+  },
+
+  // ===== NEW: Pre-Checkin =====
+  async createPreCheckin(data) {
+    const res = await fetch(`${BACKEND_URL}/api/precheckin/create`, {
+      method: 'POST', headers: authHeaders(), body: JSON.stringify(data),
+    });
+    return handleResponse(res);
+  },
+
+  async getPreCheckinInfo(tokenId) {
+    const res = await fetch(`${BACKEND_URL}/api/precheckin/${tokenId}`);
+    return handleResponse(res);
+  },
+
+  async preCheckinScan(tokenId, imageBase64, kvkkConsent = false) {
+    const res = await fetch(`${BACKEND_URL}/api/precheckin/${tokenId}/scan`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ image_base64: imageBase64, kvkk_consent: kvkkConsent }),
+    });
+    return handleResponse(res);
+  },
+
+  getPreCheckinQrUrl(tokenId) {
+    return `${BACKEND_URL}/api/precheckin/${tokenId}/qr`;
+  },
+
+  async listPreCheckins(params = {}) {
+    const query = new URLSearchParams();
+    Object.entries(params).forEach(([k, v]) => { if (v) query.set(k, v); });
+    const res = await fetch(`${BACKEND_URL}/api/precheckin/list?${query.toString()}`, { headers: authHeaders() });
+    return handleResponse(res);
+  },
+
+  // ===== NEW: Multi-Property =====
+  async getProperties(isActive = null) {
+    const query = isActive !== null ? `?is_active=${isActive}` : '';
+    const res = await fetch(`${BACKEND_URL}/api/properties${query}`, { headers: authHeaders() });
+    return handleResponse(res);
+  },
+
+  async createProperty(data) {
+    const res = await fetch(`${BACKEND_URL}/api/properties`, {
+      method: 'POST', headers: authHeaders(), body: JSON.stringify(data),
+    });
+    return handleResponse(res);
+  },
+
+  async getProperty(propertyId) {
+    const res = await fetch(`${BACKEND_URL}/api/properties/${propertyId}`, { headers: authHeaders() });
+    return handleResponse(res);
+  },
+
+  async updateProperty(propertyId, data) {
+    const res = await fetch(`${BACKEND_URL}/api/properties/${propertyId}`, {
+      method: 'PATCH', headers: authHeaders(), body: JSON.stringify(data),
+    });
+    return handleResponse(res);
+  },
+
+  // ===== NEW: Kiosk =====
+  async createKioskSession(data) {
+    const res = await fetch(`${BACKEND_URL}/api/kiosk/session`, {
+      method: 'POST', headers: authHeaders(), body: JSON.stringify(data),
+    });
+    return handleResponse(res);
+  },
+
+  async getKioskSessions(params = {}) {
+    const query = new URLSearchParams();
+    Object.entries(params).forEach(([k, v]) => { if (v) query.set(k, v); });
+    const res = await fetch(`${BACKEND_URL}/api/kiosk/sessions?${query.toString()}`, { headers: authHeaders() });
+    return handleResponse(res);
+  },
+
+  // ===== NEW: Offline Sync =====
+  async uploadOfflineData(data) {
+    const res = await fetch(`${BACKEND_URL}/api/sync/upload`, {
+      method: 'POST', headers: authHeaders(), body: JSON.stringify(data),
+    });
+    return handleResponse(res);
+  },
+
+  async getPendingSyncs(propertyId = null) {
+    const query = propertyId ? `?property_id=${propertyId}` : '';
+    const res = await fetch(`${BACKEND_URL}/api/sync/pending${query}`, { headers: authHeaders() });
+    return handleResponse(res);
+  },
+
+  async processSync(syncId) {
+    const res = await fetch(`${BACKEND_URL}/api/sync/${syncId}/process`, {
+      method: 'POST', headers: authHeaders(),
     });
     return handleResponse(res);
   },
