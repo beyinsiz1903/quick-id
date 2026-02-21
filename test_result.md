@@ -254,18 +254,14 @@ metadata:
   created_by: "main_agent"
   version: "2.0"
   test_sequence: 1
-  run_ui: false
+  run_ui: true
 
 test_plan:
   current_focus:
-    - "AI Confidence Scoring - Scan endpoint"
-    - "KVKK Full Compliance - Rights Requests"
-    - "KVKK VERBİS Report"
-    - "API Documentation (Swagger/ReDoc/Guide)"
-    - "Test Coverage - Unit Tests"
-    - "Test Coverage - Integration Tests"
+    - "KVKK Uyumluluk Merkezi Sayfası"
+    - "API Dokümantasyon Sayfası"
   stuck_tasks: []
-  test_all: true
+  test_all: false
   test_priority: "high_first"
 
 agent_communication:
@@ -273,3 +269,5 @@ agent_communication:
     - message: "Tüm 4 zayıf yön tamamlandı: 1) AI confidence scoring + review queue 2) KVKK tam uyumluluk (hak talepleri, VERBİS, envanter, retention) 3) API docs (Swagger, ReDoc, guide endpoint) 4) 66 test (29 birim + 37 entegrasyon). Backend testlerini çalıştırın lütfen."
     - agent: "testing"
     - message: "✅ BACKEND TESTING COMPLETE: 34/35 tests passed. All major functionality working: auth, KVKK compliance, API docs, guest management, dashboard, audit. Minor: scan endpoint has CloudFlare 520 error (infrastructure issue). All 66 pytest tests passed (29 unit + 37 integration)."
+    - agent: "main"
+    - message: "Kullanıcı frontend testi istedi. Lütfen yeni sayfaları test edin: 1) KVKK Uyumluluk Merkezi (/kvkk) - 5 tab, hak talebi oluşturma/işleme 2) API Dokümantasyon (/api-docs) - 4 tab, Swagger/ReDoc linkleri. Login: admin@quickid.com / admin123. Ayrıca mevcut sayfaları da kontrol edin (dashboard, misafirler, tarama, ayarlar)."
