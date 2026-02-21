@@ -8,7 +8,7 @@ import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { Card, CardContent } from '../components/ui/card';
 import { api } from '../lib/api';
-import { Loader2, ChevronLeft, ChevronRight, Users } from 'lucide-react';
+import { Loader2, ChevronLeft, ChevronRight, Users, AlertTriangle, CheckCircle2, Wifi, WifiOff } from 'lucide-react';
 
 export default function ScanPage() {
   const navigate = useNavigate();
@@ -19,6 +19,10 @@ export default function ScanPage() {
   const [scanId, setScanId] = useState(null);
   const [warnings, setWarnings] = useState([]);
   const [originalExtractedList, setOriginalExtractedList] = useState([]);
+  const [imageQuality, setImageQuality] = useState(null);
+  const [mrzResults, setMrzResults] = useState([]);
+  const [lastCapturedImage, setLastCapturedImage] = useState(null);
+  const [ocrFallbackMode, setOcrFallbackMode] = useState(false);
 
   // Duplicate handling
   const [duplicateDialogOpen, setDuplicateDialogOpen] = useState(false);
