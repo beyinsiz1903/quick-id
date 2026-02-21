@@ -252,6 +252,8 @@ def serialize_doc(doc):
 # --- Pydantic Models ---
 class ScanRequest(BaseModel):
     image_base64: str
+    provider: Optional[str] = None  # gpt-4o, gpt-4o-mini, gemini-flash, tesseract, auto
+    smart_mode: Optional[bool] = True  # Akıllı yönlendirme
 
 class GuestCreate(BaseModel):
     first_name: Optional[str] = None
