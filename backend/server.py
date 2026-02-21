@@ -28,6 +28,16 @@ from kvkk_compliance import (
     generate_verbis_report, get_data_inventory, get_retention_warnings,
     calculate_confidence_score, VALID_REQUEST_TYPES, VALID_REQUEST_STATUSES
 )
+from tc_kimlik import validate_tc_kimlik, generate_emniyet_bildirimi, is_foreign_guest
+from biometric import compare_faces, check_liveness, get_liveness_challenge
+from multi_property import (
+    create_property, list_properties, get_property, update_property,
+    create_kiosk_session, update_kiosk_activity, get_kiosk_sessions,
+    store_offline_data, get_pending_syncs, process_sync,
+    create_precheckin_token, get_precheckin_token, use_precheckin_token, list_precheckin_tokens,
+)
+import qrcode
+import io
 
 
 # --- Rate Limiter Setup ---
