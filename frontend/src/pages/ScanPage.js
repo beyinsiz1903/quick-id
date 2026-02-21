@@ -43,13 +43,34 @@ export default function ScanPage() {
     setAllDocuments([]);
     setCurrentDocIndex(0);
     setWarnings([]);
+    setImageQuality(null);
+    setMrzResults([]);
+    setLastCapturedImage(imageDataUrl);
 
     try {
-      const result = await api.scanId(imageDataUrl);
+      let result;
+      if (ocrFallbackMode) {
+        // Use offline OCR
+        const token = localStorage.getItem('token');
+        const res = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/scan/ocr-fallback`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ image_base64: imageDataUrl }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail?.message || data.detail || 'OCR hatası');
+        result = { success: true, documents: data.documents || [], document_count: data.documents?.length || 0, image_quality: data.image_quality };
+      } else {
+        result = await api.scanId(imageDataUrl);
+      }
 
       if (result.success) {
         const documents = result.documents || [];
         const docCount = result.document_count || documents.length;
+
+        // Store image quality and MRZ data
+        if (result.image_quality) setImageQuality(result.image_quality);
+        if (result.mrz_results) setMrzResults(result.mrz_results);
 
         if (documents.length === 0) {
           toast.error('Kimlik belgesi algılanamadı.');
