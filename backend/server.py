@@ -850,6 +850,184 @@ async def export_guests_csv(status: Optional[str] = None, user=Depends(require_a
                              headers={"Content-Disposition": "attachment; filename=misafirler.csv"})
 
 
+# ===== KVKK COMPLIANCE (Tam Uyumluluk) =====
+
+@app.post("/api/kvkk/rights-request", tags=["KVKK Uyumluluk"], summary="KVKK hak talebi oluştur",
+          description="Misafir veya ilgili kişi adına KVKK hak talebi oluşturur (erişim, düzeltme, silme, taşıma, itiraz)")
+async def create_kvkk_request(req: RightsRequestCreate, user=Depends(require_auth)):
+    try:
+        result = await create_rights_request(
+            db,
+            request_type=req.request_type,
+            guest_id=req.guest_id,
+            requester_name=req.requester_name,
+            requester_email=req.requester_email,
+            requester_id_number=req.requester_id_number,
+            description=req.description,
+            created_by=user.get("email")
+        )
+        return {"success": True, "request": serialize_doc(result)}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.get("/api/kvkk/rights-requests", tags=["KVKK Uyumluluk"], summary="KVKK hak taleplerini listele")
+async def get_kvkk_requests(
+    status: Optional[str] = None,
+    request_type: Optional[str] = None,
+    page: int = Query(1, ge=1),
+    limit: int = Query(20, ge=1, le=100),
+    user=Depends(require_admin)
+):
+    result = await list_rights_requests(db, status=status, request_type=request_type, page=page, limit=limit)
+    return result
+
+@app.patch("/api/kvkk/rights-requests/{request_id}", tags=["KVKK Uyumluluk"], summary="KVKK hak talebini işle")
+async def process_kvkk_request(request_id: str, req: RightsRequestProcess, user=Depends(require_admin)):
+    try:
+        result = await process_rights_request(
+            db,
+            request_id=request_id,
+            new_status=req.status,
+            response_note=req.response_note,
+            response_data=req.response_data,
+            processed_by=user.get("email")
+        )
+        if not result:
+            raise HTTPException(status_code=404, detail="Talep bulunamadı")
+        return {"success": True, "request": result}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.get("/api/kvkk/guest-data/{guest_id}", tags=["KVKK Uyumluluk"], summary="Misafir veri erişim raporu",
+         description="KVKK erişim hakkı kapsamında misafirin tüm kişisel verilerini derler")
+async def get_guest_kvkk_data(guest_id: str, user=Depends(require_admin)):
+    data = await get_guest_data_for_access(db, guest_id)
+    if not data:
+        raise HTTPException(status_code=404, detail="Misafir bulunamadı")
+    return data
+
+@app.get("/api/kvkk/guest-data/{guest_id}/portable", tags=["KVKK Uyumluluk"], summary="Veri taşınabilirlik dışa aktarımı",
+         description="KVKK veri taşıma hakkı kapsamında misafir verilerini taşınabilir formatta dışa aktarır")
+async def export_guest_portable(guest_id: str, user=Depends(require_admin)):
+    data = await export_guest_data_portable(db, guest_id)
+    if not data:
+        raise HTTPException(status_code=404, detail="Misafir bulunamadı")
+    return data
+
+@app.get("/api/kvkk/verbis-report", tags=["KVKK Uyumluluk"], summary="VERBİS uyumluluk raporu",
+         description="KVKK Madde 16 kapsamında VERBİS uyumluluk raporu üretir")
+async def get_verbis_report(user=Depends(require_admin)):
+    report = await generate_verbis_report(db)
+    return report
+
+@app.get("/api/kvkk/data-inventory", tags=["KVKK Uyumluluk"], summary="Veri işleme envanteri",
+         description="Sistemdeki tüm veri koleksiyonları ve işleme detaylarının envanterini sunar")
+async def get_kvkk_data_inventory(user=Depends(require_admin)):
+    inventory = await get_data_inventory(db)
+    return inventory
+
+@app.get("/api/kvkk/retention-warnings", tags=["KVKK Uyumluluk"], summary="Saklama süresi uyarıları",
+         description="Saklama süresine yaklaşan veya aşan veriler için uyarılar üretir")
+async def get_kvkk_retention_warnings(user=Depends(require_admin)):
+    warnings = await get_retention_warnings(db)
+    return warnings
+
+
+# ===== API GUIDE =====
+@app.get("/api/guide", tags=["API Rehberi"], summary="API Entegrasyon Rehberi",
+         description="PMS entegrasyonu ve dış sistemler için kapsamlı API rehberi")
+async def get_api_guide():
+    return {
+        "title": "Quick ID Reader - API Entegrasyon Rehberi",
+        "version": "2.0.0",
+        "base_url": "Deployment'a göre değişir",
+        "authentication": {
+            "type": "Bearer Token (JWT)",
+            "login_endpoint": "POST /api/auth/login",
+            "request_body": {"email": "string", "password": "string"},
+            "response": {"token": "jwt_token_string", "user": {"id": "...", "email": "...", "role": "admin|reception"}},
+            "header_format": "Authorization: Bearer <token>",
+            "token_expiry": "24 saat (varsayılan)"
+        },
+        "endpoints": {
+            "kimlik_tarama": {
+                "scan": {
+                    "method": "POST",
+                    "path": "/api/scan",
+                    "description": "AI ile kimlik belgesi tarama",
+                    "request": {"image_base64": "base64_encoded_image_string"},
+                    "response_fields": ["success", "scan", "extracted_data", "documents", "confidence"],
+                    "rate_limit": "15/dakika"
+                },
+                "scans_list": {
+                    "method": "GET",
+                    "path": "/api/scans",
+                    "params": {"page": "int", "limit": "int"},
+                },
+                "review_queue": {
+                    "method": "GET",
+                    "path": "/api/scans/review-queue",
+                    "description": "Düşük güvenilirlik puanlı taramalar"
+                }
+            },
+            "misafir_yonetimi": {
+                "list": {"method": "GET", "path": "/api/guests", "params": ["page", "limit", "search", "status", "nationality", "document_type", "date_from", "date_to"]},
+                "create": {"method": "POST", "path": "/api/guests", "body_fields": ["first_name", "last_name", "id_number", "birth_date", "gender", "nationality", "document_type", "kvkk_consent"]},
+                "get": {"method": "GET", "path": "/api/guests/{id}"},
+                "update": {"method": "PATCH", "path": "/api/guests/{id}"},
+                "delete": {"method": "DELETE", "path": "/api/guests/{id}"},
+                "checkin": {"method": "POST", "path": "/api/guests/{id}/checkin"},
+                "checkout": {"method": "POST", "path": "/api/guests/{id}/checkout"},
+                "duplicate_check": {"method": "GET", "path": "/api/guests/check-duplicate", "params": ["id_number", "first_name", "last_name", "birth_date"]}
+            },
+            "kvkk_uyumluluk": {
+                "settings": {"method": "GET/PATCH", "path": "/api/settings/kvkk"},
+                "rights_request": {"method": "POST", "path": "/api/kvkk/rights-request"},
+                "rights_list": {"method": "GET", "path": "/api/kvkk/rights-requests"},
+                "verbis_report": {"method": "GET", "path": "/api/kvkk/verbis-report"},
+                "data_inventory": {"method": "GET", "path": "/api/kvkk/data-inventory"},
+                "retention_warnings": {"method": "GET", "path": "/api/kvkk/retention-warnings"},
+                "guest_data_access": {"method": "GET", "path": "/api/kvkk/guest-data/{id}"},
+                "guest_data_portable": {"method": "GET", "path": "/api/kvkk/guest-data/{id}/portable"},
+                "anonymize": {"method": "POST", "path": "/api/guests/{id}/anonymize"},
+                "cleanup": {"method": "POST", "path": "/api/settings/cleanup"}
+            },
+            "denetim": {
+                "guest_audit": {"method": "GET", "path": "/api/guests/{id}/audit"},
+                "recent_audit": {"method": "GET", "path": "/api/audit/recent"}
+            },
+            "dashboard": {
+                "stats": {"method": "GET", "path": "/api/dashboard/stats"}
+            },
+            "disa_aktarim": {
+                "json": {"method": "GET", "path": "/api/exports/guests.json"},
+                "csv": {"method": "GET", "path": "/api/exports/guests.csv"}
+            }
+        },
+        "pms_integration_guide": {
+            "title": "PMS Entegrasyon Rehberi",
+            "steps": [
+                "1. POST /api/auth/login ile token alın",
+                "2. POST /api/scan ile kimlik tarayın (base64 görüntü gönderin)",
+                "3. Dönen extracted_data ile POST /api/guests ile misafir oluşturun",
+                "4. POST /api/guests/{id}/checkin ile check-in yapın",
+                "5. POST /api/guests/{id}/checkout ile check-out yapın",
+                "6. GET /api/exports/guests.json ile toplu veri çekin"
+            ],
+            "webhook_support": "Henüz desteklenmiyor - gelecek sürümde planlanıyor",
+            "batch_operations": "Toplu tarama için /api/scan endpoint'ini ardışık çağırın"
+        },
+        "error_codes": {
+            "400": "Geçersiz istek (eksik/hatalı parametre)",
+            "401": "Kimlik doğrulama gerekli (token eksik/geçersiz)",
+            "403": "Yetki yetersiz (admin yetkisi gerekli)",
+            "404": "Kaynak bulunamadı",
+            "429": "İstek limiti aşıldı",
+            "500": "Sunucu hatası"
+        }
+    }
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8001)
