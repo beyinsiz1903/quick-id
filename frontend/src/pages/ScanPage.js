@@ -259,7 +259,7 @@ export default function ScanPage() {
           <Card className="mt-3 border-2">
             <CardContent className="p-3">
               <div className="flex items-center justify-between mb-2">
-                <p className="text-sm font-medium">Tarama Saglayicisi Sec</p>
+                <p className="text-sm font-medium">Tarama Sağlayıcısı Seç</p>
                 <Button variant="ghost" size="sm" onClick={() => setShowProviderPanel(false)} className="h-6 px-2 text-xs">
                   Kapat
                 </Button>
