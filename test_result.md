@@ -131,15 +131,18 @@ backend:
 
   - task: "KVKK Public Consent Info"
     implemented: true
-    working: "NA"
+    working: true
     file: "server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "NA"
         - agent: "main"
         - comment: "GET /api/kvkk/consent-info: Public KVKK bilgilendirme ve aydınlatma metni. Auth gerektirmez."
+        - working: true
+        - agent: "testing"
+        - comment: "✅ TESTED: GET /api/kvkk/consent-info başarıyla çalışıyor. Public endpoint, auth gerektirmez. Consent required: true, 5 hak türü listeleniyor. KVKK aydınlatma metni ve hak bilgileri düzgün döndürülüyor."
 
   - task: "Biometric Face Matching"
     implemented: true
