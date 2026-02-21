@@ -541,14 +541,18 @@ async def anonymize_guest_endpoint(guest_id: str, user=Depends(require_admin)):
 
 
 # ===== SCAN ENDPOINTS =====
-@app.post("/api/scan")
+@app.post("/api/scan", tags=["Tarama"], summary="Kimlik belgesi tara",
+          description="AI (GPT-4o Vision) ile kimlik belgesini tarayıp bilgi çıkarır. Confidence score ile güvenilirlik puanı hesaplar.")
 @limiter.limit("15/minute")
 async def scan_id(request: Request, scan_req: ScanRequest, user=Depends(require_auth)):
     try:
         extracted = await extract_id_data(scan_req.image_base64)
         documents = extracted.get("documents", [])
         document_count = extracted.get("document_count", len(documents))
-        
+
+        # Calculate confidence score
+        confidence = calculate_confidence_score(extracted)
+
         scan_doc = {
             "extracted_data": extracted,
             "document_count": document_count,
@@ -557,34 +561,74 @@ async def scan_id(request: Request, scan_req: ScanRequest, user=Depends(require_
             "created_at": datetime.now(timezone.utc),
             "status": "completed",
             "warnings": [],
-            "scanned_by": user.get("email")
+            "scanned_by": user.get("email"),
+            "confidence_score": confidence.get("overall_score", 0),
+            "confidence_level": confidence.get("confidence_level", "low"),
+            "review_status": "needs_review" if confidence.get("review_needed") else "auto_approved",
         }
-        # Collect all warnings
         for doc in documents:
             scan_doc["warnings"].extend(doc.get("warnings", []))
-        
+
         result = await scans_col.insert_one(scan_doc)
         scan_doc["_id"] = result.inserted_id
-        
+
         return {
             "success": True,
             "scan": serialize_doc(scan_doc),
             "extracted_data": extracted,
             "document_count": document_count,
-            "documents": documents
+            "documents": documents,
+            "confidence": confidence,
         }
     except Exception as e:
         scan_doc = {"status": "failed", "error": str(e), "created_at": datetime.now(timezone.utc), "scanned_by": user.get("email")}
         await scans_col.insert_one(scan_doc)
         raise HTTPException(status_code=500, detail=f"Scan failed: {str(e)}")
 
-@app.get("/api/scans")
+@app.get("/api/scans", tags=["Tarama"], summary="Tarama geçmişi")
 async def get_scans(page: int = Query(1, ge=1), limit: int = Query(20, ge=1, le=100), user=Depends(require_auth)):
     skip = (page - 1) * limit
     total = await scans_col.count_documents({})
     cursor = scans_col.find({}).sort("created_at", -1).skip(skip).limit(limit)
     scans = [serialize_doc(doc) async for doc in cursor]
     return {"scans": scans, "total": total, "page": page, "limit": limit}
+
+@app.get("/api/scans/review-queue", tags=["Tarama"], summary="İnceleme kuyruğu",
+         description="Düşük güvenilirlik puanlı taramaları listeler")
+async def get_review_queue(
+    page: int = Query(1, ge=1),
+    limit: int = Query(20, ge=1, le=100),
+    review_status: Optional[str] = Query(None, description="needs_review, auto_approved, reviewed"),
+    user=Depends(require_auth)
+):
+    query = {}
+    if review_status:
+        query["review_status"] = review_status
+    else:
+        query["review_status"] = "needs_review"
+
+    skip = (page - 1) * limit
+    total = await scans_col.count_documents(query)
+    cursor = scans_col.find(query).sort("created_at", -1).skip(skip).limit(limit)
+    scans = [serialize_doc(doc) async for doc in cursor]
+    return {"scans": scans, "total": total, "page": page, "limit": limit}
+
+@app.patch("/api/scans/{scan_id}/review", tags=["Tarama"], summary="Tarama inceleme durumu güncelle")
+async def update_scan_review(scan_id: str, review_status: str = Query(..., description="reviewed, needs_review"), user=Depends(require_auth)):
+    try:
+        oid = ObjectId(scan_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Geçersiz tarama ID")
+    if review_status not in ("reviewed", "needs_review", "auto_approved"):
+        raise HTTPException(status_code=400, detail="Geçersiz inceleme durumu")
+    result = await scans_col.update_one(
+        {"_id": oid},
+        {"$set": {"review_status": review_status, "reviewed_at": datetime.now(timezone.utc), "reviewed_by": user.get("email")}}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404)
+    doc = await scans_col.find_one({"_id": oid})
+    return {"success": True, "scan": serialize_doc(doc)}
 
 
 # ===== GUEST ENDPOINTS =====
