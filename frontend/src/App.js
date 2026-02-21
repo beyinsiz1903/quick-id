@@ -18,6 +18,9 @@ import TcKimlikPage from './pages/TcKimlikPage';
 import PropertiesPage from './pages/PropertiesPage';
 import KioskPage from './pages/KioskPage';
 import PreCheckinPage from './pages/PreCheckinPage';
+import MonitoringPage from './pages/MonitoringPage';
+import RoomManagementPage from './pages/RoomManagementPage';
+import GroupCheckinPage from './pages/GroupCheckinPage';
 import './App.css';
 
 function ProtectedRoute({ children, adminOnly = false }) {
@@ -45,8 +48,11 @@ function AppRoutes() {
       <Route path="/guests/:id" element={<ProtectedRoute><AppShell><GuestDetail /></AppShell></ProtectedRoute>} />
       <Route path="/face-match" element={<ProtectedRoute><AppShell><FaceMatchPage /></AppShell></ProtectedRoute>} />
       <Route path="/tc-kimlik" element={<ProtectedRoute><AppShell><TcKimlikPage /></AppShell></ProtectedRoute>} />
+      <Route path="/group-checkin" element={<ProtectedRoute><AppShell><GroupCheckinPage /></AppShell></ProtectedRoute>} />
+      <Route path="/rooms" element={<ProtectedRoute><AppShell><RoomManagementPage /></AppShell></ProtectedRoute>} />
       
       {/* Admin only routes */}
+      <Route path="/monitoring" element={<ProtectedRoute adminOnly><AppShell><MonitoringPage /></AppShell></ProtectedRoute>} />
       <Route path="/users" element={<ProtectedRoute adminOnly><AppShell><UserManagement /></AppShell></ProtectedRoute>} />
       <Route path="/settings" element={<ProtectedRoute adminOnly><AppShell><SettingsPage /></AppShell></ProtectedRoute>} />
       <Route path="/kvkk" element={<ProtectedRoute adminOnly><AppShell><KvkkCompliancePage /></AppShell></ProtectedRoute>} />
