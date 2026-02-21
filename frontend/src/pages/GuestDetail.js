@@ -124,6 +124,62 @@ export default function GuestDetail() {
     }
   };
 
+  const handlePhotoCapture = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setPhotoCapturing(true);
+    try {
+      const reader = new FileReader();
+      reader.onload = async () => {
+        try {
+          const token = localStorage.getItem('token');
+          const res = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/guests/${id}/photo`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ image_base64: reader.result }),
+          });
+          const data = await res.json();
+          if (data.success) {
+            toast.success('Fotoğraf kaydedildi');
+            setGuestPhoto(reader.result);
+            loadGuest();
+          } else {
+            toast.error('Fotoğraf yüklenemedi');
+          }
+        } catch (err) {
+          toast.error('Fotoğraf yükleme hatası');
+        }
+        setPhotoCapturing(false);
+      };
+      reader.readAsDataURL(file);
+    } catch (err) {
+      toast.error('Dosya okuma hatası');
+      setPhotoCapturing(false);
+    }
+  };
+
+  const handleAutoAssignRoom = async () => {
+    setRoomAssigning(true);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/rooms/auto-assign`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ guest_id: id }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success(`Oda ${data.room?.room_number} atandı!`);
+        loadGuest();
+      } else {
+        toast.error(data.detail || 'Müsait oda bulunamadı');
+      }
+    } catch (err) {
+      toast.error('Oda atama hatası');
+    }
+    setRoomAssigning(false);
+  };
+
   const formatDate = (dateStr) => {
     if (!dateStr) return '—';
     try {
