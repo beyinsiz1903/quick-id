@@ -144,7 +144,7 @@ export default function ScanPage() {
         } else if (docCount > 1) {
           toast.success(`${docCount} kimlik algılandı! Aralarında geçiş yapabilirsiniz.`);
         } else if (documents[0]?.is_valid) {
-          toast.success(`Kimlik basariyla okundu! (${result.provider || 'AI'})`);
+          toast.success(`Kimlik başarıyla okundu! (${result.provider || 'AI'})`);
         } else {
           toast.warning('Kimlik okunamadi veya kismi bilgi alindi.');
         }
