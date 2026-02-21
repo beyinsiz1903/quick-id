@@ -185,15 +185,18 @@ backend:
 
   - task: "Multi-Property Management"
     implemented: true
-    working: "NA"
+    working: true
     file: "server.py, multi_property.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "NA"
         - agent: "main"
         - comment: "CRUD /api/properties: Zincir otel desteği. Tesis bazlı veri izolasyonu."
+        - working: true
+        - agent: "testing"
+        - comment: "✅ TESTED: Multi-property management tüm CRUD operasyonları çalışıyor. POST /api/properties ✅ (Test Otel created), GET /api/properties ✅ (1 property listed), GET /api/properties/{id} ✅ (detay getirme), PATCH /api/properties/{id} ✅ (phone update). Property-based data isolation working."
 
   - task: "Kiosk Mode"
     implemented: true
