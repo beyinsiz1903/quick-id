@@ -13,7 +13,7 @@ import sys
 import time
 
 # Backend URL from environment
-BACKEND_URL = "https://yuz-eslestir.preview.emergentagent.com"
+BACKEND_URL = "https://photo-capture-29.preview.emergentagent.com"
 API_BASE = f"{BACKEND_URL}/api"
 
 class APITester:
