@@ -43,67 +43,65 @@ export default function RoomManagementPage() {
   const [assignDialog, setAssignDialog] = useState({ open: false, roomId: '' });
   const [selectedGuestId, setSelectedGuestId] = useState('');
 
-  const headers = { Authorization: `Bearer ${token}` };
-
   const fetchRooms = useCallback(async () => {
     setLoading(true);
     try {
       const [roomsRes, statsRes, typesRes, guestsRes] = await Promise.allSettled([
-        api.get('/api/rooms', { headers }),
-        api.get('/api/rooms/stats', { headers }),
-        api.get('/api/rooms/types'),
-        api.get('/api/guests?status=pending&limit=100', { headers }),
+        fetchJSON('/api/rooms'),
+        fetchJSON('/api/rooms/stats'),
+        fetchJSON('/api/rooms/types'),
+        fetchJSON('/api/guests?status=pending&limit=100'),
       ]);
-      if (roomsRes.status === 'fulfilled') setRooms(roomsRes.value.data.rooms || []);
-      if (statsRes.status === 'fulfilled') setStats(statsRes.value.data);
-      if (typesRes.status === 'fulfilled') setRoomTypes(typesRes.value.data.room_types || []);
-      if (guestsRes.status === 'fulfilled') setGuests(guestsRes.value.data.guests || []);
+      if (roomsRes.status === 'fulfilled') setRooms(roomsRes.value.rooms || []);
+      if (statsRes.status === 'fulfilled') setStats(statsRes.value);
+      if (typesRes.status === 'fulfilled') setRoomTypes(typesRes.value.room_types || []);
+      if (guestsRes.status === 'fulfilled') setGuests(guestsRes.value.guests || []);
     } catch (e) {
       console.error(e);
     }
     setLoading(false);
-  }, [token]);
+  }, []);
 
   useEffect(() => { fetchRooms(); }, [fetchRooms]);
 
   const handleCreateRoom = async () => {
     try {
-      await api.post('/api/rooms', newRoom, { headers });
+      await postJSON('/api/rooms', newRoom);
       setShowCreate(false);
       setNewRoom({ room_number: '', room_type: 'standard', floor: 1, capacity: 2 });
       fetchRooms();
     } catch (e) {
-      alert(e.response?.data?.detail || 'Hata oluştu');
+      alert(e.message || 'Hata oluştu');
     }
   };
 
   const handleAssignRoom = async () => {
     if (!selectedGuestId || !assignDialog.roomId) return;
     try {
-      await api.post('/api/rooms/assign', { room_id: assignDialog.roomId, guest_id: selectedGuestId }, { headers });
+      await postJSON('/api/rooms/assign', { room_id: assignDialog.roomId, guest_id: selectedGuestId });
       setAssignDialog({ open: false, roomId: '' });
       setSelectedGuestId('');
       fetchRooms();
     } catch (e) {
-      alert(e.response?.data?.detail || 'Atama hatası');
+      alert(e.message || 'Atama hatası');
     }
   };
 
   const handleReleaseRoom = async (roomId) => {
     try {
-      await api.post(`/api/rooms/${roomId}/release`, {}, { headers });
+      await postJSON(`/api/rooms/${roomId}/release`, {});
       fetchRooms();
     } catch (e) {
-      alert(e.response?.data?.detail || 'Hata');
+      alert(e.message || 'Hata');
     }
   };
 
   const handleStatusChange = async (roomId, newStatus) => {
     try {
-      await api.patch(`/api/rooms/${roomId}`, { status: newStatus }, { headers });
+      await patchJSON(`/api/rooms/${roomId}`, { status: newStatus });
       fetchRooms();
     } catch (e) {
-      alert(e.response?.data?.detail || 'Hata');
+      alert(e.message || 'Hata');
     }
   };
 
