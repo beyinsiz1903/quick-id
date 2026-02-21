@@ -113,6 +113,11 @@ Authorization: Bearer <jwt_token>
         {"name": "KVKK Ayarları", "description": "KVKK/GDPR yapılandırma"},
         {"name": "KVKK Uyumluluk", "description": "Hak talepleri, VERBİS, veri envanteri"},
         {"name": "API Rehberi", "description": "Entegrasyon rehberi ve dokümantasyon"},
+        {"name": "Oda Yönetimi", "description": "Oda atama ve yönetimi"},
+        {"name": "Grup Check-in", "description": "Toplu misafir kaydı"},
+        {"name": "Monitoring", "description": "Sistem izleme ve metrikler"},
+        {"name": "Yedekleme", "description": "Veritabanı yedekleme ve geri yükleme"},
+        {"name": "OCR", "description": "Offline OCR ve görüntü işleme"},
     ]
 )
 app.state.limiter = limiter
@@ -124,10 +129,32 @@ async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
         content={"detail": "İstek limiti aşıldı. Lütfen biraz bekleyin ve tekrar deneyin.", "retry_after": str(exc.detail)}
     )
 
-# CORS
+# --- Security Headers Middleware ---
+from starlette.middleware.base import BaseHTTPMiddleware
+
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request, call_next):
+        response = await call_next(request)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["Permissions-Policy"] = "camera=(self), microphone=()"
+        return response
+
+app.add_middleware(SecurityHeadersMiddleware)
+
+# CORS - Whitelist configuration
+CORS_ORIGINS = os.environ.get("CORS_ORIGINS", "*")
+if CORS_ORIGINS == "*":
+    cors_origins_list = ["*"]
+else:
+    cors_origins_list = [o.strip() for o in CORS_ORIGINS.split(",") if o.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=cors_origins_list,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
