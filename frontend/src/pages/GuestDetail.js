@@ -289,6 +289,21 @@ export default function GuestDetail() {
           <Button variant="outline" size="sm" onClick={handleDelete} className="text-[var(--brand-danger)] hover:bg-[var(--brand-danger-soft)]">
             <Trash2 className="w-4 h-4 mr-1" /> Sil
           </Button>
+          <label className="cursor-pointer">
+            <Button variant="outline" size="sm" asChild disabled={photoCapturing}>
+              <span>
+                {photoCapturing ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Camera className="w-4 h-4 mr-1" />}
+                Fotoğraf
+              </span>
+            </Button>
+            <input type="file" accept="image/*" capture="user" className="hidden" onChange={handlePhotoCapture} disabled={photoCapturing} />
+          </label>
+          {!guest.room_number && (
+            <Button variant="outline" size="sm" onClick={handleAutoAssignRoom} disabled={roomAssigning}>
+              {roomAssigning ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <DoorOpen className="w-4 h-4 mr-1" />}
+              Oda Ata
+            </Button>
+          )}
         </div>
       </div>
 
