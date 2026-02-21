@@ -1825,10 +1825,14 @@ async def update_room_endpoint(room_id: str, req: RoomUpdate, user=Depends(requi
 async def assign_room_endpoint(req: RoomAssignRequest, user=Depends(require_auth)):
     try:
         result = await assign_room(db, room_id=req.room_id, guest_id=req.guest_id)
+        room_data = result.get("room", {})
+        assignment_data = result.get("assignment", {})
+        # Remove non-serializable fields
+        assignment_data.pop("_id", None)
         await create_audit_log(req.guest_id, "room_assigned",
-                               metadata={"room_id": req.room_id, "room_number": result["room"]["room_number"]},
+                               metadata={"room_id": req.room_id, "room_number": room_data.get("room_number", "")},
                                user_email=user.get("email"))
-        return {"success": True, **result}
+        return {"success": True, "room": room_data, "assignment": serialize_doc(assignment_data) if isinstance(assignment_data, dict) else assignment_data}
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
