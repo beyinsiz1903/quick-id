@@ -374,14 +374,7 @@ metadata:
   run_ui: true
 
 test_plan:
-  current_focus:
-    - "KVKK Public Consent Info"
-    - "TC Kimlik Validation"
-    - "Pre-Checkin QR System"
-    - "Multi-Property Management"
-    - "Kiosk Mode"
-    - "Offline Sync"
-    - "Biometric Face Matching"
+  current_focus: []
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
