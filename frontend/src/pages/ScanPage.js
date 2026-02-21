@@ -457,10 +457,10 @@ export default function ScanPage() {
             <div className="mb-3 flex items-center gap-2 px-3 py-2 rounded-lg bg-[var(--brand-sky-soft)] text-[var(--brand-sky)] text-sm">
               <Loader2 className="w-4 h-4 animate-spin" />
               {selectedProvider === 'tesseract'
-                ? 'Offline OCR tarama yapiliyor...'
+                ? 'Offline OCR tarama yapılıyor...'
                 : selectedProvider === 'auto'
-                  ? 'Akilli tarama yapiliyor (en uygun provider seciliyor)...'
-                  : `${selectedProviderOption?.label} ile tarama yapiliyor...`
+                  ? 'Akıllı tarama yapılıyor (en uygun provider seçiliyor)...'
+                  : `${selectedProviderOption?.label} ile tarama yapılıyor...`
               }
             </div>
           )}
