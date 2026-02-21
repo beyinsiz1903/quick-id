@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import CameraCapture from '../components/CameraCapture';
@@ -8,7 +8,29 @@ import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { Card, CardContent } from '../components/ui/card';
 import { api } from '../lib/api';
-import { Loader2, ChevronLeft, ChevronRight, Users, AlertTriangle, CheckCircle2, Wifi, WifiOff } from 'lucide-react';
+import {
+  Loader2, ChevronLeft, ChevronRight, Users, AlertTriangle, CheckCircle2,
+  Wifi, WifiOff, Zap, Brain, Globe, Settings2, DollarSign, Shield,
+  Focus, Sun, Sparkles, Maximize, RotateCcw, Info
+} from 'lucide-react';
+
+const PROVIDER_OPTIONS = [
+  { id: 'auto', label: 'Akilli Mod', icon: Brain, description: 'Kaliteye gore otomatik secim', color: 'text-purple-600', bg: 'bg-purple-50', border: 'border-purple-200' },
+  { id: 'gpt-4o', label: 'GPT-4o', icon: Brain, description: 'En yuksek dogruluk', color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-200', cost: '$0.015' },
+  { id: 'gpt-4o-mini', label: 'GPT-4o Mini', icon: Zap, description: 'Hizli ve ucuz', color: 'text-green-600', bg: 'bg-green-50', border: 'border-green-200', cost: '$0.003' },
+  { id: 'gemini-flash', label: 'Gemini Flash', icon: Globe, description: 'Google alternatifi', color: 'text-orange-600', bg: 'bg-orange-50', border: 'border-orange-200', cost: '$0.004' },
+  { id: 'tesseract', label: 'Offline OCR', icon: WifiOff, description: 'Internet gerektirmez', color: 'text-gray-600', bg: 'bg-gray-50', border: 'border-gray-200', cost: 'Ucretsiz' },
+];
+
+const RECOMMENDATION_ICONS = {
+  focus: Focus,
+  sun: Sun,
+  'sun-dim': Sun,
+  sparkles: Sparkles,
+  contrast: Settings2,
+  maximize: Maximize,
+  rotate: RotateCcw,
+};
 
 export default function ScanPage() {
   const navigate = useNavigate();
@@ -22,7 +44,9 @@ export default function ScanPage() {
   const [imageQuality, setImageQuality] = useState(null);
   const [mrzResults, setMrzResults] = useState([]);
   const [lastCapturedImage, setLastCapturedImage] = useState(null);
-  const [ocrFallbackMode, setOcrFallbackMode] = useState(false);
+  const [selectedProvider, setSelectedProvider] = useState('auto');
+  const [providerInfo, setProviderInfo] = useState(null);
+  const [showProviderPanel, setShowProviderPanel] = useState(false);
 
   // Duplicate handling
   const [duplicateDialogOpen, setDuplicateDialogOpen] = useState(false);
@@ -46,34 +70,46 @@ export default function ScanPage() {
     setImageQuality(null);
     setMrzResults([]);
     setLastCapturedImage(imageDataUrl);
+    setProviderInfo(null);
 
     try {
       let result;
-      if (ocrFallbackMode) {
-        // Use offline OCR
-        const token = localStorage.getItem('token');
-        const res = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/scan/ocr-fallback`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ image_base64: imageDataUrl }),
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.detail?.message || data.detail || 'OCR hatası');
-        result = { success: true, documents: data.documents || [], document_count: data.documents?.length || 0, image_quality: data.image_quality };
+      const isOffline = selectedProvider === 'tesseract';
+      const isAuto = selectedProvider === 'auto';
+
+      if (isOffline) {
+        // Offline OCR
+        result = await api.scanWithOcr(imageDataUrl);
+        result = {
+          success: true,
+          documents: result.documents || [],
+          document_count: result.documents?.length || 0,
+          image_quality: result.image_quality,
+          confidence: result.confidence,
+          provider: 'tesseract',
+          provider_info: { name: 'Tesseract OCR', cost: 0 },
+        };
       } else {
-        result = await api.scanId(imageDataUrl);
+        // AI scan with provider selection
+        const provider = isAuto ? null : selectedProvider;
+        result = await api.scanId(imageDataUrl, provider, isAuto);
       }
 
       if (result.success) {
         const documents = result.documents || [];
         const docCount = result.document_count || documents.length;
 
-        // Store image quality and MRZ data
+        // Store metadata
         if (result.image_quality) setImageQuality(result.image_quality);
         if (result.mrz_results) setMrzResults(result.mrz_results);
+        if (result.provider_info) setProviderInfo({
+          ...result.provider_info,
+          provider: result.provider,
+          fallback_used: result.fallback_used || false,
+        });
 
         if (documents.length === 0) {
-          toast.error('Kimlik belgesi algılanamadı.');
+          toast.error('Kimlik belgesi algilanamadi.');
           setExtracting(false);
           return;
         }
@@ -102,20 +138,23 @@ export default function ScanPage() {
         setScanId(result.scan?.id || null);
         setCurrentDocIndex(0);
 
-        if (docCount > 1) {
-          toast.success(`${docCount} kimlik algılandı! Aralarında geçiş yapabilirsiniz.`);
+        // Fallback notification
+        if (result.fallback_used) {
+          toast.warning('AI tarama basarisiz oldu, Tesseract OCR ile tarandi. Sonuclari kontrol edin.');
+        } else if (docCount > 1) {
+          toast.success(`${docCount} kimlik algilandi! Aralarinda gecis yapabilirsiniz.`);
         } else if (documents[0]?.is_valid) {
-          toast.success('Kimlik başarıyla okundu!');
+          toast.success(`Kimlik basariyla okundu! (${result.provider || 'AI'})`);
         } else {
-          toast.warning('Kimlik okunamadı veya kısmi bilgi alındı.');
+          toast.warning('Kimlik okunamadi veya kismi bilgi alindi.');
         }
       }
     } catch (err) {
-      toast.error(`Tarama hatası: ${err.message}`);
+      toast.error(`Tarama hatasi: ${err.message}`);
     } finally {
       setExtracting(false);
     }
-  }, [ocrFallbackMode]);
+  }, [selectedProvider]);
 
   const handleSave = useCallback(async (forceCreate = false) => {
     if (!currentData) return;
@@ -143,7 +182,6 @@ export default function ScanPage() {
       if (result.success) {
         toast.success(`${currentData.first_name} ${currentData.last_name} kaydedildi!`);
 
-        // If there are more documents, go to next
         if (currentDocIndex < allDocuments.length - 1) {
           setCurrentDocIndex(prev => prev + 1);
           toast.info('Sonraki kimlik bilgilerini kontrol edin.');
@@ -152,7 +190,7 @@ export default function ScanPage() {
         }
       }
     } catch (err) {
-      toast.error(`Kaydetme hatası: ${err.message}`);
+      toast.error(`Kaydetme hatasi: ${err.message}`);
     } finally {
       setSaving(false);
     }
@@ -168,6 +206,8 @@ export default function ScanPage() {
     navigate(`/guests/${guestId}`);
   }, [navigate]);
 
+  const selectedProviderOption = PROVIDER_OPTIONS.find(p => p.id === selectedProvider);
+
   return (
     <div className="space-y-4">
       {/* Header */}
@@ -176,51 +216,230 @@ export default function ScanPage() {
           Kimlik Tarama
         </h1>
         <p className="text-sm text-muted-foreground mt-0.5">
-          Kimlik kartını kameraya gösterin, bilgiler otomatik çıkarılacak (çoklu kimlik destekli)
+          Kimlik kartini kameraya gosterin, bilgiler otomatik cikarilacak (coklu kimlik destekli)
         </p>
-        {/* OCR Fallback Toggle */}
-        <div className="flex items-center gap-3 mt-2">
-          <Button variant={ocrFallbackMode ? "default" : "outline"} size="sm" onClick={() => setOcrFallbackMode(!ocrFallbackMode)}>
-            {ocrFallbackMode ? <WifiOff className="w-4 h-4 mr-1" /> : <Wifi className="w-4 h-4 mr-1" />}
-            {ocrFallbackMode ? 'Offline OCR Modu (Aktif)' : 'AI Tarama Modu'}
+
+        {/* Provider Selection Toggle */}
+        <div className="flex items-center gap-2 mt-3 flex-wrap">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowProviderPanel(!showProviderPanel)}
+            className={`${selectedProviderOption?.bg} ${selectedProviderOption?.border} ${selectedProviderOption?.color}`}
+          >
+            {selectedProviderOption && <selectedProviderOption.icon className="w-4 h-4 mr-1.5" />}
+            {selectedProviderOption?.label || 'Provider Sec'}
+            <Settings2 className="w-3.5 h-3.5 ml-1.5 opacity-60" />
           </Button>
-          {ocrFallbackMode && (
+
+          {selectedProvider !== 'auto' && selectedProvider !== 'tesseract' && (
+            <Badge variant="outline" className="text-xs">
+              <DollarSign className="w-3 h-3 mr-0.5" />
+              {PROVIDER_OPTIONS.find(p => p.id === selectedProvider)?.cost || ''}
+            </Badge>
+          )}
+
+          {selectedProvider === 'tesseract' && (
             <Badge variant="outline" className="text-amber-600 border-amber-200 bg-amber-50">
-              Tesseract OCR - Düşük doğruluk
+              <WifiOff className="w-3 h-3 mr-1" />
+              Offline OCR - Dusuk dogruluk
+            </Badge>
+          )}
+
+          {selectedProvider === 'auto' && (
+            <Badge variant="outline" className="text-purple-600 border-purple-200 bg-purple-50">
+              <Brain className="w-3 h-3 mr-1" />
+              Goruntu kalitesine gore otomatik secim
             </Badge>
           )}
         </div>
+
+        {/* Provider Selection Panel */}
+        {showProviderPanel && (
+          <Card className="mt-3 border-2">
+            <CardContent className="p-3">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm font-medium">Tarama Saglayicisi Sec</p>
+                <Button variant="ghost" size="sm" onClick={() => setShowProviderPanel(false)} className="h-6 px-2 text-xs">
+                  Kapat
+                </Button>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
+                {PROVIDER_OPTIONS.map((option) => {
+                  const Icon = option.icon;
+                  const isSelected = selectedProvider === option.id;
+                  return (
+                    <button
+                      key={option.id}
+                      onClick={() => { setSelectedProvider(option.id); setShowProviderPanel(false); }}
+                      className={`flex flex-col items-start p-2.5 rounded-lg border-2 text-left transition-all ${
+                        isSelected
+                          ? `${option.border} ${option.bg} ring-2 ring-offset-1 ring-current`
+                          : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                      }`}
+                    >
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <Icon className={`w-4 h-4 ${isSelected ? option.color : 'text-gray-400'}`} />
+                        <span className={`text-sm font-medium ${isSelected ? option.color : 'text-gray-700'}`}>
+                          {option.label}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground leading-tight">{option.description}</p>
+                      {option.cost && (
+                        <span className="text-[10px] mt-1 px-1.5 py-0.5 rounded bg-white/80 border text-muted-foreground">
+                          {option.cost}/tarama
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="mt-2 p-2 rounded-md bg-blue-50 border border-blue-200">
+                <div className="flex items-start gap-1.5">
+                  <Info className="w-3.5 h-3.5 text-blue-500 mt-0.5 shrink-0" />
+                  <p className="text-[11px] text-blue-700">
+                    <strong>Akilli Mod</strong> goruntu kalitesine gore en uygun saglayiciyi otomatik secer.
+                    Yuksek kaliteli goruntulerde ucuz provider, dusuk kalitede en iyi provider kullanilir.
+                    AI basarisiz olursa Tesseract OCR otomatik devreye girer.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
-      {/* Image Quality Warning */}
+      {/* Image Quality Warning (Enhanced) */}
       {imageQuality && imageQuality.quality_checked && imageQuality.warnings?.length > 0 && (
         <Card className={`border-2 ${imageQuality.overall_quality === 'poor' ? 'border-red-200 bg-red-50/50' : 'border-amber-200 bg-amber-50/50'}`}>
           <CardContent className="p-3">
             <div className="flex items-start gap-2">
-              <AlertTriangle className={`w-5 h-5 mt-0.5 ${imageQuality.overall_quality === 'poor' ? 'text-red-500' : 'text-amber-500'}`} />
-              <div>
-                <p className="font-medium text-sm">
-                  Görüntü Kalitesi: {imageQuality.overall_quality === 'good' ? 'İyi' : imageQuality.overall_quality === 'acceptable' ? 'Kabul Edilebilir' : 'Düşük'}
-                  <span className="ml-2 text-muted-foreground">({imageQuality.overall_score}/100)</span>
-                </p>
+              <AlertTriangle className={`w-5 h-5 mt-0.5 shrink-0 ${imageQuality.overall_quality === 'poor' ? 'text-red-500' : 'text-amber-500'}`} />
+              <div className="flex-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className="font-medium text-sm">
+                    Goruntu Kalitesi: {imageQuality.overall_quality === 'good' ? 'Iyi' : imageQuality.overall_quality === 'acceptable' ? 'Kabul Edilebilir' : 'Dusuk'}
+                  </p>
+                  <Badge variant="outline" className={`text-xs ${
+                    imageQuality.overall_score >= 80 ? 'text-green-600 border-green-200' :
+                    imageQuality.overall_score >= 50 ? 'text-amber-600 border-amber-200' :
+                    'text-red-600 border-red-200'
+                  }`}>
+                    {imageQuality.overall_score}/100
+                  </Badge>
+                  {imageQuality.suggested_provider && (
+                    <Badge variant="outline" className="text-xs text-blue-600 border-blue-200">
+                      Onerilen: {imageQuality.suggested_provider}
+                    </Badge>
+                  )}
+                </div>
                 <ul className="text-xs text-muted-foreground mt-1 space-y-0.5">
-                  {imageQuality.warnings.map((w, i) => <li key={i}>• {w}</li>)}
+                  {imageQuality.warnings.map((w, i) => <li key={i}>&#8226; {w}</li>)}
                 </ul>
+
+                {/* Enhancement Recommendations */}
+                {imageQuality.recommendations && imageQuality.recommendations.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {imageQuality.recommendations.map((rec, i) => {
+                      const RecIcon = RECOMMENDATION_ICONS[rec.icon] || AlertTriangle;
+                      return (
+                        <div key={i} className={`flex items-center gap-1 px-2 py-1 rounded text-[11px] ${
+                          rec.priority === 'high' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'
+                        }`}>
+                          <RecIcon className="w-3 h-3" />
+                          <span>{rec.action}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Quality Detail Checks */}
+                {imageQuality.checks && (
+                  <div className="mt-2 flex flex-wrap gap-1">
+                    {Object.entries(imageQuality.checks).map(([key, check]) => {
+                      const isOk = check.score_penalty === 0;
+                      const label = {
+                        blur: 'Netlik', brightness: 'Aydinlik', resolution: 'Cozunurluk',
+                        contrast: 'Kontrast', glare: 'Parlama', document_edges: 'Kenar',
+                        skew: 'Egiklik'
+                      }[key] || key;
+                      return (
+                        <span key={key} className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] ${
+                          isOk ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                        }`}>
+                          {isOk ? '✓' : '✗'} {label}
+                        </span>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             </div>
           </CardContent>
         </Card>
       )}
 
-      {/* MRZ Results */}
+      {/* Provider Info */}
+      {providerInfo && (
+        <Card className="border-blue-200 bg-blue-50/50">
+          <CardContent className="p-2.5">
+            <div className="flex items-center gap-2 flex-wrap">
+              <Shield className="w-4 h-4 text-blue-500" />
+              <span className="text-xs font-medium text-blue-700">
+                Tarama: {providerInfo.name || providerInfo.provider}
+              </span>
+              {providerInfo.response_time && (
+                <Badge variant="outline" className="text-[10px] text-blue-600 border-blue-200">
+                  {providerInfo.response_time}s
+                </Badge>
+              )}
+              {providerInfo.cost !== undefined && providerInfo.cost > 0 && (
+                <Badge variant="outline" className="text-[10px] text-green-600 border-green-200">
+                  ~${providerInfo.cost}
+                </Badge>
+              )}
+              {providerInfo.fallback_used && (
+                <Badge variant="outline" className="text-[10px] text-amber-600 border-amber-200 bg-amber-50">
+                  Fallback kullanildi
+                </Badge>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* MRZ Results (Enhanced) */}
       {mrzResults.length > 0 && (
         <Card className="border-green-200 bg-green-50/50">
           <CardContent className="p-3">
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-5 h-5 text-green-500" />
-              <div>
-                <p className="font-medium text-sm text-green-700">MRZ Bölgesi Okundu</p>
+            <div className="flex items-start gap-2">
+              <CheckCircle2 className="w-5 h-5 text-green-500 mt-0.5 shrink-0" />
+              <div className="flex-1">
+                <p className="font-medium text-sm text-green-700">MRZ Bolgesi Okundu</p>
                 <p className="text-xs text-green-600">{mrzResults[0]?.message}</p>
+                <div className="flex flex-wrap gap-1 mt-1.5">
+                  {mrzResults[0]?.mrz_type && (
+                    <Badge variant="outline" className="text-[10px] text-green-600 border-green-200">
+                      {mrzResults[0].mrz_type} Format
+                    </Badge>
+                  )}
+                  {mrzResults[0]?.icao_compliant && (
+                    <Badge variant="outline" className="text-[10px] text-green-600 border-green-200">
+                      ICAO 9303 Uyumlu
+                    </Badge>
+                  )}
+                  {mrzResults[0]?.ocr_corrected && (
+                    <Badge variant="outline" className="text-[10px] text-amber-600 border-amber-200">
+                      OCR Duzeltme Uygulandi
+                    </Badge>
+                  )}
+                  {mrzResults[0]?.fuzzy_matched && (
+                    <Badge variant="outline" className="text-[10px] text-amber-600 border-amber-200">
+                      Fuzzy Esleme
+                    </Badge>
+                  )}
+                </div>
               </div>
             </div>
           </CardContent>
@@ -237,7 +456,12 @@ export default function ScanPage() {
           {extracting && (
             <div className="mb-3 flex items-center gap-2 px-3 py-2 rounded-lg bg-[var(--brand-sky-soft)] text-[var(--brand-sky)] text-sm">
               <Loader2 className="w-4 h-4 animate-spin" />
-              AI kimlik okuma yapılıyor, lütfen bekleyin...
+              {selectedProvider === 'tesseract'
+                ? 'Offline OCR tarama yapiliyor...'
+                : selectedProvider === 'auto'
+                  ? 'Akilli tarama yapiliyor (en uygun provider seciliyor)...'
+                  : `${selectedProviderOption?.label} ile tarama yapiliyor...`
+              }
             </div>
           )}
 
@@ -249,7 +473,7 @@ export default function ScanPage() {
                   <div className="flex items-center gap-2">
                     <Users className="w-4 h-4 text-[var(--brand-sky)]" />
                     <span className="text-sm font-medium">
-                      {allDocuments.length} kimlik algılandı
+                      {allDocuments.length} kimlik algilandi
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
