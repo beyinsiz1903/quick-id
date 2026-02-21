@@ -389,12 +389,7 @@ metadata:
   run_ui: true
 
 test_plan:
-  current_focus:
-    - "TC Kimlik Page"
-    - "Properties Page"
-    - "Kiosk & Offline Page"
-    - "Face Match Page"
-    - "Navigation Updates"
+  current_focus: []
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
