@@ -76,7 +76,7 @@ Authorization: Bearer <jwt_token>
 - **Admin**: admin@quickid.com / admin123
 - **Resepsiyon**: resepsiyon@quickid.com / resepsiyon123
     """,
-    version="2.0.0",
+    version="3.0.0",
     docs_url="/api/docs",
     redoc_url="/api/redoc",
     openapi_url="/api/openapi.json",
@@ -462,7 +462,7 @@ async def create_default_admin():
 # ===== AUTH ROUTES =====
 @app.get("/api/health", tags=["Sağlık"], summary="Sistem sağlık kontrolü")
 async def health():
-    return {"status": "healthy", "service": "Quick ID Reader", "version": "2.0.0"}
+    return {"status": "healthy", "service": "Quick ID Reader", "version": "3.0.0"}
 
 @app.get("/api/rate-limits", tags=["Sağlık"], summary="Rate limit bilgileri")
 async def get_rate_limits():
