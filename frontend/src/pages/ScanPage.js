@@ -360,9 +360,9 @@ export default function ScanPage() {
                     {Object.entries(imageQuality.checks).map(([key, check]) => {
                       const isOk = check.score_penalty === 0;
                       const label = {
-                        blur: 'Netlik', brightness: 'Aydinlik', resolution: 'Cozunurluk',
+                        blur: 'Netlik', brightness: 'Aydınlık', resolution: 'Çözünürlük',
                         contrast: 'Kontrast', glare: 'Parlama', document_edges: 'Kenar',
-                        skew: 'Egiklik'
+                        skew: 'Eğiklik'
                       }[key] || key;
                       return (
                         <span key={key} className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] ${
