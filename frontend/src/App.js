@@ -35,6 +35,8 @@ function AppRoutes() {
       <Route path="/guests/:id" element={<ProtectedRoute><AppShell><GuestDetail /></AppShell></ProtectedRoute>} />
       <Route path="/users" element={<ProtectedRoute adminOnly><AppShell><UserManagement /></AppShell></ProtectedRoute>} />
       <Route path="/settings" element={<ProtectedRoute adminOnly><AppShell><SettingsPage /></AppShell></ProtectedRoute>} />
+      <Route path="/kvkk" element={<ProtectedRoute adminOnly><AppShell><KvkkCompliancePage /></AppShell></ProtectedRoute>} />
+      <Route path="/api-docs" element={<ProtectedRoute adminOnly><AppShell><ApiDocsPage /></AppShell></ProtectedRoute>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
