@@ -20,6 +20,9 @@ import {
   Fingerprint,
   Building2,
   Monitor,
+  DoorOpen,
+  BarChart3,
+  UsersRound,
 } from 'lucide-react';
 
 export default function AppShell({ children }) {
@@ -32,9 +35,12 @@ export default function AppShell({ children }) {
     { path: '/scan', label: 'Tara', icon: ScanLine },
     { path: '/bulk-scan', label: 'Toplu Tarama', icon: Layers },
     { path: '/guests', label: 'Misafirler', icon: Users },
+    { path: '/group-checkin', label: 'Grup Check-in', icon: UsersRound },
+    { path: '/rooms', label: 'Oda Yönetimi', icon: DoorOpen },
     { path: '/face-match', label: 'Yüz Eşleştirme', icon: UserCheck },
     { path: '/tc-kimlik', label: 'TC Kimlik & Emniyet', icon: Fingerprint },
     ...(isAdmin ? [
+      { path: '/monitoring', label: 'Monitoring', icon: BarChart3 },
       { path: '/properties', label: 'Tesisler', icon: Building2 },
       { path: '/kiosk', label: 'Kiosk & Offline', icon: Monitor },
       { path: '/users', label: 'Kullanıcılar', icon: UserCog },
