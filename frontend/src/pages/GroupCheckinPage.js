@@ -37,22 +37,20 @@ export default function GroupCheckinPage() {
   const [processing, setProcessing] = useState(false);
   const [result, setResult] = useState(null);
 
-  const headers = { Authorization: `Bearer ${token}` };
-
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       const [guestsRes, roomsRes] = await Promise.allSettled([
-        api.get('/api/guests?status=pending&limit=100', { headers }),
-        api.get('/api/rooms?status=available', { headers }),
+        fetchJSON('/api/guests?status=pending&limit=100'),
+        fetchJSON('/api/rooms?status=available'),
       ]);
-      if (guestsRes.status === 'fulfilled') setGuests(guestsRes.value.data.guests || []);
-      if (roomsRes.status === 'fulfilled') setRooms(roomsRes.value.data.rooms || []);
+      if (guestsRes.status === 'fulfilled') setGuests(guestsRes.value.guests || []);
+      if (roomsRes.status === 'fulfilled') setRooms(roomsRes.value.rooms || []);
     } catch (e) {
       console.error(e);
     }
     setLoading(false);
-  }, [token]);
+  }, []);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
@@ -71,12 +69,12 @@ export default function GroupCheckinPage() {
         guest_ids: selectedGuests,
         ...(selectedRoom ? { room_id: selectedRoom } : {}),
       };
-      const res = await api.post('/api/guests/group-checkin', payload, { headers });
-      setResult(res.data);
+      const data = await postJSON('/api/guests/group-checkin', payload);
+      setResult(data);
       setSelectedGuests([]);
       fetchData();
     } catch (e) {
-      setResult({ success: false, error: e.response?.data?.detail || 'Hata oluştu' });
+      setResult({ success: false, error: e.message || 'Hata oluştu' });
     }
     setProcessing(false);
   };
