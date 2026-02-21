@@ -115,7 +115,7 @@ export default function ScanPage() {
     } finally {
       setExtracting(false);
     }
-  }, []);
+  }, [ocrFallbackMode]);
 
   const handleSave = useCallback(async (forceCreate = false) => {
     if (!currentData) return;
