@@ -293,7 +293,7 @@ async def extract_with_provider(provider_id: str, image_base64: str) -> dict:
             **result,
         }
 
-    except Exception as e:
+    except Exception:
         elapsed = time.time() - start_time
         update_provider_health(provider_id, False, elapsed)
         raise
