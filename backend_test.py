@@ -236,7 +236,7 @@ class QuickIDTester:
         
         if response.status_code == 200:
             result = response.json()
-            print(f"✅ Group check-in successful: {result['checked_in_count']} guests")
+            print(f"✅ Group check-in successful: {result['successful_count']} guests")
         else:
             print(f"❌ Group check-in failed: {response.status_code} - {response.text}")
     
