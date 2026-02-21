@@ -431,7 +431,7 @@ export default function ScanPage() {
                   )}
                   {mrzResults[0]?.ocr_corrected && (
                     <Badge variant="outline" className="text-[10px] text-amber-600 border-amber-200">
-                      OCR Duzeltme Uygulandi
+                      OCR Düzeltme Uygulandı
                     </Badge>
                   )}
                   {mrzResults[0]?.fuzzy_matched && (
