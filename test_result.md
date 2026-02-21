@@ -297,63 +297,78 @@ frontend:
 
   - task: "Face Match Page"
     implemented: true
-    working: "NA"
+    working: true
     file: "pages/FaceMatchPage.js"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "NA"
         - agent: "main"
         - comment: "/face-match route. Yüz eşleştirme + canlılık testi tabları."
+        - working: true
+        - agent: "testing"
+        - comment: "✅ TESTED: /face-match page loads with both tabs (Yüz Eşleştirme, Canlılık Testi). Two upload areas present (Belge Fotoğrafı, Canlı Fotoğraf Selfie). 'Yüzleri Karşılaştır' button exists. Canlılık Testi tab shows 'Canlılık Testi Başlat' button. UI structure correct and functional."
 
   - task: "TC Kimlik Page"
     implemented: true
-    working: "NA"
+    working: true
     file: "pages/TcKimlikPage.js"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "NA"
         - agent: "main"
         - comment: "/tc-kimlik route. TC doğrulama + Emniyet bildirimi tabları."
+        - working: true
+        - agent: "testing"
+        - comment: "✅ TESTED: /tc-kimlik page fully functional. Both tabs working (TC Doğrulama, Emniyet Bildirimi). TC validation tested: Valid TC '10000000146' shows 'Geçerli TC Kimlik No' with green checkmark and 5 validation steps passing. Invalid TC '12345678901' shows 'Geçersiz TC Kimlik No' with error explanation. Emniyet Bildirimi tab shows guest search and form history sections. All features working correctly."
 
   - task: "Properties Page"
     implemented: true
-    working: "NA"
+    working: true
     file: "pages/PropertiesPage.js"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "NA"
         - agent: "main"
         - comment: "/properties route. Tesis yönetimi + ön check-in QR tabları."
+        - working: true
+        - agent: "testing"
+        - comment: "✅ TESTED: /properties page working correctly. Both tabs functional (Tesisler, Ön Check-in). 'Test Otel' from backend tests displayed in properties list. 'Yeni Tesis' button opens dialog with all required fields (Name, City, Address, Phone). Ön Check-in tab shows 'Yeni QR Oluştur' button and pre-checkin tokens list. Property management and QR code features ready."
 
   - task: "Kiosk & Offline Page"
     implemented: true
-    working: "NA"
+    working: true
     file: "pages/KioskPage.js"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "NA"
         - agent: "main"
         - comment: "/kiosk route. Kiosk oturum yönetimi + offline sync tabları."
+        - working: true
+        - agent: "testing"
+        - comment: "✅ TESTED: /kiosk page fully operational. Both tabs working (Kiosk Modu, Offline Sync). Kiosk Modu shows Tesis dropdown, Kiosk name input, and 'Oturum Başlat' button. 'Lobby Terminal 1' session from backend tests displayed. Offline Sync tab shows sync management with 'Yenile' button and proper empty state. Minor: React hydration warnings for select/option elements (non-critical)."
 
   - task: "Navigation Updates"
     implemented: true
-    working: "NA"
+    working: true
     file: "components/AppShell.js"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "NA"
         - agent: "main"
         - comment: "Yeni nav items: Yüz Eşleştirme, TC Kimlik & Emniyet, Tesisler, Kiosk & Offline"
+        - working: true
+        - agent: "testing"
+        - comment: "✅ TESTED: Navigation sidebar contains ALL 12 required menu items: Genel Bakış, Tara, Toplu Tarama, Misafirler, Yüz Eşleştirme, TC Kimlik & Emniyet, Tesisler, Kiosk & Offline, Kullanıcılar, Ayarlar & KVKK, KVKK Uyumluluk, API Rehberi. All navigation items clickable and functional."
 
   - task: "PWA Setup"
     implemented: true
