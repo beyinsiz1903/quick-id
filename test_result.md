@@ -102,9 +102,141 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Quick ID Reader Hotel App - 8 büyük özellik: 1) AI güvenilirlik artırma + fallback 2) KVKK tam uyumluluk 3) API dokümantasyon 4) Test coverage 5) Ön check-in QR+mobil+PWA 6) Biyometrik yüz eşleştirme 7) TC Kimlik doğrulama + Emniyet bildirimi 8) Multi-property + Kiosk + Offline"
+user_problem_statement: "Quick ID Reader Hotel App - Tüm eksiklikler: Grup check-in, Oda atama, Form-C, Misafir fotoğraf, Rate limiting, AI maliyet, CORS, Güvenlik, Yedekleme, Monitoring, Google Vision/Tesseract OCR, MRZ parsing, Görüntü kalite kontrolü"
 
 backend:
+  - task: "Room Management CRUD + Auto-assign"
+    implemented: true
+    working: "NA"
+    file: "server.py, room_assignment.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+        - agent: "main"
+        - comment: "POST/GET/PATCH /api/rooms, POST /api/rooms/assign, POST /api/rooms/auto-assign, POST /api/rooms/{id}/release, GET /api/rooms/stats, GET /api/rooms/types"
+
+  - task: "Group Check-in"
+    implemented: true
+    working: "NA"
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+        - agent: "main"
+        - comment: "POST /api/guests/group-checkin - birden fazla misafiri tek işlemde check-in + opsiyonel oda atama"
+
+  - task: "Guest Photo Capture"
+    implemented: true
+    working: "NA"
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+        - agent: "main"
+        - comment: "POST /api/guests/{id}/photo, GET /api/guests/{id}/photo - check-in sırasında misafir fotoğrafı"
+
+  - task: "Form-C (Emniyet Bildirim Formatı)"
+    implemented: true
+    working: "NA"
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+        - agent: "main"
+        - comment: "GET /api/tc-kimlik/form-c/{guest_id} - Emniyet Müdürlüğü Form-C formatında yabancı misafir bildirimi"
+
+  - task: "Monitoring Dashboard API"
+    implemented: true
+    working: "NA"
+    file: "server.py, monitoring.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+        - agent: "main"
+        - comment: "GET /api/monitoring/dashboard, /scan-stats, /error-log, /ai-costs - Scan sayısı, başarı oranı, hata izleme, AI maliyet"
+
+  - task: "Backup/Restore"
+    implemented: true
+    working: "NA"
+    file: "server.py, backup_restore.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+        - agent: "main"
+        - comment: "POST /api/admin/backup, GET /api/admin/backups, POST /api/admin/restore, GET /api/admin/backup-schedule"
+
+  - task: "Offline OCR Fallback (Tesseract)"
+    implemented: true
+    working: "NA"
+    file: "server.py, ocr_fallback.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+        - agent: "main"
+        - comment: "POST /api/scan/ocr-fallback, GET /api/scan/ocr-status - Tesseract OCR fallback"
+
+  - task: "Image Quality Control"
+    implemented: true
+    working: "NA"
+    file: "server.py, image_quality.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+        - agent: "main"
+        - comment: "POST /api/scan/quality-check + /api/scan entegrasyonu - bulanıklık, karanlık, çözünürlük kontrolü"
+
+  - task: "MRZ Parsing"
+    implemented: true
+    working: "NA"
+    file: "server.py, mrz_parser.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+        - agent: "main"
+        - comment: "Pasaport MRZ otomatik okuma /api/scan entegrasyonu - TD1+TD3 formatları"
+
+  - task: "Security Hardening + CORS"
+    implemented: true
+    working: "NA"
+    file: "server.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+        - agent: "main"
+        - comment: "SecurityHeadersMiddleware, CORS whitelist from env, rate limiting enhanced"
+
+  - task: "Compliance Reports"
+    implemented: true
+    working: "NA"
+    file: "server.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+        - agent: "main"
+        - comment: "GET /api/compliance/reports - Emniyet, Form-C, KVKK uyumluluk raporları"
+
   - task: "AI Confidence Scoring - Scan endpoint"
     implemented: true
     working: true
@@ -115,9 +247,9 @@ backend:
     status_history:
         - working: true
         - agent: "main"
-        - comment: "Fallback mekanizması eklendi: AI başarısız olursa kullanıcıya rehberlik mesajları dönüyor."
+        - comment: "Önceden çalışıyordu"
 
-  - task: "KVKK Full Compliance - Rights Requests"
+  - task: "KVKK Full Compliance"
     implemented: true
     working: true
     file: "server.py, kvkk_compliance.py"
@@ -127,260 +259,80 @@ backend:
     status_history:
         - working: true
         - agent: "testing"
-        - comment: "Mevcut - önceki iterasyondan çalışıyor"
-
-  - task: "KVKK Public Consent Info"
-    implemented: true
-    working: true
-    file: "server.py"
-    stuck_count: 0
-    priority: "high"
-    needs_retesting: false
-    status_history:
-        - working: "NA"
-        - agent: "main"
-        - comment: "GET /api/kvkk/consent-info: Public KVKK bilgilendirme ve aydınlatma metni. Auth gerektirmez."
-        - working: true
-        - agent: "testing"
-        - comment: "✅ TESTED: GET /api/kvkk/consent-info başarıyla çalışıyor. Public endpoint, auth gerektirmez. Consent required: true, 5 hak türü listeleniyor. KVKK aydınlatma metni ve hak bilgileri düzgün döndürülüyor."
-
-  - task: "Biometric Face Matching"
-    implemented: true
-    working: true
-    file: "server.py, biometric.py"
-    stuck_count: 0
-    priority: "high"
-    needs_retesting: false
-    status_history:
-        - working: "NA"
-        - agent: "main"
-        - comment: "POST /api/biometric/face-compare, GET /api/biometric/liveness-challenge, POST /api/biometric/liveness-check. GPT-4o Vision ile yüz karşılaştırma ve canlılık testi."
-        - working: true
-        - agent: "testing"
-        - comment: "✅ TESTED: Biometric endpoints struktural olarak çalışıyor. GET /api/biometric/liveness-challenge ✅ (challenge: smile, session_id generated). GPT-4o Vision integration ready for face comparison and liveness detection. Auth not required for challenge endpoint."
-
-  - task: "TC Kimlik Validation"
-    implemented: true
-    working: true
-    file: "server.py, tc_kimlik.py"
-    stuck_count: 0
-    priority: "high"
-    needs_retesting: false
-    status_history:
-        - working: "NA"
-        - agent: "main"
-        - comment: "POST /api/tc-kimlik/validate: 11 haneli TC Kimlik No matematiksel algoritma ile doğrulama. POST /api/tc-kimlik/emniyet-bildirimi: Yabancı misafir Emniyet bildirimi formu."
-        - working: true
-        - agent: "testing"
-        - comment: "✅ TESTED: TC Kimlik validation tüm test senaryoları geçti. Geçerli TC (10000000146) ✅, geçersiz TC (12345678901) ❌ doğru redded, kısa TC (123) ❌ doğru reddedildi. Matematiksel algoritma çalışıyor. GET /api/tc-kimlik/emniyet-bildirimleri de çalışıyor (0 form)."
-
-  - task: "Pre-Checkin QR System"
-    implemented: true
-    working: true
-    file: "server.py, multi_property.py"
-    stuck_count: 0
-    priority: "high"
-    needs_retesting: false
-    status_history:
-        - working: "NA"
-        - agent: "main"
-        - comment: "POST /api/precheckin/create, GET /api/precheckin/{id} (public), POST /api/precheckin/{id}/scan (public), GET /api/precheckin/{id}/qr. QR kod ile ön check-in."
-        - working: true
-        - agent: "testing"
-        - comment: "✅ TESTED: Pre-checkin QR system tam çalışıyor. POST /api/precheckin/create ✅ (token created), GET /api/precheckin/{token} ✅ PUBLIC access (guest: Test Misafir), GET /api/precheckin/{token}/qr ✅ (PNG image 800 bytes), GET /api/precheckin/list ✅ (1 token listed). QR workflow complete."
-
-  - task: "Multi-Property Management"
-    implemented: true
-    working: true
-    file: "server.py, multi_property.py"
-    stuck_count: 0
-    priority: "high"
-    needs_retesting: false
-    status_history:
-        - working: "NA"
-        - agent: "main"
-        - comment: "CRUD /api/properties: Zincir otel desteği. Tesis bazlı veri izolasyonu."
-        - working: true
-        - agent: "testing"
-        - comment: "✅ TESTED: Multi-property management tüm CRUD operasyonları çalışıyor. POST /api/properties ✅ (Test Otel created), GET /api/properties ✅ (1 property listed), GET /api/properties/{id} ✅ (detay getirme), PATCH /api/properties/{id} ✅ (phone update). Property-based data isolation working."
-
-  - task: "Kiosk Mode"
-    implemented: true
-    working: true
-    file: "server.py, multi_property.py"
-    stuck_count: 0
-    priority: "high"
-    needs_retesting: false
-    status_history:
-        - working: "NA"
-        - agent: "main"
-        - comment: "POST /api/kiosk/session, GET /api/kiosk/sessions, POST /api/kiosk/scan. Self-servis lobby terminali."
-        - working: true
-        - agent: "testing"
-        - comment: "✅ TESTED: Kiosk mode endpoints çalışıyor. POST /api/kiosk/session ✅ (session created for Lobby Terminal 1), GET /api/kiosk/sessions ✅ (1 session listed). Kiosk session management active."
-
-  - task: "Offline Sync"
-    implemented: true
-    working: true
-    file: "server.py, multi_property.py"
-    stuck_count: 0
-    priority: "high"
-    needs_retesting: false
-    status_history:
-        - working: "NA"
-        - agent: "main"
-        - comment: "POST /api/sync/upload, GET /api/sync/pending, POST /api/sync/{id}/process. Offline veri senkronizasyonu."
-        - working: true
-        - agent: "testing"
-        - comment: "✅ TESTED: Offline sync workflow tam çalışıyor. POST /api/sync/upload ✅ (data uploaded for device001), GET /api/sync/pending ✅ (1 pending sync found), POST /api/sync/{id}/process ✅ (status changed to processed). Offline data synchronization complete."
-
-  - task: "API Documentation (Swagger/ReDoc/Guide)"
-    implemented: true
-    working: true
-    file: "server.py"
-    stuck_count: 0
-    priority: "high"
-    needs_retesting: false
-    status_history:
-        - working: true
-        - agent: "main"
-        - comment: "v3.0.0 olarak güncellendi. Yeni endpoint'ler eklendi: biyometrik, TC kimlik, ön check-in, multi-property, kiosk, offline sync."
-
-  - task: "Test Coverage - Unit Tests"
-    implemented: true
-    working: true
-    file: "tests/test_unit.py"
-    stuck_count: 0
-    priority: "medium"
-    needs_retesting: false
-    status_history:
-        - working: true
-        - agent: "testing"
-        - comment: "29 birim testi geçiyor"
-
-  - task: "Test Coverage - Integration Tests"
-    implemented: true
-    working: true
-    file: "tests/test_api.py"
-    stuck_count: 0
-    priority: "medium"
-    needs_retesting: false
-    status_history:
-        - working: true
-        - agent: "testing"
-        - comment: "37 entegrasyon testi geçiyor"
+        - comment: "Önceden çalışıyordu"
 
 frontend:
-  - task: "KVKK Uyumluluk Merkezi Sayfası"
-    implemented: true
-    working: true
-    file: "pages/KvkkCompliancePage.js"
-    stuck_count: 0
-    priority: "high"
-    needs_retesting: false
-    status_history:
-        - working: true
-        - agent: "testing"
-        - comment: "Önceki iterasyondan çalışıyor"
-
-  - task: "Pre-Checkin Page (Public/Mobile)"
+  - task: "Monitoring Dashboard Page"
     implemented: true
     working: "NA"
-    file: "pages/PreCheckinPage.js"
+    file: "pages/MonitoringPage.js"
     stuck_count: 0
     priority: "high"
     needs_retesting: true
     status_history:
         - working: "NA"
         - agent: "main"
-        - comment: "/precheckin/:tokenId public route. KVKK consent, kamera tarama, sonuç gösterimi. Mobil uyumlu."
+        - comment: "/monitoring route - Tarama istatistikleri, hata izleme, AI maliyet, uyumluluk, yedekleme"
 
-  - task: "Face Match Page"
+  - task: "Room Management Page"
     implemented: true
-    working: true
-    file: "pages/FaceMatchPage.js"
+    working: "NA"
+    file: "pages/RoomManagementPage.js"
     stuck_count: 0
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
         - working: "NA"
         - agent: "main"
-        - comment: "/face-match route. Yüz eşleştirme + canlılık testi tabları."
-        - working: true
-        - agent: "testing"
-        - comment: "✅ TESTED: /face-match page loads with both tabs (Yüz Eşleştirme, Canlılık Testi). Two upload areas present (Belge Fotoğrafı, Canlı Fotoğraf Selfie). 'Yüzleri Karşılaştır' button exists. Canlılık Testi tab shows 'Canlılık Testi Başlat' button. UI structure correct and functional."
+        - comment: "/rooms route - Oda CRUD, atama, durum değiştirme, istatistikler"
 
-  - task: "TC Kimlik Page"
+  - task: "Group Check-in Page"
     implemented: true
-    working: true
-    file: "pages/TcKimlikPage.js"
+    working: "NA"
+    file: "pages/GroupCheckinPage.js"
     stuck_count: 0
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
         - working: "NA"
         - agent: "main"
-        - comment: "/tc-kimlik route. TC doğrulama + Emniyet bildirimi tabları."
-        - working: true
-        - agent: "testing"
-        - comment: "✅ TESTED: /tc-kimlik page fully functional. Both tabs working (TC Doğrulama, Emniyet Bildirimi). TC validation tested: Valid TC '10000000146' shows 'Geçerli TC Kimlik No' with green checkmark and 5 validation steps passing. Invalid TC '12345678901' shows 'Geçersiz TC Kimlik No' with error explanation. Emniyet Bildirimi tab shows guest search and form history sections. All features working correctly."
+        - comment: "/group-checkin route - Toplu misafir seçimi, grup check-in, opsiyonel oda atama"
 
-  - task: "Properties Page"
+  - task: "ScanPage - Image Quality + OCR Fallback"
     implemented: true
-    working: true
-    file: "pages/PropertiesPage.js"
+    working: "NA"
+    file: "pages/ScanPage.js"
     stuck_count: 0
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
         - working: "NA"
         - agent: "main"
-        - comment: "/properties route. Tesis yönetimi + ön check-in QR tabları."
-        - working: true
-        - agent: "testing"
-        - comment: "✅ TESTED: /properties page working correctly. Both tabs functional (Tesisler, Ön Check-in). 'Test Otel' from backend tests displayed in properties list. 'Yeni Tesis' button opens dialog with all required fields (Name, City, Address, Phone). Ön Check-in tab shows 'Yeni QR Oluştur' button and pre-checkin tokens list. Property management and QR code features ready."
+        - comment: "Görüntü kalite uyarıları, MRZ sonuçları, Offline OCR modu toggle"
 
-  - task: "Kiosk & Offline Page"
+  - task: "GuestDetail - Photo + Room"
     implemented: true
-    working: true
-    file: "pages/KioskPage.js"
+    working: "NA"
+    file: "pages/GuestDetail.js"
     stuck_count: 0
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
         - working: "NA"
         - agent: "main"
-        - comment: "/kiosk route. Kiosk oturum yönetimi + offline sync tabları."
-        - working: true
-        - agent: "testing"
-        - comment: "✅ TESTED: /kiosk page fully operational. Both tabs working (Kiosk Modu, Offline Sync). Kiosk Modu shows Tesis dropdown, Kiosk name input, and 'Oturum Başlat' button. 'Lobby Terminal 1' session from backend tests displayed. Offline Sync tab shows sync management with 'Yenile' button and proper empty state. Minor: React hydration warnings for select/option elements (non-critical)."
+        - comment: "Fotoğraf çekimi butonu, otomatik oda atama butonu, oda bilgisi görüntüleme"
 
   - task: "Navigation Updates"
     implemented: true
-    working: true
+    working: "NA"
     file: "components/AppShell.js"
     stuck_count: 0
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
         - working: "NA"
         - agent: "main"
-        - comment: "Yeni nav items: Yüz Eşleştirme, TC Kimlik & Emniyet, Tesisler, Kiosk & Offline"
-        - working: true
-        - agent: "testing"
-        - comment: "✅ TESTED: Navigation sidebar contains ALL 12 required menu items: Genel Bakış, Tara, Toplu Tarama, Misafirler, Yüz Eşleştirme, TC Kimlik & Emniyet, Tesisler, Kiosk & Offline, Kullanıcılar, Ayarlar & KVKK, KVKK Uyumluluk, API Rehberi. All navigation items clickable and functional."
-
-  - task: "PWA Setup"
-    implemented: true
-    working: "NA"
-    file: "public/manifest.json"
-    stuck_count: 0
-    priority: "medium"
-    needs_retesting: false
-    status_history:
-        - working: "NA"
-        - agent: "main"
-        - comment: "manifest.json güncellendi. PWA temel yapılandırma."
+        - comment: "Yeni nav items: Grup Check-in, Oda Yönetimi, Monitoring"
 
 metadata:
   created_by: "main_agent"
