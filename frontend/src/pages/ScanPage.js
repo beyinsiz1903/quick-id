@@ -216,7 +216,7 @@ export default function ScanPage() {
           Kimlik Tarama
         </h1>
         <p className="text-sm text-muted-foreground mt-0.5">
-          Kimlik kartini kameraya gosterin, bilgiler otomatik cikarilacak (coklu kimlik destekli)
+          Kimlik kartını kameraya gösterin, bilgiler otomatik çıkarılacak (çoklu kimlik destekli)
         </p>
 
         {/* Provider Selection Toggle */}
