@@ -1840,15 +1840,21 @@ async def assign_room_endpoint(req: RoomAssignRequest, user=Depends(require_auth
 @app.post("/api/rooms/auto-assign", tags=["Oda Yönetimi"], summary="Otomatik oda ata",
           description="Scan sonrası müsait odayı otomatik atar")
 async def auto_assign_room_endpoint(req: AutoAssignRequest, user=Depends(require_auth)):
-    result = await auto_assign_room(db, guest_id=req.guest_id,
-                                     property_id=req.property_id,
-                                     preferred_type=req.preferred_type)
-    if not result:
-        raise HTTPException(status_code=404, detail="Müsait oda bulunamadı")
-    await create_audit_log(req.guest_id, "room_auto_assigned",
-                           metadata={"room_id": result["room"]["room_id"]},
-                           user_email=user.get("email"))
-    return {"success": True, **result}
+    try:
+        result = await auto_assign_room(db, guest_id=req.guest_id,
+                                         property_id=req.property_id,
+                                         preferred_type=req.preferred_type)
+        if not result:
+            raise HTTPException(status_code=404, detail="Müsait oda bulunamadı")
+        room_data = result.get("room", {})
+        assignment_data = result.get("assignment", {})
+        assignment_data.pop("_id", None)
+        await create_audit_log(req.guest_id, "room_auto_assigned",
+                               metadata={"room_id": room_data.get("room_id", "")},
+                               user_email=user.get("email"))
+        return {"success": True, "room": room_data, "assignment": serialize_doc(assignment_data) if isinstance(assignment_data, dict) else assignment_data}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @app.post("/api/rooms/{room_id}/release", tags=["Oda Yönetimi"], summary="Odayı serbest bırak")
