@@ -16,6 +16,10 @@ import {
   LogOut,
   Shield,
   BookOpen,
+  UserCheck,
+  Fingerprint,
+  Building2,
+  Monitor,
 } from 'lucide-react';
 
 export default function AppShell({ children }) {
@@ -28,7 +32,11 @@ export default function AppShell({ children }) {
     { path: '/scan', label: 'Tara', icon: ScanLine },
     { path: '/bulk-scan', label: 'Toplu Tarama', icon: Layers },
     { path: '/guests', label: 'Misafirler', icon: Users },
+    { path: '/face-match', label: 'Yüz Eşleştirme', icon: UserCheck },
+    { path: '/tc-kimlik', label: 'TC Kimlik & Emniyet', icon: Fingerprint },
     ...(isAdmin ? [
+      { path: '/properties', label: 'Tesisler', icon: Building2 },
+      { path: '/kiosk', label: 'Kiosk & Offline', icon: Monitor },
       { path: '/users', label: 'Kullanıcılar', icon: UserCog },
       { path: '/settings', label: 'Ayarlar & KVKK', icon: Settings },
       { path: '/kvkk', label: 'KVKK Uyumluluk', icon: Shield },
