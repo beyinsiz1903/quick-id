@@ -175,6 +175,7 @@ async def assign_room(db: AsyncIOMotorDatabase, room_id: str, guest_id: str) -> 
         "status": "active",
     }
     await assignments_col.insert_one(assignment)
+    assignment.pop("_id", None)  # Remove MongoDB _id for JSON serialization
     
     updated_room = await col.find_one({"_id": room["_id"]})
     if updated_room:
