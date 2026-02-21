@@ -327,6 +327,18 @@ export default function GuestDetail() {
               <InfoRow icon={User} label="Cinsiyet" value={guest.gender === 'M' ? 'Erkek' : guest.gender === 'F' ? 'Kadın' : guest.gender} field="gender" type="select-gender" />
               <InfoRow icon={Globe} label="Uyruk" value={guest.nationality} field="nationality" />
               <InfoRow icon={MapPin} label="Doğum Yeri" value={guest.birth_place} field="birth_place" />
+              {guest.room_number && (
+                <InfoRow icon={DoorOpen} label="Oda No" value={guest.room_number} />
+              )}
+              {(guest.has_photo || guestPhoto) && (
+                <div className="flex items-center gap-3 py-2.5 border-b border-[hsl(var(--border))]">
+                  <Camera className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-0.5">Fotoğraf</p>
+                    <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50">Çekildi</Badge>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
 
