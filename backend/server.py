@@ -43,7 +43,47 @@ def get_user_or_ip(request: Request) -> str:
 
 limiter = Limiter(key_func=get_user_or_ip)
 
-app = FastAPI(title="Quick ID Reader")
+app = FastAPI(
+    title="Quick ID Reader API",
+    description="""
+## Otel Kimlik Okuyucu Sistemi API
+
+Quick ID Reader, otel resepsiyon operasyonları için geliştirilmiş kimlik tarama ve misafir yönetim sistemidir.
+
+### Özellikler:
+- **AI Kimlik Tarama**: GPT-4o Vision ile kimlik belgelerinden otomatik bilgi çıkarımı
+- **Misafir Yönetimi**: CRUD, check-in/check-out, toplu tarama
+- **KVKK Uyumluluğu**: Tam 6698 sayılı kanun uyumluluğu
+- **Güvenlik**: JWT auth, RBAC, rate limiting, denetim izi
+
+### Kimlik Doğrulama:
+Tüm korumalı endpoint'ler Bearer token gerektirir:
+```
+Authorization: Bearer <jwt_token>
+```
+
+### Varsayılan Hesaplar:
+- **Admin**: admin@quickid.com / admin123
+- **Resepsiyon**: resepsiyon@quickid.com / resepsiyon123
+    """,
+    version="2.0.0",
+    docs_url="/api/docs",
+    redoc_url="/api/redoc",
+    openapi_url="/api/openapi.json",
+    openapi_tags=[
+        {"name": "Sağlık", "description": "Sistem sağlık kontrolleri"},
+        {"name": "Kimlik Doğrulama", "description": "Giriş, token yönetimi"},
+        {"name": "Kullanıcı Yönetimi", "description": "Admin kullanıcı CRUD işlemleri"},
+        {"name": "Tarama", "description": "AI kimlik tarama ve inceleme kuyruğu"},
+        {"name": "Misafirler", "description": "Misafir CRUD, check-in/check-out"},
+        {"name": "Denetim İzi", "description": "Audit trail ve değişiklik geçmişi"},
+        {"name": "Dashboard", "description": "İstatistikler ve genel bakış"},
+        {"name": "Dışa Aktarım", "description": "CSV/JSON veri dışa aktarımı"},
+        {"name": "KVKK Ayarları", "description": "KVKK/GDPR yapılandırma"},
+        {"name": "KVKK Uyumluluk", "description": "Hak talepleri, VERBİS, veri envanteri"},
+        {"name": "API Rehberi", "description": "Entegrasyon rehberi ve dokümantasyon"},
+    ]
+)
 app.state.limiter = limiter
 
 @app.exception_handler(RateLimitExceeded)
