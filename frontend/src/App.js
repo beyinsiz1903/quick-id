@@ -11,6 +11,8 @@ import GuestList from './pages/GuestList';
 import GuestDetail from './pages/GuestDetail';
 import UserManagement from './pages/UserManagement';
 import SettingsPage from './pages/SettingsPage';
+import KvkkCompliancePage from './pages/KvkkCompliancePage';
+import ApiDocsPage from './pages/ApiDocsPage';
 import './App.css';
 
 function ProtectedRoute({ children, adminOnly = false }) {
