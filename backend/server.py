@@ -394,11 +394,11 @@ async def create_default_admin():
 
 
 # ===== AUTH ROUTES =====
-@app.get("/api/health")
+@app.get("/api/health", tags=["Sağlık"], summary="Sistem sağlık kontrolü")
 async def health():
-    return {"status": "healthy", "service": "Quick ID Reader"}
+    return {"status": "healthy", "service": "Quick ID Reader", "version": "2.0.0"}
 
-@app.get("/api/rate-limits")
+@app.get("/api/rate-limits", tags=["Sağlık"], summary="Rate limit bilgileri")
 async def get_rate_limits():
     """Return rate limit configuration for the frontend"""
     return {
