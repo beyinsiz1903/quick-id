@@ -298,8 +298,8 @@ export default function ScanPage() {
                 <div className="flex items-start gap-1.5">
                   <Info className="w-3.5 h-3.5 text-blue-500 mt-0.5 shrink-0" />
                   <p className="text-[11px] text-blue-700">
-                    <strong>Akilli Mod</strong> goruntu kalitesine gore en uygun saglayiciyi otomatik secer.
-                    Yuksek kaliteli goruntulerde ucuz provider, dusuk kalitede en iyi provider kullanilir.
+                    <strong>Akıllı Mod</strong> görüntü kalitesine göre en uygun sağlayıcıyı otomatik seçer.
+                    Yüksek kaliteli görüntülerde ucuz provider, düşük kalitede en iyi provider kullanılır.
                     AI başarısız olursa Tesseract OCR otomatik devreye girer.
                   </p>
                 </div>
