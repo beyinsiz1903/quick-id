@@ -329,7 +329,7 @@ export default function ScanPage() {
                   </Badge>
                   {imageQuality.suggested_provider && (
                     <Badge variant="outline" className="text-xs text-blue-600 border-blue-200">
-                      Onerilen: {imageQuality.suggested_provider}
+                      Önerilen: {imageQuality.suggested_provider}
                     </Badge>
                   )}
                 </div>
