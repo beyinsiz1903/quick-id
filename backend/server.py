@@ -687,16 +687,53 @@ async def anonymize_guest_endpoint(guest_id: str, user=Depends(require_admin)):
 
 # ===== SCAN ENDPOINTS =====
 @app.post("/api/scan", tags=["Tarama"], summary="Kimlik belgesi tara",
-          description="AI (GPT-4o Vision) ile kimlik belgesini tarayıp bilgi çıkarır. Confidence score ile güvenilirlik puanı hesaplar.")
+          description="AI (GPT-4o Vision) ile kimlik belgesini tarayıp bilgi çıkarır. Görüntü kalite kontrolü + MRZ parsing + Confidence score.")
 @limiter.limit("15/minute")
 async def scan_id(request: Request, scan_req: ScanRequest, user=Depends(require_auth)):
     try:
+        # Step 1: Image quality check
+        quality = assess_image_quality(scan_req.image_base64)
+        
+        if quality.get("quality_checked") and not quality.get("pass", True):
+            # Return quality warning but still try to scan
+            pass
+        
+        # Step 2: AI extraction
         extracted = await extract_id_data(scan_req.image_base64)
         documents = extracted.get("documents", [])
         document_count = extracted.get("document_count", len(documents))
 
-        # Calculate confidence score
+        # Step 3: Calculate confidence score
         confidence = calculate_confidence_score(extracted)
+
+        # Step 4: MRZ parsing from raw text
+        mrz_results = []
+        for doc in documents:
+            raw_text = doc.get("raw_extracted_text", "")
+            if raw_text:
+                mrz = parse_mrz_from_text(raw_text)
+                if mrz.get("mrz_detected"):
+                    mrz_results.append(mrz)
+                    # Enrich document data with MRZ info
+                    mrz_data = mrz["mrz_data"]
+                    if mrz_data.get("first_name") and not doc.get("first_name"):
+                        doc["first_name"] = mrz_data["first_name"]
+                    if mrz_data.get("last_name") and not doc.get("last_name"):
+                        doc["last_name"] = mrz_data["last_name"]
+                    if mrz_data.get("birth_date") and not doc.get("birth_date"):
+                        doc["birth_date"] = mrz_data["birth_date"]
+                    if mrz_data.get("expiry_date") and not doc.get("expiry_date"):
+                        doc["expiry_date"] = mrz_data["expiry_date"]
+                    if mrz_data.get("passport_number") and not doc.get("document_number"):
+                        doc["document_number"] = mrz_data["passport_number"]
+
+        # Step 5: Track AI cost
+        try:
+            await track_ai_cost(db, model="gpt-4o", operation="id_scan",
+                              input_tokens=1000, output_tokens=500,
+                              estimated_cost=0.01)
+        except Exception:
+            pass
 
         scan_doc = {
             "extracted_data": extracted,
@@ -710,9 +747,15 @@ async def scan_id(request: Request, scan_req: ScanRequest, user=Depends(require_
             "confidence_score": confidence.get("overall_score", 0),
             "confidence_level": confidence.get("confidence_level", "low"),
             "review_status": "needs_review" if confidence.get("review_needed") else "auto_approved",
+            "image_quality": quality,
+            "mrz_results": mrz_results,
         }
         for doc in documents:
             scan_doc["warnings"].extend(doc.get("warnings", []))
+        
+        # Add quality warnings
+        if quality.get("warnings"):
+            scan_doc["warnings"].extend(quality["warnings"])
 
         result = await scans_col.insert_one(scan_doc)
         scan_doc["_id"] = result.inserted_id
@@ -724,6 +767,8 @@ async def scan_id(request: Request, scan_req: ScanRequest, user=Depends(require_
             "document_count": document_count,
             "documents": documents,
             "confidence": confidence,
+            "image_quality": quality,
+            "mrz_results": mrz_results,
         }
     except Exception as e:
         error_str = str(e)
