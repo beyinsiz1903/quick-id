@@ -15,11 +15,11 @@ import {
 } from 'lucide-react';
 
 const PROVIDER_OPTIONS = [
-  { id: 'auto', label: 'Akilli Mod', icon: Brain, description: 'Kaliteye gore otomatik secim', color: 'text-purple-600', bg: 'bg-purple-50', border: 'border-purple-200' },
-  { id: 'gpt-4o', label: 'GPT-4o', icon: Brain, description: 'En yuksek dogruluk', color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-200', cost: '$0.015' },
-  { id: 'gpt-4o-mini', label: 'GPT-4o Mini', icon: Zap, description: 'Hizli ve ucuz', color: 'text-green-600', bg: 'bg-green-50', border: 'border-green-200', cost: '$0.003' },
+  { id: 'auto', label: 'Akıllı Mod', icon: Brain, description: 'Kaliteye göre otomatik seçim', color: 'text-purple-600', bg: 'bg-purple-50', border: 'border-purple-200' },
+  { id: 'gpt-4o', label: 'GPT-4o', icon: Brain, description: 'En yüksek doğruluk', color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-200', cost: '$0.015' },
+  { id: 'gpt-4o-mini', label: 'GPT-4o Mini', icon: Zap, description: 'Hızlı ve ucuz', color: 'text-green-600', bg: 'bg-green-50', border: 'border-green-200', cost: '$0.003' },
   { id: 'gemini-flash', label: 'Gemini Flash', icon: Globe, description: 'Google alternatifi', color: 'text-orange-600', bg: 'bg-orange-50', border: 'border-orange-200', cost: '$0.004' },
-  { id: 'tesseract', label: 'Offline OCR', icon: WifiOff, description: 'Internet gerektirmez', color: 'text-gray-600', bg: 'bg-gray-50', border: 'border-gray-200', cost: 'Ucretsiz' },
+  { id: 'tesseract', label: 'Offline OCR', icon: WifiOff, description: 'İnternet gerektirmez', color: 'text-gray-600', bg: 'bg-gray-50', border: 'border-gray-200', cost: 'Ücretsiz' },
 ];
 
 const RECOMMENDATION_ICONS = {
