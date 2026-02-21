@@ -32,7 +32,6 @@ async function patchJSON(path, body) {
 }
 
 export default function RoomManagementPage() {
-  const { token } = useAuth();
   const [rooms, setRooms] = useState([]);
   const [stats, setStats] = useState(null);
   const [roomTypes, setRoomTypes] = useState([]);
