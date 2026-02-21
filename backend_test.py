@@ -1,674 +1,559 @@
 #!/usr/bin/env python3
 """
-Quick ID Reader Hotel App - Backend Testing Suite
-Comprehensive testing for all backend endpoints including new features.
-Uses production URL from frontend .env configuration.
+Backend API Testing Script for Quick ID Reader Hotel App v3.0
+Tests all new backend endpoints for KVKK, TC Kimlik, Pre-Checkin, Multi-Property, Kiosk, Offline, and Biometric features
 """
+
 import requests
 import json
 import base64
-import time
-from datetime import datetime, timezone
+import io
+from PIL import Image
 import sys
-import uuid
+import time
 
-# Load backend URL from frontend config
-def get_backend_url():
-    try:
-        with open('/app/frontend/.env', 'r') as f:
-            for line in f:
-                if line.startswith('REACT_APP_BACKEND_URL='):
-                    return line.split('=', 1)[1].strip()
-    except:
-        pass
-    return "http://localhost:8001"
+# Backend URL from environment
+BACKEND_URL = "https://yuz-eslestir.preview.emergentagent.com"
+API_BASE = f"{BACKEND_URL}/api"
 
-BASE_URL = get_backend_url() + "/api"
-print(f"Testing backend at: {BASE_URL}")
-
-# Test credentials
-ADMIN_EMAIL = "admin@quickid.com"
-ADMIN_PASSWORD = "admin123" 
-RECEPTION_EMAIL = "resepsiyon@quickid.com"
-RECEPTION_PASSWORD = "resepsiyon123"
-
-# Global test state
-admin_token = None
-reception_token = None
-test_guest_id = None
-test_scan_id = None
-test_request_id = None
-
-class TestResult:
+class APITester:
     def __init__(self):
-        self.passed = 0
-        self.failed = 0
-        self.errors = []
-    
-    def success(self, test_name):
-        self.passed += 1
-        print(f"✅ {test_name}")
-    
-    def failure(self, test_name, error):
-        self.failed += 1
-        self.errors.append(f"{test_name}: {error}")
-        print(f"❌ {test_name}: {error}")
-    
-    def summary(self):
-        total = self.passed + self.failed
-        print(f"\n🔸 TEST SUMMARY:")
-        print(f"   Total: {total}, Passed: {self.passed}, Failed: {self.failed}")
-        if self.errors:
-            print("\n🔸 FAILURES:")
-            for error in self.errors:
-                print(f"   - {error}")
-        return self.failed == 0
-
-result = TestResult()
-
-def make_request(method, endpoint, headers=None, json_data=None, params=None):
-    """Make HTTP request with error handling"""
-    try:
-        url = f"{BASE_URL}{endpoint}"
-        response = requests.request(method, url, headers=headers, json=json_data, params=params, timeout=30)
-        return response
-    except Exception as e:
-        raise Exception(f"Request failed: {str(e)}")
-
-def get_auth_headers(token):
-    return {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
-
-# ============== AUTHENTICATION TESTS ==============
-
-def test_authentication():
-    global admin_token, reception_token
-    print("\n🔸 AUTHENTICATION TESTS")
-    
-    # Admin login
-    try:
-        response = make_request("POST", "/auth/login", 
-                              json_data={"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD})
-        if response.status_code == 200:
-            data = response.json()
-            admin_token = data["token"]
-            result.success("Admin login")
-        else:
-            result.failure("Admin login", f"Status {response.status_code}: {response.text}")
-    except Exception as e:
-        result.failure("Admin login", str(e))
-    
-    # Reception login
-    try:
-        response = make_request("POST", "/auth/login", 
-                              json_data={"email": RECEPTION_EMAIL, "password": RECEPTION_PASSWORD})
-        if response.status_code == 200:
-            data = response.json()
-            reception_token = data["token"]
-            result.success("Reception login")
-        else:
-            result.failure("Reception login", f"Status {response.status_code}: {response.text}")
-    except Exception as e:
-        result.failure("Reception login", str(e))
-    
-    # Get me endpoint
-    if admin_token:
-        try:
-            response = make_request("GET", "/auth/me", headers=get_auth_headers(admin_token))
-            if response.status_code == 200:
-                result.success("Get current user info")
-            else:
-                result.failure("Get current user info", f"Status {response.status_code}")
-        except Exception as e:
-            result.failure("Get current user info", str(e))
-
-# ============== HEALTH & API DOCUMENTATION TESTS ==============
-
-def test_api_documentation():
-    print("\n🔸 API DOCUMENTATION TESTS")
-    
-    # Health check
-    try:
-        response = make_request("GET", "/health")
-        if response.status_code == 200:
-            data = response.json()
-            if data.get("status") == "healthy":
-                result.success("Health check")
-            else:
-                result.failure("Health check", f"Unhealthy status: {data}")
-        else:
-            result.failure("Health check", f"Status {response.status_code}")
-    except Exception as e:
-        result.failure("Health check", str(e))
-    
-    # OpenAPI spec
-    try:
-        response = make_request("GET", "/openapi.json")
-        if response.status_code == 200:
-            data = response.json()
-            if "openapi" in data and "paths" in data:
-                result.success("OpenAPI JSON spec")
-            else:
-                result.failure("OpenAPI JSON spec", "Invalid OpenAPI structure")
-        else:
-            result.failure("OpenAPI JSON spec", f"Status {response.status_code}")
-    except Exception as e:
-        result.failure("OpenAPI JSON spec", str(e))
-    
-    # Swagger UI
-    try:
-        response = make_request("GET", "/docs")
-        if response.status_code == 200:
-            result.success("Swagger UI access")
-        else:
-            result.failure("Swagger UI access", f"Status {response.status_code}")
-    except Exception as e:
-        result.failure("Swagger UI access", str(e))
-    
-    # ReDoc
-    try:
-        response = make_request("GET", "/redoc")
-        if response.status_code == 200:
-            result.success("ReDoc access")
-        else:
-            result.failure("ReDoc access", f"Status {response.status_code}")
-    except Exception as e:
-        result.failure("ReDoc access", str(e))
-    
-    # API Integration Guide
-    try:
-        response = make_request("GET", "/guide")
-        if response.status_code == 200:
-            data = response.json()
-            if "endpoints" in data and "pms_integration_guide" in data:
-                result.success("API integration guide")
-            else:
-                result.failure("API integration guide", "Missing required sections")
-        else:
-            result.failure("API integration guide", f"Status {response.status_code}")
-    except Exception as e:
-        result.failure("API integration guide", str(e))
-
-# ============== AI CONFIDENCE SCORING TESTS ==============
-
-def test_ai_confidence_scanning():
-    global test_scan_id
-    print("\n🔸 AI CONFIDENCE SCORING TESTS")
-    
-    if not admin_token:
-        result.failure("AI Confidence Scoring", "No admin token available")
-        return
-    
-    # Create a mock base64 image for testing
-    test_image = base64.b64encode(b"fake_image_data_for_testing").decode()
-    
-    # Test scan endpoint with confidence scoring
-    try:
-        response = make_request("POST", "/scan", 
-                              headers=get_auth_headers(admin_token),
-                              json_data={"image_base64": test_image})
+        self.token = None
+        self.test_results = []
+        self.property_id = None
+        self.precheckin_token_id = None
+        self.sync_id = None
         
-        # Note: This will likely fail with actual AI processing, but we test the endpoint structure
-        if response.status_code in [200, 500]:  # 500 expected due to fake image
+    def log_result(self, test_name, success, details="", response_data=None):
+        """Log test results"""
+        result = {
+            "test": test_name,
+            "success": success, 
+            "details": details,
+            "response_data": response_data
+        }
+        self.test_results.append(result)
+        status = "✅ PASS" if success else "❌ FAIL"
+        print(f"{status}: {test_name}")
+        if details:
+            print(f"    {details}")
+        if not success and response_data:
+            print(f"    Response: {json.dumps(response_data, indent=2)[:200]}...")
+            
+    def create_test_image(self):
+        """Create a simple test image in base64 format"""
+        img = Image.new('RGB', (200, 200), color='blue')
+        buffer = io.BytesIO()
+        img.save(buffer, format='JPEG')
+        img_data = buffer.getvalue()
+        return base64.b64encode(img_data).decode()
+
+    def test_login(self):
+        """Test authentication"""
+        print("\n=== AUTHENTICATION TEST ===")
+        
+        try:
+            response = requests.post(f"{API_BASE}/auth/login", json={
+                "email": "admin@quickid.com",
+                "password": "admin123"
+            })
+            
             if response.status_code == 200:
                 data = response.json()
-                if "confidence" in data:
-                    result.success("Scan endpoint with confidence scoring")
-                    if "scan" in data and data["scan"].get("id"):
-                        test_scan_id = data["scan"]["id"]
-                else:
-                    result.failure("Scan endpoint confidence", "Missing confidence data")
+                self.token = data.get("token")
+                self.log_result("Admin Login", True, f"Token received, user role: {data.get('user', {}).get('role')}")
+                return True
             else:
-                # Expected failure due to fake image, but endpoint exists
-                result.success("Scan endpoint available (expected AI failure)")
-        else:
-            result.failure("Scan endpoint", f"Status {response.status_code}: {response.text}")
-    except Exception as e:
-        result.failure("Scan endpoint", str(e))
-    
-    # Test review queue endpoint
-    try:
-        response = make_request("GET", "/scans/review-queue", 
-                              headers=get_auth_headers(admin_token))
-        if response.status_code == 200:
-            data = response.json()
-            if "scans" in data:
-                result.success("Review queue endpoint")
-            else:
-                result.failure("Review queue endpoint", "Missing scans data")
-        else:
-            result.failure("Review queue endpoint", f"Status {response.status_code}")
-    except Exception as e:
-        result.failure("Review queue endpoint", str(e))
-    
-    # Test review queue with status filter
-    try:
-        response = make_request("GET", "/scans/review-queue", 
-                              headers=get_auth_headers(admin_token),
-                              params={"review_status": "needs_review"})
-        if response.status_code == 200:
-            result.success("Review queue filtered")
-        else:
-            result.failure("Review queue filtered", f"Status {response.status_code}")
-    except Exception as e:
-        result.failure("Review queue filtered", str(e))
-
-# ============== KVKK COMPLIANCE TESTS ==============
-
-def test_kvkk_compliance():
-    global test_request_id
-    print("\n🔸 KVKK COMPLIANCE TESTS")
-    
-    if not admin_token:
-        result.failure("KVKK Compliance", "No admin token available")
-        return
-    
-    # Test KVKK Rights Request creation
-    try:
-        request_data = {
-            "request_type": "access",
-            "requester_name": "Test Kullanıcı",
-            "requester_email": "test@example.com",
-            "requester_id_number": "12345678901",
-            "description": "KVKK kapsamında verilerime erişim talep ediyorum."
-        }
-        response = make_request("POST", "/kvkk/rights-request",
-                              headers=get_auth_headers(admin_token),
-                              json_data=request_data)
-        if response.status_code == 200:
-            data = response.json()
-            if data.get("success") and "request" in data:
-                result.success("KVKK rights request creation")
-                test_request_id = data["request"].get("request_id")
-            else:
-                result.failure("KVKK rights request creation", "Invalid response structure")
-        else:
-            result.failure("KVKK rights request creation", f"Status {response.status_code}: {response.text}")
-    except Exception as e:
-        result.failure("KVKK rights request creation", str(e))
-    
-    # Test listing KVKK rights requests
-    try:
-        response = make_request("GET", "/kvkk/rights-requests",
-                              headers=get_auth_headers(admin_token))
-        if response.status_code == 200:
-            data = response.json()
-            if "requests" in data:
-                result.success("KVKK rights requests listing")
-            else:
-                result.failure("KVKK rights requests listing", "Missing requests data")
-        else:
-            result.failure("KVKK rights requests listing", f"Status {response.status_code}")
-    except Exception as e:
-        result.failure("KVKK rights requests listing", str(e))
-    
-    # Test processing KVKK rights request
-    if test_request_id:
-        try:
-            process_data = {
-                "status": "completed",
-                "response_note": "Talep işlenmiştir. İlgili veriler sağlanmıştır."
-            }
-            response = make_request("PATCH", f"/kvkk/rights-requests/{test_request_id}",
-                                  headers=get_auth_headers(admin_token),
-                                  json_data=process_data)
-            if response.status_code == 200:
-                result.success("KVKK rights request processing")
-            else:
-                result.failure("KVKK rights request processing", f"Status {response.status_code}: {response.text}")
+                self.log_result("Admin Login", False, f"Status {response.status_code}", response.json())
+                return False
+                
         except Exception as e:
-            result.failure("KVKK rights request processing", str(e))
+            self.log_result("Admin Login", False, f"Exception: {str(e)}")
+            return False
     
-    # Test VERBİS compliance report
-    try:
-        response = make_request("GET", "/kvkk/verbis-report",
-                              headers=get_auth_headers(admin_token))
-        if response.status_code == 200:
-            data = response.json()
-            if "veri_kategorileri" in data and "uyumluluk_durumu" in data:
-                result.success("VERBİS compliance report")
-            else:
-                result.failure("VERBİS compliance report", "Missing required report sections")
-        else:
-            result.failure("VERBİS compliance report", f"Status {response.status_code}")
-    except Exception as e:
-        result.failure("VERBİS compliance report", str(e))
-    
-    # Test data inventory
-    try:
-        response = make_request("GET", "/kvkk/data-inventory",
-                              headers=get_auth_headers(admin_token))
-        if response.status_code == 200:
-            data = response.json()
-            if "koleksiyonlar" in data and "veri_akisi" in data:
-                result.success("KVKK data inventory")
-            else:
-                result.failure("KVKK data inventory", "Missing inventory sections")
-        else:
-            result.failure("KVKK data inventory", f"Status {response.status_code}")
-    except Exception as e:
-        result.failure("KVKK data inventory", str(e))
-    
-    # Test retention warnings
-    try:
-        response = make_request("GET", "/kvkk/retention-warnings",
-                              headers=get_auth_headers(admin_token))
-        if response.status_code == 200:
-            data = response.json()
-            if "warnings" in data and "total_warnings" in data:
-                result.success("KVKK retention warnings")
-            else:
-                result.failure("KVKK retention warnings", "Missing warnings data")
-        else:
-            result.failure("KVKK retention warnings", f"Status {response.status_code}")
-    except Exception as e:
-        result.failure("KVKK retention warnings", str(e))
-    
-    # Test invalid request type
-    try:
-        invalid_data = {
-            "request_type": "invalid_type",
-            "requester_name": "Test",
-            "requester_email": "test@test.com",
-            "description": "Invalid request"
-        }
-        response = make_request("POST", "/kvkk/rights-request",
-                              headers=get_auth_headers(admin_token),
-                              json_data=invalid_data)
-        if response.status_code == 400:
-            result.success("KVKK invalid request type validation")
-        else:
-            result.failure("KVKK invalid request type validation", f"Expected 400, got {response.status_code}")
-    except Exception as e:
-        result.failure("KVKK invalid request type validation", str(e))
+    def get_headers(self):
+        """Get authorization headers"""
+        if not self.token:
+            return {}
+        return {"Authorization": f"Bearer {self.token}"}
 
-# ============== GUEST MANAGEMENT TESTS ==============
-
-def test_guest_management():
-    global test_guest_id
-    print("\n🔸 GUEST MANAGEMENT TESTS")
-    
-    if not admin_token:
-        result.failure("Guest Management", "No admin token available")
-        return
-    
-    # Create test guest
-    try:
-        guest_data = {
-            "first_name": "Ahmet",
-            "last_name": "Yılmaz", 
-            "id_number": "11111111111",
-            "birth_date": "1990-05-15",
-            "gender": "M",
-            "nationality": "TC",
-            "document_type": "tc_kimlik",
-            "kvkk_consent": True,
-            "force_create": True
-        }
-        response = make_request("POST", "/guests",
-                              headers=get_auth_headers(admin_token),
-                              json_data=guest_data)
-        if response.status_code == 200:
-            data = response.json()
-            if data.get("success") and "guest" in data:
-                result.success("Guest creation")
-                test_guest_id = data["guest"]["id"]
-            else:
-                result.failure("Guest creation", "Invalid response structure")
-        else:
-            result.failure("Guest creation", f"Status {response.status_code}: {response.text}")
-    except Exception as e:
-        result.failure("Guest creation", str(e))
-    
-    # List guests
-    try:
-        response = make_request("GET", "/guests",
-                              headers=get_auth_headers(admin_token))
-        if response.status_code == 200:
-            data = response.json()
-            if "guests" in data and "total" in data:
-                result.success("Guest listing")
-            else:
-                result.failure("Guest listing", "Missing required fields")
-        else:
-            result.failure("Guest listing", f"Status {response.status_code}")
-    except Exception as e:
-        result.failure("Guest listing", str(e))
-    
-    # Get specific guest
-    if test_guest_id:
+    def test_kvkk_public_consent(self):
+        """Test KVKK public consent info endpoint (no auth required)"""
+        print("\n=== KVKK PUBLIC CONSENT INFO ===")
+        
         try:
-            response = make_request("GET", f"/guests/{test_guest_id}",
-                                  headers=get_auth_headers(admin_token))
+            response = requests.get(f"{API_BASE}/kvkk/consent-info")
+            
             if response.status_code == 200:
                 data = response.json()
-                if "guest" in data:
-                    result.success("Get specific guest")
+                has_required_fields = all(key in data for key in ["consent_required", "consent_text", "rights"])
+                if has_required_fields:
+                    self.log_result("KVKK Public Consent Info", True, 
+                                  f"Consent required: {data.get('consent_required')}, {len(data.get('rights', []))} rights listed")
                 else:
-                    result.failure("Get specific guest", "Missing guest data")
+                    self.log_result("KVKK Public Consent Info", False, "Missing required fields", data)
             else:
-                result.failure("Get specific guest", f"Status {response.status_code}")
+                self.log_result("KVKK Public Consent Info", False, f"Status {response.status_code}", response.json())
+                
         except Exception as e:
-            result.failure("Get specific guest", str(e))
+            self.log_result("KVKK Public Consent Info", False, f"Exception: {str(e)}")
+
+    def test_tc_kimlik_validation(self):
+        """Test TC Kimlik No validation endpoint"""
+        print("\n=== TC KIMLIK VALIDATION ===")
         
-        # Check-in guest
+        # Test valid TC number
         try:
-            response = make_request("POST", f"/guests/{test_guest_id}/checkin",
-                                  headers=get_auth_headers(admin_token))
-            if response.status_code == 200:
-                result.success("Guest check-in")
-            else:
-                result.failure("Guest check-in", f"Status {response.status_code}")
-        except Exception as e:
-            result.failure("Guest check-in", str(e))
-        
-        # Check-out guest
-        try:
-            response = make_request("POST", f"/guests/{test_guest_id}/checkout",
-                                  headers=get_auth_headers(admin_token))
-            if response.status_code == 200:
-                result.success("Guest check-out")
-            else:
-                result.failure("Guest check-out", f"Status {response.status_code}")
-        except Exception as e:
-            result.failure("Guest check-out", str(e))
-    
-    # Test duplicate detection
-    try:
-        response = make_request("GET", "/guests/check-duplicate",
-                              headers=get_auth_headers(admin_token),
-                              params={"id_number": "11111111111"})
-        if response.status_code == 200:
-            result.success("Duplicate detection")
-        else:
-            result.failure("Duplicate detection", f"Status {response.status_code}")
-    except Exception as e:
-        result.failure("Duplicate detection", str(e))
-
-# ============== KVKK SETTINGS TESTS ==============
-
-def test_kvkk_settings():
-    print("\n🔸 KVKK SETTINGS TESTS")
-    
-    if not admin_token:
-        result.failure("KVKK Settings", "No admin token available")
-        return
-    
-    # Get KVKK settings
-    try:
-        response = make_request("GET", "/settings/kvkk",
-                              headers=get_auth_headers(admin_token))
-        if response.status_code == 200:
-            data = response.json()
-            if "settings" in data:
-                result.success("Get KVKK settings")
-            else:
-                result.failure("Get KVKK settings", "Missing settings data")
-        else:
-            result.failure("Get KVKK settings", f"Status {response.status_code}")
-    except Exception as e:
-        result.failure("Get KVKK settings", str(e))
-    
-    # Update KVKK settings (admin only)
-    try:
-        update_data = {"retention_days_scans": 60}
-        response = make_request("PATCH", "/settings/kvkk",
-                              headers=get_auth_headers(admin_token),
-                              json_data=update_data)
-        if response.status_code == 200:
-            result.success("Update KVKK settings")
-            # Restore original value
-            restore_data = {"retention_days_scans": 90}
-            make_request("PATCH", "/settings/kvkk",
-                        headers=get_auth_headers(admin_token),
-                        json_data=restore_data)
-        else:
-            result.failure("Update KVKK settings", f"Status {response.status_code}")
-    except Exception as e:
-        result.failure("Update KVKK settings", str(e))
-
-# ============== DASHBOARD TESTS ==============
-
-def test_dashboard():
-    print("\n🔸 DASHBOARD TESTS")
-    
-    if not admin_token:
-        result.failure("Dashboard", "No admin token available")
-        return
-    
-    try:
-        response = make_request("GET", "/dashboard/stats",
-                              headers=get_auth_headers(admin_token))
-        if response.status_code == 200:
-            data = response.json()
-            if "total_guests" in data and "weekly_stats" in data:
-                result.success("Dashboard statistics")
-            else:
-                result.failure("Dashboard statistics", "Missing required stats")
-        else:
-            result.failure("Dashboard statistics", f"Status {response.status_code}")
-    except Exception as e:
-        result.failure("Dashboard statistics", str(e))
-
-# ============== AUDIT TRAIL TESTS ==============
-
-def test_audit_trail():
-    print("\n🔸 AUDIT TRAIL TESTS")
-    
-    if not admin_token:
-        result.failure("Audit Trail", "No admin token available")
-        return
-    
-    # Recent audit logs
-    try:
-        response = make_request("GET", "/audit/recent",
-                              headers=get_auth_headers(admin_token),
-                              params={"limit": 10})
-        if response.status_code == 200:
-            data = response.json()
-            if "audit_logs" in data:
-                result.success("Recent audit logs")
-            else:
-                result.failure("Recent audit logs", "Missing audit_logs data")
-        else:
-            result.failure("Recent audit logs", f"Status {response.status_code}")
-    except Exception as e:
-        result.failure("Recent audit logs", str(e))
-    
-    # Guest-specific audit if we have a test guest
-    if test_guest_id:
-        try:
-            response = make_request("GET", f"/guests/{test_guest_id}/audit",
-                                  headers=get_auth_headers(admin_token))
+            response = requests.post(f"{API_BASE}/tc-kimlik/validate", 
+                                   headers=self.get_headers(),
+                                   json={"tc_no": "10000000146"})
+            
             if response.status_code == 200:
                 data = response.json()
-                if "audit_logs" in data:
-                    result.success("Guest audit trail")
+                if data.get("is_valid") == True:
+                    self.log_result("TC Kimlik Valid Number", True, "Valid TC number accepted")
                 else:
-                    result.failure("Guest audit trail", "Missing audit_logs data")
+                    self.log_result("TC Kimlik Valid Number", False, "Valid TC rejected", data)
             else:
-                result.failure("Guest audit trail", f"Status {response.status_code}")
+                self.log_result("TC Kimlik Valid Number", False, f"Status {response.status_code}", response.json())
+                
         except Exception as e:
-            result.failure("Guest audit trail", str(e))
+            self.log_result("TC Kimlik Valid Number", False, f"Exception: {str(e)}")
 
-# ============== AUTHORIZATION TESTS ==============
-
-def test_authorization():
-    print("\n🔸 AUTHORIZATION TESTS")
-    
-    if not reception_token:
-        result.failure("Authorization", "No reception token available")
-        return
-    
-    # Reception should NOT access admin-only endpoints
-    admin_endpoints = [
-        "/users",
-        "/kvkk/rights-requests",  
-        "/kvkk/verbis-report",
-        "/kvkk/data-inventory",
-        "/kvkk/retention-warnings"
-    ]
-    
-    for endpoint in admin_endpoints:
+        # Test invalid TC number
         try:
-            response = make_request("GET", endpoint,
-                                  headers=get_auth_headers(reception_token))
-            if response.status_code == 403:
-                result.success(f"Reception denied access to {endpoint}")
-            else:
-                result.failure(f"Reception access control {endpoint}", f"Expected 403, got {response.status_code}")
-        except Exception as e:
-            result.failure(f"Reception access control {endpoint}", str(e))
-
-# ============== CLEANUP ==============
-
-def cleanup_test_data():
-    print("\n🔸 CLEANUP")
-    
-    if not admin_token:
-        return
-    
-    # Delete test guest if created
-    if test_guest_id:
-        try:
-            response = make_request("DELETE", f"/guests/{test_guest_id}",
-                                  headers=get_auth_headers(admin_token))
+            response = requests.post(f"{API_BASE}/tc-kimlik/validate", 
+                                   headers=self.get_headers(),
+                                   json={"tc_no": "12345678901"})
+            
             if response.status_code == 200:
-                result.success("Test guest cleanup")
+                data = response.json()
+                if data.get("is_valid") == False:
+                    self.log_result("TC Kimlik Invalid Number", True, "Invalid TC number correctly rejected")
+                else:
+                    self.log_result("TC Kimlik Invalid Number", False, "Invalid TC incorrectly accepted", data)
             else:
-                result.success("Test guest cleanup (already deleted)")
+                self.log_result("TC Kimlik Invalid Number", False, f"Status {response.status_code}", response.json())
+                
         except Exception as e:
-            result.failure("Test guest cleanup", str(e))
+            self.log_result("TC Kimlik Invalid Number", False, f"Exception: {str(e)}")
 
-# ============== MAIN TEST EXECUTION ==============
+        # Test too short TC number
+        try:
+            response = requests.post(f"{API_BASE}/tc-kimlik/validate", 
+                                   headers=self.get_headers(),
+                                   json={"tc_no": "123"})
+            
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("is_valid") == False and "11 haneli" in str(data.get("errors", [])):
+                    self.log_result("TC Kimlik Short Number", True, "Short TC number correctly rejected")
+                else:
+                    self.log_result("TC Kimlik Short Number", False, "Short TC not properly validated", data)
+            else:
+                self.log_result("TC Kimlik Short Number", False, f"Status {response.status_code}", response.json())
+                
+        except Exception as e:
+            self.log_result("TC Kimlik Short Number", False, f"Exception: {str(e)}")
 
-def main():
-    print("🚀 Quick ID Reader Backend Testing Suite")
-    print("=" * 50)
-    
-    # Run all test suites
-    test_authentication()
-    test_api_documentation()
-    test_ai_confidence_scanning()
-    test_kvkk_compliance()
-    test_guest_management()
-    test_kvkk_settings()
-    test_dashboard()
-    test_audit_trail()
-    test_authorization()
-    
-    # Cleanup
-    cleanup_test_data()
-    
-    # Final summary
-    success = result.summary()
-    
-    if success:
-        print("\n🎉 ALL TESTS PASSED! Backend is working correctly.")
-        return 0
-    else:
-        print(f"\n⚠️  {result.failed} TESTS FAILED. See errors above.")
-        return 1
+    def test_multi_property_management(self):
+        """Test multi-property management endpoints"""
+        print("\n=== MULTI-PROPERTY MANAGEMENT ===")
+        
+        # Test create property
+        try:
+            response = requests.post(f"{API_BASE}/properties", 
+                                   headers=self.get_headers(),
+                                   json={
+                                       "name": "Test Otel", 
+                                       "city": "Istanbul",
+                                       "address": "Test Mahallesi", 
+                                       "phone": "02123334455"
+                                   })
+            
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("success") and "property" in data:
+                    self.property_id = data["property"]["property_id"]
+                    self.log_result("Create Property", True, f"Property created: {data['property']['name']}")
+                else:
+                    self.log_result("Create Property", False, "Property not created properly", data)
+            else:
+                self.log_result("Create Property", False, f"Status {response.status_code}", response.json())
+                
+        except Exception as e:
+            self.log_result("Create Property", False, f"Exception: {str(e)}")
+
+        # Test list properties
+        try:
+            response = requests.get(f"{API_BASE}/properties", headers=self.get_headers())
+            
+            if response.status_code == 200:
+                data = response.json()
+                if "properties" in data and len(data["properties"]) > 0:
+                    self.log_result("List Properties", True, f"Found {len(data['properties'])} properties")
+                    # Set property_id if not set from creation
+                    if not self.property_id and data["properties"]:
+                        self.property_id = data["properties"][0]["property_id"]
+                else:
+                    self.log_result("List Properties", False, "No properties found", data)
+            else:
+                self.log_result("List Properties", False, f"Status {response.status_code}", response.json())
+                
+        except Exception as e:
+            self.log_result("List Properties", False, f"Exception: {str(e)}")
+
+        # Test get specific property
+        if self.property_id:
+            try:
+                response = requests.get(f"{API_BASE}/properties/{self.property_id}", headers=self.get_headers())
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    if "property" in data and data["property"]["property_id"] == self.property_id:
+                        self.log_result("Get Property", True, f"Property details retrieved: {data['property']['name']}")
+                    else:
+                        self.log_result("Get Property", False, "Property details incorrect", data)
+                else:
+                    self.log_result("Get Property", False, f"Status {response.status_code}", response.json())
+                    
+            except Exception as e:
+                self.log_result("Get Property", False, f"Exception: {str(e)}")
+
+        # Test update property  
+        if self.property_id:
+            try:
+                response = requests.patch(f"{API_BASE}/properties/{self.property_id}", 
+                                        headers=self.get_headers(),
+                                        json={"phone": "05551112233"})
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    if data.get("success") and data.get("property", {}).get("phone") == "05551112233":
+                        self.log_result("Update Property", True, "Property phone updated successfully")
+                    else:
+                        self.log_result("Update Property", False, "Property update failed", data)
+                else:
+                    self.log_result("Update Property", False, f"Status {response.status_code}", response.json())
+                    
+            except Exception as e:
+                self.log_result("Update Property", False, f"Exception: {str(e)}")
+
+    def test_precheckin_qr_system(self):
+        """Test pre-checkin QR system endpoints"""
+        print("\n=== PRE-CHECKIN QR SYSTEM ===")
+        
+        if not self.property_id:
+            self.log_result("Pre-Checkin System", False, "No property_id available for testing")
+            return
+        
+        # Test create pre-checkin token
+        try:
+            response = requests.post(f"{API_BASE}/precheckin/create", 
+                                   headers=self.get_headers(),
+                                   json={
+                                       "property_id": self.property_id,
+                                       "guest_name": "Test Misafir",
+                                       "reservation_ref": "RES123"
+                                   })
+            
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("success") and "token" in data:
+                    self.precheckin_token_id = data["token"]["token_id"]
+                    self.log_result("Create Pre-Checkin Token", True, f"Token created: {self.precheckin_token_id[:8]}...")
+                else:
+                    self.log_result("Create Pre-Checkin Token", False, "Token not created properly", data)
+            else:
+                self.log_result("Create Pre-Checkin Token", False, f"Status {response.status_code}", response.json())
+                
+        except Exception as e:
+            self.log_result("Create Pre-Checkin Token", False, f"Exception: {str(e)}")
+
+        # Test get token info (public endpoint, no auth)
+        if self.precheckin_token_id:
+            try:
+                response = requests.get(f"{API_BASE}/precheckin/{self.precheckin_token_id}")
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    if data.get("token_id") == self.precheckin_token_id:
+                        self.log_result("Get Pre-Checkin Token (Public)", True, f"Token info retrieved for guest: {data.get('guest_name')}")
+                    else:
+                        self.log_result("Get Pre-Checkin Token (Public)", False, "Token info incorrect", data)
+                else:
+                    self.log_result("Get Pre-Checkin Token (Public)", False, f"Status {response.status_code}", response.json())
+                    
+            except Exception as e:
+                self.log_result("Get Pre-Checkin Token (Public)", False, f"Exception: {str(e)}")
+
+        # Test get QR code image (requires auth)
+        if self.precheckin_token_id:
+            try:
+                response = requests.get(f"{API_BASE}/precheckin/{self.precheckin_token_id}/qr", 
+                                      headers=self.get_headers())
+                
+                if response.status_code == 200 and response.headers.get('content-type') == 'image/png':
+                    self.log_result("Get QR Code Image", True, f"QR code PNG received, size: {len(response.content)} bytes")
+                else:
+                    self.log_result("Get QR Code Image", False, f"Status {response.status_code}, content-type: {response.headers.get('content-type')}")
+                    
+            except Exception as e:
+                self.log_result("Get QR Code Image", False, f"Exception: {str(e)}")
+
+        # Test list pre-checkin tokens
+        try:
+            response = requests.get(f"{API_BASE}/precheckin/list", headers=self.get_headers())
+            
+            if response.status_code == 200:
+                data = response.json()
+                if "tokens" in data:
+                    self.log_result("List Pre-Checkin Tokens", True, f"Found {len(data['tokens'])} tokens")
+                else:
+                    self.log_result("List Pre-Checkin Tokens", False, "Token list not properly formatted", data)
+            else:
+                self.log_result("List Pre-Checkin Tokens", False, f"Status {response.status_code}", response.json())
+                
+        except Exception as e:
+            self.log_result("List Pre-Checkin Tokens", False, f"Exception: {str(e)}")
+
+    def test_kiosk_mode(self):
+        """Test kiosk mode endpoints"""
+        print("\n=== KIOSK MODE ===")
+        
+        if not self.property_id:
+            self.log_result("Kiosk Mode", False, "No property_id available for testing")
+            return
+            
+        # Test create kiosk session
+        try:
+            response = requests.post(f"{API_BASE}/kiosk/session", 
+                                   headers=self.get_headers(),
+                                   json={
+                                       "property_id": self.property_id,
+                                       "kiosk_name": "Lobby Terminal 1"
+                                   })
+            
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("success") and "session" in data:
+                    session_id = data["session"]["session_id"]
+                    self.log_result("Create Kiosk Session", True, f"Session created: {session_id[:8]}...")
+                else:
+                    self.log_result("Create Kiosk Session", False, "Session not created properly", data)
+            else:
+                self.log_result("Create Kiosk Session", False, f"Status {response.status_code}", response.json())
+                
+        except Exception as e:
+            self.log_result("Create Kiosk Session", False, f"Exception: {str(e)}")
+
+        # Test list kiosk sessions
+        try:
+            response = requests.get(f"{API_BASE}/kiosk/sessions", headers=self.get_headers())
+            
+            if response.status_code == 200:
+                data = response.json()
+                if "sessions" in data:
+                    self.log_result("List Kiosk Sessions", True, f"Found {len(data['sessions'])} sessions")
+                else:
+                    self.log_result("List Kiosk Sessions", False, "Sessions list not properly formatted", data)
+            else:
+                self.log_result("List Kiosk Sessions", False, f"Status {response.status_code}", response.json())
+                
+        except Exception as e:
+            self.log_result("List Kiosk Sessions", False, f"Exception: {str(e)}")
+
+    def test_offline_sync(self):
+        """Test offline sync endpoints"""
+        print("\n=== OFFLINE SYNC ===")
+        
+        if not self.property_id:
+            self.log_result("Offline Sync", False, "No property_id available for testing")
+            return
+            
+        # Test upload offline data
+        try:
+            response = requests.post(f"{API_BASE}/sync/upload", 
+                                   headers=self.get_headers(),
+                                   json={
+                                       "property_id": self.property_id,
+                                       "data_type": "guests",
+                                       "data": [{"first_name": "Test", "last_name": "Offline"}],
+                                       "device_id": "device001"
+                                   })
+            
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("success") and "sync" in data:
+                    self.sync_id = data["sync"]["sync_id"]
+                    self.log_result("Upload Offline Data", True, f"Sync uploaded: {self.sync_id[:8]}...")
+                else:
+                    self.log_result("Upload Offline Data", False, "Sync not created properly", data)
+            else:
+                self.log_result("Upload Offline Data", False, f"Status {response.status_code}", response.json())
+                
+        except Exception as e:
+            self.log_result("Upload Offline Data", False, f"Exception: {str(e)}")
+
+        # Test get pending syncs
+        try:
+            response = requests.get(f"{API_BASE}/sync/pending", headers=self.get_headers())
+            
+            if response.status_code == 200:
+                data = response.json()
+                if "syncs" in data:
+                    self.log_result("Get Pending Syncs", True, f"Found {len(data['syncs'])} pending syncs")
+                else:
+                    self.log_result("Get Pending Syncs", False, "Syncs list not properly formatted", data)
+            else:
+                self.log_result("Get Pending Syncs", False, f"Status {response.status_code}", response.json())
+                
+        except Exception as e:
+            self.log_result("Get Pending Syncs", False, f"Exception: {str(e)}")
+
+        # Test process sync
+        if self.sync_id:
+            try:
+                response = requests.post(f"{API_BASE}/sync/{self.sync_id}/process", 
+                                       headers=self.get_headers(),
+                                       json={"status": "processed"})
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    if data.get("success") and data.get("sync", {}).get("status") == "processed":
+                        self.log_result("Process Sync", True, "Sync processed successfully")
+                    else:
+                        self.log_result("Process Sync", False, "Sync not processed properly", data)
+                else:
+                    self.log_result("Process Sync", False, f"Status {response.status_code}", response.json())
+                    
+            except Exception as e:
+                self.log_result("Process Sync", False, f"Exception: {str(e)}")
+
+    def test_biometric_endpoints(self):
+        """Test biometric face matching endpoints (structure only)"""
+        print("\n=== BIOMETRIC ENDPOINTS ===")
+        
+        # Test get liveness challenge (no auth required)
+        try:
+            response = requests.get(f"{API_BASE}/biometric/liveness-challenge")
+            
+            if response.status_code == 200:
+                data = response.json()
+                if "session_id" in data and "challenge" in data:
+                    self.log_result("Get Liveness Challenge", True, f"Challenge: {data['challenge']['challenge_id']}")
+                else:
+                    self.log_result("Get Liveness Challenge", False, "Challenge not properly formatted", data)
+            else:
+                self.log_result("Get Liveness Challenge", False, f"Status {response.status_code}", response.json())
+                
+        except Exception as e:
+            self.log_result("Get Liveness Challenge", False, f"Exception: {str(e)}")
+
+    def test_emniyet_bildirimleri(self):
+        """Test Emniyet bildirimleri endpoint"""
+        print("\n=== EMNIYET BILDIRIMLERI ===")
+        
+        try:
+            response = requests.get(f"{API_BASE}/tc-kimlik/emniyet-bildirimleri", headers=self.get_headers())
+            
+            if response.status_code == 200:
+                data = response.json()
+                if "forms" in data:
+                    self.log_result("Get Emniyet Bildirimleri", True, f"Found {len(data['forms'])} forms")
+                else:
+                    self.log_result("Get Emniyet Bildirimleri", False, "Forms list not properly formatted", data)
+            else:
+                self.log_result("Get Emniyet Bildirimleri", False, f"Status {response.status_code}", response.json())
+                
+        except Exception as e:
+            self.log_result("Get Emniyet Bildirimleri", False, f"Exception: {str(e)}")
+
+    def test_health_and_guide(self):
+        """Test health and API guide endpoints"""
+        print("\n=== HEALTH & API GUIDE ===")
+        
+        # Test health endpoint
+        try:
+            response = requests.get(f"{API_BASE}/health")
+            
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("version") == "3.0.0" and data.get("status") == "healthy":
+                    self.log_result("Health Check", True, f"Version: {data.get('version')}, Status: {data.get('status')}")
+                else:
+                    self.log_result("Health Check", False, "Health check response incorrect", data)
+            else:
+                self.log_result("Health Check", False, f"Status {response.status_code}", response.json())
+                
+        except Exception as e:
+            self.log_result("Health Check", False, f"Exception: {str(e)}")
+
+        # Test API guide endpoint
+        try:
+            response = requests.get(f"{API_BASE}/guide")
+            
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("version") == "3.0.0" and "endpoints" in data:
+                    endpoint_count = len(data.get("endpoints", {}))
+                    has_v3_endpoints = any(endpoint in data["endpoints"] for endpoint in 
+                                         ["biyometrik", "tc_kimlik", "on_checkin", "multi_property", "kiosk", "offline_sync"])
+                    if has_v3_endpoints:
+                        self.log_result("API Guide", True, f"v3.0 guide with {endpoint_count} endpoint groups, includes new v3 features")
+                    else:
+                        self.log_result("API Guide", False, "Missing v3 endpoints in guide", data)
+                else:
+                    self.log_result("API Guide", False, "API guide response incorrect", data)
+            else:
+                self.log_result("API Guide", False, f"Status {response.status_code}", response.json())
+                
+        except Exception as e:
+            self.log_result("API Guide", False, f"Exception: {str(e)}")
+
+    def run_all_tests(self):
+        """Run all tests in sequence"""
+        print("🚀 Starting Quick ID Reader v3.0 Backend API Tests")
+        print(f"Backend URL: {BACKEND_URL}")
+        
+        # Login first
+        if not self.test_login():
+            print("❌ Login failed, cannot continue with authenticated tests")
+            return False
+            
+        # Run all endpoint tests
+        self.test_kvkk_public_consent()
+        self.test_tc_kimlik_validation() 
+        self.test_multi_property_management()
+        self.test_precheckin_qr_system()
+        self.test_kiosk_mode()
+        self.test_offline_sync()
+        self.test_biometric_endpoints()
+        self.test_emniyet_bildirimleri()
+        self.test_health_and_guide()
+        
+        # Print summary
+        print("\n" + "="*60)
+        print("📊 TEST SUMMARY")
+        print("="*60)
+        
+        passed = sum(1 for r in self.test_results if r["success"])
+        total = len(self.test_results)
+        
+        print(f"✅ Passed: {passed}/{total}")
+        print(f"❌ Failed: {total - passed}/{total}")
+        
+        if total - passed > 0:
+            print("\n🔍 FAILED TESTS:")
+            for result in self.test_results:
+                if not result["success"]:
+                    print(f"  • {result['test']}: {result['details']}")
+        
+        print(f"\n🎯 Overall Success Rate: {(passed/total)*100:.1f}%")
+        
+        return passed == total
 
 if __name__ == "__main__":
-    exit_code = main()
-    sys.exit(exit_code)
+    tester = APITester()
+    success = tester.run_all_tests()
+    sys.exit(0 if success else 1)
