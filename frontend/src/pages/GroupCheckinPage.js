@@ -27,7 +27,6 @@ async function postJSON(path, body) {
 }
 
 export default function GroupCheckinPage() {
-  const { token } = useAuth();
   const [guests, setGuests] = useState([]);
   const [rooms, setRooms] = useState([]);
   const [selectedGuests, setSelectedGuests] = useState([]);
