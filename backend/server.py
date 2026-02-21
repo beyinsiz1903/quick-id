@@ -286,6 +286,56 @@ class RightsRequestProcess(BaseModel):
     response_note: str
     response_data: Optional[dict] = None
 
+class FaceCompareRequest(BaseModel):
+    document_image_base64: str
+    selfie_image_base64: str
+
+class LivenessCheckRequest(BaseModel):
+    image_base64: str
+    challenge_id: str
+    session_id: str
+
+class TcKimlikValidateRequest(BaseModel):
+    tc_no: str
+
+class EmniyetBildirimiRequest(BaseModel):
+    guest_id: str
+
+class PropertyCreate(BaseModel):
+    name: str
+    address: Optional[str] = ""
+    phone: Optional[str] = ""
+    tax_no: Optional[str] = ""
+    city: Optional[str] = ""
+
+class PropertyUpdate(BaseModel):
+    name: Optional[str] = None
+    address: Optional[str] = None
+    phone: Optional[str] = None
+    tax_no: Optional[str] = None
+    city: Optional[str] = None
+    is_active: Optional[bool] = None
+    settings: Optional[dict] = None
+
+class KioskSessionCreate(BaseModel):
+    property_id: str
+    kiosk_name: Optional[str] = "Lobby Kiosk"
+
+class PreCheckinCreate(BaseModel):
+    property_id: str
+    reservation_ref: Optional[str] = ""
+    guest_name: Optional[str] = ""
+
+class PreCheckinScanRequest(BaseModel):
+    image_base64: str
+    kvkk_consent: Optional[bool] = False
+
+class OfflineSyncRequest(BaseModel):
+    property_id: str
+    data_type: str  # scans, guests
+    data: list
+    device_id: Optional[str] = None
+
 
 async def extract_id_data(image_base64: str) -> dict:
     """Extract data from one or more ID documents in an image using OpenAI Vision"""
