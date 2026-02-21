@@ -20,7 +20,7 @@ import time
 from datetime import datetime, timedelta
 
 # Configuration
-BASE_URL = "https://photo-capture-29.preview.emergentagent.com/api"
+BASE_URL = "https://mrz-parser.preview.emergentagent.com/api"
 ADMIN_EMAIL = "admin@quickid.com"
 ADMIN_PASSWORD = "admin123"
 
