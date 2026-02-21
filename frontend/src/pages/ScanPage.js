@@ -142,7 +142,7 @@ export default function ScanPage() {
         if (result.fallback_used) {
           toast.warning('AI tarama başarısız oldu, Tesseract OCR ile tarandı. Sonuçları kontrol edin.');
         } else if (docCount > 1) {
-          toast.success(`${docCount} kimlik algilandi! Aralarinda gecis yapabilirsiniz.`);
+          toast.success(`${docCount} kimlik algılandı! Aralarında geçiş yapabilirsiniz.`);
         } else if (documents[0]?.is_valid) {
           toast.success(`Kimlik basariyla okundu! (${result.provider || 'AI'})`);
         } else {
