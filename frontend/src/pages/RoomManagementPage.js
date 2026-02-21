@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../lib/AuthContext';
-import api from '../lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
@@ -8,8 +7,29 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '../components/ui/dialog';
 import {
-  DoorOpen, Plus, RefreshCw, UserPlus, Check, X, Wrench, Sparkles, BedDouble,
+  DoorOpen, Plus, RefreshCw, UserPlus, Check, X, Wrench, BedDouble,
 } from 'lucide-react';
+
+const BACKEND = process.env.REACT_APP_BACKEND_URL || '';
+function authHeaders() {
+  const token = localStorage.getItem('quickid_token');
+  return token ? { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } : { 'Content-Type': 'application/json' };
+}
+async function fetchJSON(path) {
+  const res = await fetch(`${BACKEND}${path}`, { headers: authHeaders() });
+  if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.detail || `HTTP ${res.status}`); }
+  return res.json();
+}
+async function postJSON(path, body) {
+  const res = await fetch(`${BACKEND}${path}`, { method: 'POST', headers: authHeaders(), body: JSON.stringify(body) });
+  if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.detail || `HTTP ${res.status}`); }
+  return res.json();
+}
+async function patchJSON(path, body) {
+  const res = await fetch(`${BACKEND}${path}`, { method: 'PATCH', headers: authHeaders(), body: JSON.stringify(body) });
+  if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.detail || `HTTP ${res.status}`); }
+  return res.json();
+}
 
 export default function RoomManagementPage() {
   const { token } = useAuth();
