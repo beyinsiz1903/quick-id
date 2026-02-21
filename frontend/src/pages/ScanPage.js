@@ -249,7 +249,7 @@ export default function ScanPage() {
           {selectedProvider === 'auto' && (
             <Badge variant="outline" className="text-purple-600 border-purple-200 bg-purple-50">
               <Brain className="w-3 h-3 mr-1" />
-              Goruntu kalitesine gore otomatik secim
+              Görüntü kalitesine göre otomatik seçim
             </Badge>
           )}
         </div>
