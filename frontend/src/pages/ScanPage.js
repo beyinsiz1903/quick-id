@@ -436,7 +436,7 @@ export default function ScanPage() {
                   )}
                   {mrzResults[0]?.fuzzy_matched && (
                     <Badge variant="outline" className="text-[10px] text-amber-600 border-amber-200">
-                      Fuzzy Esleme
+                      Fuzzy Eşleme
                     </Badge>
                   )}
                 </div>
