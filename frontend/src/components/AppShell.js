@@ -15,6 +15,7 @@ import {
   UserCog,
   LogOut,
   Shield,
+  BookOpen,
 } from 'lucide-react';
 
 export default function AppShell({ children }) {
