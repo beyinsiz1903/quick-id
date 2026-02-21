@@ -112,9 +112,10 @@ export const api = {
   },
 
   // Scan
-  async scanId(imageBase64) {
+  async scanId(imageBase64, provider = null, smartMode = true) {
     const res = await fetch(`${BACKEND_URL}/api/scan`, {
-      method: 'POST', headers: authHeaders(), body: JSON.stringify({ image_base64: imageBase64 }),
+      method: 'POST', headers: authHeaders(),
+      body: JSON.stringify({ image_base64: imageBase64, provider, smart_mode: smartMode }),
     });
     return handleResponse(res);
   },
