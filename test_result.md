@@ -348,22 +348,23 @@ frontend:
 
 metadata:
   created_by: "main_agent"
-  version: "2.0"
-  test_sequence: 2
+  version: "3.0"
+  test_sequence: 3
   run_ui: true
 
 test_plan:
-  current_focus: []
+  current_focus:
+    - "KVKK Public Consent Info"
+    - "TC Kimlik Validation"
+    - "Pre-Checkin QR System"
+    - "Multi-Property Management"
+    - "Kiosk Mode"
+    - "Offline Sync"
+    - "Biometric Face Matching"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
 
 agent_communication:
     - agent: "main"
-    - message: "Tüm 4 zayıf yön tamamlandı: 1) AI confidence scoring + review queue 2) KVKK tam uyumluluk (hak talepleri, VERBİS, envanter, retention) 3) API docs (Swagger, ReDoc, guide endpoint) 4) 66 test (29 birim + 37 entegrasyon). Backend testlerini çalıştırın lütfen."
-    - agent: "testing"
-    - message: "✅ BACKEND TESTING COMPLETE: 34/35 tests passed. All major functionality working: auth, KVKK compliance, API docs, guest management, dashboard, audit. Minor: scan endpoint has CloudFlare 520 error (infrastructure issue). All 66 pytest tests passed (29 unit + 37 integration)."
-    - agent: "main"
-    - message: "Kullanıcı frontend testi istedi. Lütfen yeni sayfaları test edin: 1) KVKK Uyumluluk Merkezi (/kvkk) - 5 tab, hak talebi oluşturma/işleme 2) API Dokümantasyon (/api-docs) - 4 tab, Swagger/ReDoc linkleri. Login: admin@quickid.com / admin123. Ayrıca mevcut sayfaları da kontrol edin (dashboard, misafirler, tarama, ayarlar)."
-    - agent: "testing"
-    - message: "✅ FRONTEND TESTING COMPLETE: All requested features working perfectly. (1) Login flow successful with admin credentials. (2) KVKK Uyumluluk Merkezi: All 4 KPI cards, 5 tabs functional, Yeni Talep form creates requests successfully. (3) API Dokümantasyon: All 4 tabs functional, Swagger/ReDoc buttons working. (4) Navigation: Both 'KVKK Uyumluluk' and 'API Rehberi' items visible in admin sidebar. (5) Existing pages sanity check passed (Dashboard, Misafirler, Ayarlar). Minor: WebSocket HMR errors (dev-only, non-functional issue). Ready for production."
+    - message: "8 büyük özellik backend ve frontend eklendi. Yeni endpoint'ler: 1) POST /api/biometric/face-compare, GET /api/biometric/liveness-challenge, POST /api/biometric/liveness-check 2) POST /api/tc-kimlik/validate, POST /api/tc-kimlik/emniyet-bildirimi, GET /api/tc-kimlik/emniyet-bildirimleri 3) POST/GET /api/precheckin/*, GET /api/precheckin/{id}/qr 4) CRUD /api/properties 5) POST /api/kiosk/session, GET /api/kiosk/sessions, POST /api/kiosk/scan 6) POST /api/sync/upload, GET /api/sync/pending, POST /api/sync/{id}/process 7) GET /api/kvkk/consent-info (public). Backend testlerini çalıştırın, özellikle yeni endpoint'leri test edin. Auth: admin@quickid.com / admin123"
