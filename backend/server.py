@@ -2307,7 +2307,7 @@ async def backup_schedule(user=Depends(require_admin)):
 
 # ===== OCR FALLBACK =====
 @app.post("/api/scan/ocr-fallback", tags=["OCR"], summary="Offline OCR tarama (Tesseract)",
-          description="İnternet kesintisinde lokal Tesseract OCR ile kimlik belgesi tarama")
+          description="İnternet kesintisinde lokal Tesseract OCR ile kimlik belgesi tarama. Geliştirilmiş ön işleme ile.")
 @limiter.limit("30/minute")
 async def ocr_fallback_scan(request: Request, scan_req: ScanRequest, user=Depends(require_auth)):
     if not is_tesseract_available():
@@ -2334,6 +2334,9 @@ async def ocr_fallback_scan(request: Request, scan_req: ScanRequest, user=Depend
             "can_retry": True,
         })
     
+    # OCR güven puanı
+    ocr_confidence = result.get("confidence", {})
+    
     # Store scan
     scan_doc = {
         "extracted_data": {"documents": result.get("documents", []), "document_count": result.get("document_count", 0)},
@@ -2343,11 +2346,13 @@ async def ocr_fallback_scan(request: Request, scan_req: ScanRequest, user=Depend
         "status": "completed",
         "source": "tesseract_ocr",
         "scanned_by": user.get("email"),
-        "confidence_level": "low",
-        "confidence_score": 40,
+        "confidence_level": ocr_confidence.get("confidence_level", "low"),
+        "confidence_score": ocr_confidence.get("confidence_score", 40),
         "review_status": "needs_review",
         "image_quality": quality,
         "warnings": ["Offline OCR ile tarandı - sonuçları doğrulayın"],
+        "provider": "tesseract",
+        "preprocessing_applied": result.get("preprocessing_applied", False),
     }
     await scans_col.insert_one(scan_doc)
     
@@ -2357,13 +2362,15 @@ async def ocr_fallback_scan(request: Request, scan_req: ScanRequest, user=Depend
         "documents": result.get("documents", []),
         "raw_text": result.get("raw_text", ""),
         "image_quality": quality,
+        "confidence": ocr_confidence,
         "confidence_note": result.get("confidence_note", ""),
+        "preprocessing_applied": result.get("preprocessing_applied", False),
         "message": "Offline OCR tarama tamamlandı. Sonuçları doğrulayın.",
     }
 
 
-@app.post("/api/scan/quality-check", tags=["OCR"], summary="Görüntü kalite kontrolü",
-          description="Tarama öncesi görüntü kalite kontrolü (bulanıklık, karanlık, çözünürlük)")
+@app.post("/api/scan/quality-check", tags=["OCR"], summary="Görüntü kalite kontrolü (geliştirilmiş)",
+          description="Tarama öncesi geliştirilmiş görüntü kalite kontrolü: bulanıklık, karanlık, çözünürlük, parlama, kenar tespiti, eğiklik")
 async def image_quality_check(scan_req: ScanRequest, user=Depends(require_auth)):
     quality = assess_image_quality(scan_req.image_base64)
     return quality
@@ -2375,7 +2382,43 @@ async def ocr_system_status():
         "tesseract_available": is_tesseract_available(),
         "supported_languages": ["tur", "eng"],
         "note": "Tesseract OCR internet kesintisinde yedek olarak kullanılabilir",
+        "preprocessing": {
+            "opencv_available": True,
+            "features": ["deskew", "noise_reduction", "contrast_enhancement", "adaptive_threshold"],
+        },
     }
+
+
+@app.get("/api/scan/providers", tags=["OCR"], summary="Kullanılabilir AI sağlayıcıları",
+         description="Kimlik tarama için kullanılabilir AI sağlayıcılarını listeler")
+async def get_scan_providers():
+    providers = list_providers()
+    stats = get_provider_stats()
+    return {
+        "providers": providers,
+        "stats": stats,
+        "smart_routing": {
+            "enabled": True,
+            "description": "Görüntü kalitesine göre otomatik provider seçimi",
+            "rules": {
+                "high_quality": "Ucuz/hızlı provider (GPT-4o-mini veya Gemini Flash)",
+                "medium_quality": "Orta seviye provider",
+                "low_quality": "En yüksek doğruluklu provider (GPT-4o)",
+            },
+        },
+        "tesseract": {
+            "available": is_tesseract_available(),
+            "role": "Offline fallback - internet kesintisinde otomatik devreye girer",
+        },
+    }
+
+
+@app.get("/api/scan/cost-estimate/{provider_id}", tags=["OCR"], summary="Tarama maliyet tahmini")
+async def scan_cost_estimate(provider_id: str):
+    estimate = estimate_scan_cost(provider_id)
+    if "error" in estimate:
+        raise HTTPException(status_code=404, detail=estimate["error"])
+    return estimate
 
 
 if __name__ == "__main__":
