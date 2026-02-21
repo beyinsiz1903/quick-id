@@ -200,7 +200,7 @@ async def release_room(db: AsyncIOMotorDatabase, room_id: str, guest_id: str = N
     status = "cleaning" if len(current_guests) == 0 else "occupied"
     
     await col.update_one(
-        {"room_id": room_id},
+        {"_id": room["_id"]},
         {"$set": {
             "current_guest_ids": current_guests,
             "status": status,
@@ -210,7 +210,7 @@ async def release_room(db: AsyncIOMotorDatabase, room_id: str, guest_id: str = N
     
     # Update assignment record
     assignments_col = db["room_assignments"]
-    query = {"room_id": room_id, "status": "active"}
+    query = {"room_id": actual_room_id, "status": "active"}
     if guest_id:
         query["guest_id"] = guest_id
     await assignments_col.update_many(
@@ -218,7 +218,7 @@ async def release_room(db: AsyncIOMotorDatabase, room_id: str, guest_id: str = N
         {"$set": {"status": "released", "released_at": datetime.now(timezone.utc)}}
     )
     
-    updated_room = await col.find_one({"room_id": room_id})
+    updated_room = await col.find_one({"_id": room["_id"]})
     if updated_room:
         updated_room["id"] = str(updated_room.pop("_id"))
     return updated_room
