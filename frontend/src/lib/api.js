@@ -420,4 +420,36 @@ export const api = {
     });
     return handleResponse(res);
   },
+
+  // ===== OCR Providers =====
+  async getScanProviders() {
+    const res = await fetch(`${BACKEND_URL}/api/scan/providers`, { headers: authHeaders() });
+    return handleResponse(res);
+  },
+
+  async getOcrStatus() {
+    const res = await fetch(`${BACKEND_URL}/api/scan/ocr-status`);
+    return handleResponse(res);
+  },
+
+  async scanWithOcr(imageBase64) {
+    const res = await fetch(`${BACKEND_URL}/api/scan/ocr-fallback`, {
+      method: 'POST', headers: authHeaders(),
+      body: JSON.stringify({ image_base64: imageBase64 }),
+    });
+    return handleResponse(res);
+  },
+
+  async checkImageQuality(imageBase64) {
+    const res = await fetch(`${BACKEND_URL}/api/scan/quality-check`, {
+      method: 'POST', headers: authHeaders(),
+      body: JSON.stringify({ image_base64: imageBase64 }),
+    });
+    return handleResponse(res);
+  },
+
+  async getCostEstimate(providerId) {
+    const res = await fetch(`${BACKEND_URL}/api/scan/cost-estimate/${providerId}`, { headers: authHeaders() });
+    return handleResponse(res);
+  },
 };
