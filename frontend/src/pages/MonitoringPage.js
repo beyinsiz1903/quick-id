@@ -37,39 +37,37 @@ export default function MonitoringPage() {
   const [loading, setLoading] = useState(true);
   const [backupLoading, setBackupLoading] = useState(false);
 
-  const headers = { Authorization: `Bearer ${token}` };
-
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       const [dashRes, scanRes, errorRes, costRes, backupRes, scheduleRes] = await Promise.allSettled([
-        api.get('/api/monitoring/dashboard', { headers }),
-        api.get('/api/monitoring/scan-stats?days=30', { headers }),
-        api.get('/api/monitoring/error-log?days=7&limit=20', { headers }),
-        api.get('/api/monitoring/ai-costs?days=30', { headers }),
-        api.get('/api/admin/backups', { headers }),
-        api.get('/api/admin/backup-schedule', { headers }),
+        fetchJSON('/api/monitoring/dashboard'),
+        fetchJSON('/api/monitoring/scan-stats?days=30'),
+        fetchJSON('/api/monitoring/error-log?days=7&limit=20'),
+        fetchJSON('/api/monitoring/ai-costs?days=30'),
+        fetchJSON('/api/admin/backups'),
+        fetchJSON('/api/admin/backup-schedule'),
       ]);
-      if (dashRes.status === 'fulfilled') setDashboard(dashRes.value.data);
-      if (scanRes.status === 'fulfilled') setScanStats(scanRes.value.data);
-      if (errorRes.status === 'fulfilled') setErrorLog(errorRes.value.data);
-      if (costRes.status === 'fulfilled') setAiCosts(costRes.value.data);
-      if (backupRes.status === 'fulfilled') setBackups(backupRes.value.data.backups || []);
-      if (scheduleRes.status === 'fulfilled') setBackupSchedule(scheduleRes.value.data);
+      if (dashRes.status === 'fulfilled') setDashboard(dashRes.value);
+      if (scanRes.status === 'fulfilled') setScanStats(scanRes.value);
+      if (errorRes.status === 'fulfilled') setErrorLog(errorRes.value);
+      if (costRes.status === 'fulfilled') setAiCosts(costRes.value);
+      if (backupRes.status === 'fulfilled') setBackups(backupRes.value.backups || []);
+      if (scheduleRes.status === 'fulfilled') setBackupSchedule(scheduleRes.value);
     } catch (e) {
       console.error('Monitoring fetch error:', e);
     }
     setLoading(false);
-  }, [token]);
+  }, []);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
   const handleCreateBackup = async () => {
     setBackupLoading(true);
     try {
-      await api.post('/api/admin/backup', { description: 'Manuel yedekleme' }, { headers });
-      const res = await api.get('/api/admin/backups', { headers });
-      setBackups(res.data.backups || []);
+      await postJSON('/api/admin/backup', { description: 'Manuel yedekleme' });
+      const data = await fetchJSON('/api/admin/backups');
+      setBackups(data.backups || []);
     } catch (e) {
       console.error('Backup error:', e);
     }
