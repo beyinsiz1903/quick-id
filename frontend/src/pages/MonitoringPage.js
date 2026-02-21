@@ -27,7 +27,6 @@ async function postJSON(path, body) {
 }
 
 export default function MonitoringPage() {
-  const { token } = useAuth();
   const [dashboard, setDashboard] = useState(null);
   const [scanStats, setScanStats] = useState(null);
   const [errorLog, setErrorLog] = useState(null);
