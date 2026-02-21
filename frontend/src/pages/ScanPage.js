@@ -300,7 +300,7 @@ export default function ScanPage() {
                   <p className="text-[11px] text-blue-700">
                     <strong>Akilli Mod</strong> goruntu kalitesine gore en uygun saglayiciyi otomatik secer.
                     Yuksek kaliteli goruntulerde ucuz provider, dusuk kalitede en iyi provider kullanilir.
-                    AI basarisiz olursa Tesseract OCR otomatik devreye girer.
+                    AI başarısız olursa Tesseract OCR otomatik devreye girer.
                   </p>
                 </div>
               </div>
