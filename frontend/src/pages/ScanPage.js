@@ -150,7 +150,7 @@ export default function ScanPage() {
         }
       }
     } catch (err) {
-      toast.error(`Tarama hatasi: ${err.message}`);
+      toast.error(`Tarama hatası: ${err.message}`);
     } finally {
       setExtracting(false);
     }
