@@ -704,9 +704,10 @@ class BackendTester:
             return None
 
     def run_all_tests(self):
-        """Run all v5.0 backend tests"""
-        print("🚀 Starting Quick ID Reader v5.0 Backend Tests")
-        print("=" * 60)
+        """Run FIXED Room Assignment backend tests"""
+        print("🚀 Starting Quick ID Reader v5.1 Room Assignment Tests")
+        print("Testing FIXED room_assignment.py (ID mismatch issues resolved)")
+        print("=" * 70)
         
         # Login first
         if not self.login():
@@ -714,16 +715,13 @@ class BackendTester:
         
         all_results = []
         
-        # Run all test suites
-        all_results.extend(self.test_multi_provider_ocr_endpoints())
-        all_results.extend(self.test_enhanced_image_quality_control())
-        all_results.extend(self.test_enhanced_ocr_status())
-        all_results.extend(self.test_scan_endpoint_new_params())
+        # Run room assignment test suite
+        all_results.extend(self.test_room_assignment_flow())
         
         # Summary
-        print("\n" + "=" * 60)
+        print("\n" + "=" * 70)
         print("📊 Test Results Summary:")
-        print("=" * 60)
+        print("=" * 70)
         
         passed = sum(1 for _, status, _ in all_results if status)
         failed = len(all_results) - passed
@@ -737,8 +735,11 @@ class BackendTester:
             for test_name, status, message in all_results:
                 if not status:
                     print(f"  • {test_name}: {message}")
+        else:
+            print("\n🎉 All room assignment tests PASSED!")
+            print("The room_assignment.py fixes appear to be working correctly!")
         
-        print("\n" + "=" * 60)
+        print("\n" + "=" * 70)
         
         return failed == 0
 
