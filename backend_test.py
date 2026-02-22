@@ -66,10 +66,16 @@ class BackendTester:
         
         results = []
         
+        # Generate unique room numbers to avoid conflicts
+        import time
+        room_suffix = str(int(time.time()))[-4:]  # Last 4 digits of timestamp
+        room1_number = f"5{room_suffix[:2]}"
+        room2_number = f"5{room_suffix[2:]}"
+        
         # Step 1: Create a room (admin only)
-        print("\n  Step 1: Creating room 501...")
+        print(f"\n  Step 1: Creating room {room1_number}...")
         room_data = {
-            "room_number": "501", 
+            "room_number": room1_number, 
             "room_type": "standard", 
             "floor": 5, 
             "capacity": 2
