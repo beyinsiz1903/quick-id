@@ -213,13 +213,13 @@ class BackendTester:
         
         return results
 
-    def test_remaining_room_assignment_steps(self, results, first_room_id, first_guest_id):
+    def test_remaining_room_assignment_steps(self, results, first_room_id, first_guest_id, room2_number):
         """Complete the remaining steps of room assignment testing"""
         
         # Step 4: Create another room for auto-assign test
-        print("\n  Step 4: Creating room 502 for auto-assign test...")
+        print(f"\n  Step 4: Creating room {room2_number} for auto-assign test...")
         room_data = {
-            "room_number": "502", 
+            "room_number": room2_number, 
             "room_type": "standard", 
             "floor": 5, 
             "capacity": 2
