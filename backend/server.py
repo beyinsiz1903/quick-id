@@ -1898,7 +1898,7 @@ async def create_new_room(req: RoomCreate, user=Depends(require_admin)):
             floor=req.floor, capacity=req.capacity,
             property_id=req.property_id, features=req.features
         )
-        return {"success": True, "room": serialize_doc(room)}
+        return {"success": True, "room": room}
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
