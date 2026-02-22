@@ -167,15 +167,30 @@ backend:
 
   - task: "Room Management CRUD + Auto-assign"
     implemented: true
-    working: false
+    working: "NA"
     file: "server.py, room_assignment.py"
     stuck_count: 1
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
         - working: false
         - agent: "testing"
         - comment: "Room assignment endpoints fail due to ID mismatch"
+        - working: "NA"
+        - agent: "main"
+        - comment: "v5.1 FIX: room_assignment.py tamamen yeniden yazıldı. serialize_room() eklendi, find_room_by_any_id() 3 yöntemle arar (room_id UUID, ObjectId, room_number). assign_room/auto_assign/release hepsi serialize edilmiş dict döner. server.py endpoint'leri güncellendi - assignment_data artık serialize_doc gerektirmiyor."
+
+  - task: "CI/CD Pipeline"
+    implemented: true
+    working: "NA"
+    file: "tests/test_unit.py, scripts/ci_test.sh, pytest.ini"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+        - agent: "main"
+        - comment: "23 unit test (MRZ, ImageQuality, OCR, Providers, Room). CI/CD script: ./scripts/ci_test.sh. pytest.ini yapılandırması."
 
   - task: "Group Check-in"
     implemented: true
