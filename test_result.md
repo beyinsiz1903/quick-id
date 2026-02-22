@@ -167,11 +167,11 @@ backend:
 
   - task: "Room Management CRUD + Auto-assign"
     implemented: true
-    working: "NA"
+    working: true
     file: "server.py, room_assignment.py"
     stuck_count: 1
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: false
         - agent: "testing"
@@ -179,6 +179,9 @@ backend:
         - working: "NA"
         - agent: "main"
         - comment: "v5.1 FIX: room_assignment.py tamamen yeniden yazıldı. serialize_room() eklendi, find_room_by_any_id() 3 yöntemle arar (room_id UUID, ObjectId, room_number). assign_room/auto_assign/release hepsi serialize edilmiş dict döner. server.py endpoint'leri güncellendi - assignment_data artık serialize_doc gerektirmiyor."
+        - working: true
+        - agent: "testing"
+        - comment: "✅ ALL ROOM ASSIGNMENT ENDPOINTS WORKING! Complete test flow passed: 1) Created room 501→ ObjectId + UUID both work, 2) Created guest Test Misafir, 3) Manual assignment with UUID successful, 4) Manual assignment with ObjectId correctly rejects cleaning room (business logic working), 5) Created room 502, 6) Created guest Oto Atama, 7) Auto-assign successful to room 556, 8) Release room successful (status→cleaning), 9) Room stats working (6 rooms, 16.7% occupancy), 10) List rooms working. The serialize_room() fix and find_room_by_any_id() function resolved all ID mismatch issues."
 
   - task: "CI/CD Pipeline"
     implemented: true
