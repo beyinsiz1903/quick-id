@@ -99,7 +99,7 @@ class BackendTester:
                     print(f"       Room ID (UUID): {room_uuid_id}")
                     
                     self.created_rooms.append(room_obj_id)
-                    results.append(("Create room 501", True, "Room created with both id and room_id fields"))
+                    results.append(("Create room {room1_number}", True, "Room created with both id and room_id fields"))
                     
                     # Step 2: Create a guest for testing
                     print("\n  Step 2: Creating guest 'Test Misafir'...")
