@@ -202,10 +202,10 @@ class BackendTester:
                         
                 else:
                     print(f"    ❌ Room creation: Missing id or room_id fields in response")
-                    results.append(("Create room 501", False, "Missing id or room_id fields in response"))
+                    results.append((f"Create room {room1_number}", False, "Missing id or room_id fields in response"))
             else:
                 print(f"    ❌ Room creation failed: {response.status_code} - {response.text}")
-                results.append(("Create room 501", False, f"HTTP {response.status_code}: {response.text}"))
+                results.append((f"Create room {room1_number}", False, f"HTTP {response.status_code}: {response.text}"))
                 
         except Exception as e:
             print(f"    ❌ Room assignment flow error: {e}")
