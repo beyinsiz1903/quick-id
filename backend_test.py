@@ -237,8 +237,8 @@ class BackendTester:
                 if "room" in room_data and "id" in room_data["room"]:
                     second_room_id = room_data["room"]["room_id"]
                     self.created_rooms.append(room_data["room"]["id"])
-                    print(f"    ✅ Room 502 created: {second_room_id}")
-                    results.append(("Create room 502", True, "Room 502 created successfully"))
+                    print(f"    ✅ Room {room2_number} created: {second_room_id}")
+                    results.append((f"Create room {room2_number}", True, f"Room {room2_number} created successfully"))
                     
                     # Step 5: Create another guest
                     print("\n  Step 5: Creating guest 'Oto Atama'...")
