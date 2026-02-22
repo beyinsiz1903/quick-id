@@ -384,7 +384,6 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Room Management CRUD + Auto-assign"
     - "CI/CD Pipeline"
   stuck_tasks: []
   test_all: false
