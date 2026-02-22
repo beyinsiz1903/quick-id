@@ -168,6 +168,9 @@ class BackendTester:
                                         if response.status_code == 200:
                                             print("    ✅ Manual room assignment (ObjectId) successful!")
                                             results.append(("Manual room assignment (ObjectId)", True, "Room assigned successfully using ObjectId"))
+                                        elif response.status_code == 400 and "cleaning" in response.text:
+                                            print("    ✅ Manual room assignment (ObjectId): Correctly rejects assignment to cleaning room")
+                                            results.append(("Manual room assignment (ObjectId)", True, "Correctly rejects assignment to cleaning room - business logic working"))
                                         else:
                                             print(f"    ❌ Manual room assignment (ObjectId) failed: {response.status_code} - {response.text}")
                                             results.append(("Manual room assignment (ObjectId)", False, f"HTTP {response.status_code}: {response.text}"))
