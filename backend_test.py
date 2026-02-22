@@ -247,11 +247,14 @@ class BackendTester:
                     
                     # Step 5: Create another guest
                     print("\n  Step 5: Creating guest 'Oto Atama'...")
+                    # Use unique ID to avoid duplicates
+                    unique_id2 = str(random.randint(10000000000, 99999999999))
                     guest_data = {
                         "first_name": "Oto", 
                         "last_name": "Atama", 
                         "nationality": "TR", 
-                        "id_number": "88877766655"
+                        "id_number": unique_id2,
+                        "force_create": True  # Force create even if duplicate found
                     }
                     
                     response = self.session.post(
