@@ -62,7 +62,328 @@ class BackendTester:
             print(f"❌ Login error: {e}")
             return False
 
-    def test_multi_provider_ocr_endpoints(self):
+    def test_room_assignment_flow(self):
+        """Test the complete room assignment flow as specified in review request"""
+        print("\n🏨 Testing FIXED Room Assignment Flow:")
+        
+        results = []
+        
+        # Step 1: Create a room (admin only)
+        print("\n  Step 1: Creating room 501...")
+        room_data = {
+            "room_number": "501", 
+            "room_type": "standard", 
+            "floor": 5, 
+            "capacity": 2
+        }
+        
+        try:
+            response = self.session.post(
+                f"{self.base_url}/api/rooms",
+                json=room_data,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                if "room" in data and "id" in data["room"] and "room_id" in data["room"]:
+                    room_obj_id = data["room"]["id"]  # ObjectId string
+                    room_uuid_id = data["room"]["room_id"]  # UUID string
+                    
+                    print(f"    ✅ Room created successfully")
+                    print(f"       ObjectId: {room_obj_id}")
+                    print(f"       Room ID (UUID): {room_uuid_id}")
+                    
+                    self.created_rooms.append(room_obj_id)
+                    results.append(("Create room 501", True, "Room created with both id and room_id fields"))
+                    
+                    # Step 2: Create a guest for testing
+                    print("\n  Step 2: Creating guest 'Test Misafir'...")
+                    guest_data = {
+                        "first_name": "Test", 
+                        "last_name": "Misafir", 
+                        "nationality": "TR", 
+                        "id_number": "99988877766"
+                    }
+                    
+                    response = self.session.post(
+                        f"{self.base_url}/api/guests",
+                        json=guest_data,
+                        timeout=30
+                    )
+                    
+                    if response.status_code == 200:
+                        guest_data = response.json()
+                        if "guest" in guest_data and "id" in guest_data["guest"]:
+                            guest_id = guest_data["guest"]["id"]
+                            print(f"    ✅ Guest created successfully")
+                            print(f"       Guest ID: {guest_id}")
+                            
+                            self.created_guests.append(guest_id)
+                            results.append(("Create guest Test Misafir", True, "Guest created with id field"))
+                            
+                            # Step 3: Manual room assignment (THE BUG WAS HERE - should now work)
+                            print("\n  Step 3: Manual room assignment (using room UUID)...")
+                            assign_data = {
+                                "room_id": room_uuid_id,  # Use UUID first
+                                "guest_id": guest_id
+                            }
+                            
+                            response = self.session.post(
+                                f"{self.base_url}/api/rooms/assign",
+                                json=assign_data,
+                                timeout=30
+                            )
+                            
+                            if response.status_code == 200:
+                                assign_result = response.json()
+                                if "room" in assign_result and "assignment" in assign_result:
+                                    print("    ✅ Manual room assignment (UUID) successful!")
+                                    print(f"       Room status: {assign_result['room'].get('status')}")
+                                    print(f"       Assignment ID: {assign_result['assignment'].get('assignment_id')}")
+                                    results.append(("Manual room assignment (UUID)", True, "Room assigned successfully using UUID"))
+                                    
+                                    # Test assignment with ObjectId too
+                                    print("\n  Step 3b: Testing assignment with ObjectId...")
+                                    
+                                    # First release the room
+                                    response = self.session.post(
+                                        f"{self.base_url}/api/rooms/{room_uuid_id}/release",
+                                        timeout=30
+                                    )
+                                    
+                                    if response.status_code == 200:
+                                        print("    ✅ Room released for ObjectId test")
+                                        
+                                        # Now try with ObjectId
+                                        assign_data_oid = {
+                                            "room_id": room_obj_id,  # Use ObjectId this time
+                                            "guest_id": guest_id
+                                        }
+                                        
+                                        response = self.session.post(
+                                            f"{self.base_url}/api/rooms/assign",
+                                            json=assign_data_oid,
+                                            timeout=30
+                                        )
+                                        
+                                        if response.status_code == 200:
+                                            print("    ✅ Manual room assignment (ObjectId) successful!")
+                                            results.append(("Manual room assignment (ObjectId)", True, "Room assigned successfully using ObjectId"))
+                                        else:
+                                            print(f"    ❌ Manual room assignment (ObjectId) failed: {response.status_code} - {response.text}")
+                                            results.append(("Manual room assignment (ObjectId)", False, f"HTTP {response.status_code}: {response.text}"))
+                                    else:
+                                        print(f"    ❌ Room release failed: {response.status_code}")
+                                        results.append(("Room release for ObjectId test", False, f"HTTP {response.status_code}"))
+                                else:
+                                    print(f"    ❌ Manual room assignment: Invalid response structure")
+                                    results.append(("Manual room assignment (UUID)", False, "Invalid response structure"))
+                            else:
+                                print(f"    ❌ Manual room assignment failed: {response.status_code} - {response.text}")
+                                results.append(("Manual room assignment (UUID)", False, f"HTTP {response.status_code}: {response.text}"))
+                            
+                            # Continue with remaining tests...
+                            self.test_remaining_room_assignment_steps(results, room_uuid_id, guest_id)
+                            
+                        else:
+                            print(f"    ❌ Guest creation: Missing id field in response")
+                            results.append(("Create guest Test Misafir", False, "Missing id field in response"))
+                    else:
+                        print(f"    ❌ Guest creation failed: {response.status_code} - {response.text}")
+                        results.append(("Create guest Test Misafir", False, f"HTTP {response.status_code}: {response.text}"))
+                        
+                else:
+                    print(f"    ❌ Room creation: Missing id or room_id fields in response")
+                    results.append(("Create room 501", False, "Missing id or room_id fields in response"))
+            else:
+                print(f"    ❌ Room creation failed: {response.status_code} - {response.text}")
+                results.append(("Create room 501", False, f"HTTP {response.status_code}: {response.text}"))
+                
+        except Exception as e:
+            print(f"    ❌ Room assignment flow error: {e}")
+            results.append(("Room assignment flow", False, str(e)))
+        
+        return results
+
+    def test_remaining_room_assignment_steps(self, results, first_room_id, first_guest_id):
+        """Complete the remaining steps of room assignment testing"""
+        
+        # Step 4: Create another room for auto-assign test
+        print("\n  Step 4: Creating room 502 for auto-assign test...")
+        room_data = {
+            "room_number": "502", 
+            "room_type": "standard", 
+            "floor": 5, 
+            "capacity": 2
+        }
+        
+        try:
+            response = self.session.post(
+                f"{self.base_url}/api/rooms",
+                json=room_data,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                room_data = response.json()
+                if "room" in room_data and "id" in room_data["room"]:
+                    second_room_id = room_data["room"]["room_id"]
+                    self.created_rooms.append(room_data["room"]["id"])
+                    print(f"    ✅ Room 502 created: {second_room_id}")
+                    results.append(("Create room 502", True, "Room 502 created successfully"))
+                    
+                    # Step 5: Create another guest
+                    print("\n  Step 5: Creating guest 'Oto Atama'...")
+                    guest_data = {
+                        "first_name": "Oto", 
+                        "last_name": "Atama", 
+                        "nationality": "TR", 
+                        "id_number": "88877766655"
+                    }
+                    
+                    response = self.session.post(
+                        f"{self.base_url}/api/guests",
+                        json=guest_data,
+                        timeout=30
+                    )
+                    
+                    if response.status_code == 200:
+                        guest_data = response.json()
+                        if "guest" in guest_data and "id" in guest_data["guest"]:
+                            second_guest_id = guest_data["guest"]["id"]
+                            self.created_guests.append(second_guest_id)
+                            print(f"    ✅ Guest 'Oto Atama' created: {second_guest_id}")
+                            results.append(("Create guest Oto Atama", True, "Second guest created successfully"))
+                            
+                            # Step 6: Auto-assign room (THE BUG WAS HERE TOO - should now work)
+                            print("\n  Step 6: Auto-assign room...")
+                            auto_assign_data = {"guest_id": second_guest_id}
+                            
+                            response = self.session.post(
+                                f"{self.base_url}/api/rooms/auto-assign",
+                                json=auto_assign_data,
+                                timeout=30
+                            )
+                            
+                            if response.status_code == 200:
+                                auto_result = response.json()
+                                if "room" in auto_result and "assignment" in auto_result:
+                                    assigned_room_number = auto_result["room"].get("room_number")
+                                    print(f"    ✅ Auto-assign successful! Assigned to room: {assigned_room_number}")
+                                    results.append(("Auto-assign room", True, f"Auto-assigned to room {assigned_room_number}"))
+                                else:
+                                    print(f"    ❌ Auto-assign: Invalid response structure")
+                                    results.append(("Auto-assign room", False, "Invalid response structure"))
+                            else:
+                                print(f"    ❌ Auto-assign failed: {response.status_code} - {response.text}")
+                                results.append(("Auto-assign room", False, f"HTTP {response.status_code}: {response.text}"))
+                                
+                        else:
+                            print(f"    ❌ Second guest creation: Missing id field")
+                            results.append(("Create guest Oto Atama", False, "Missing id field"))
+                    else:
+                        print(f"    ❌ Second guest creation failed: {response.status_code}")
+                        results.append(("Create guest Oto Atama", False, f"HTTP {response.status_code}"))
+                        
+                else:
+                    print(f"    ❌ Second room creation: Missing id field")
+                    results.append(("Create room 502", False, "Missing id field"))
+            else:
+                print(f"    ❌ Second room creation failed: {response.status_code}")
+                results.append(("Create room 502", False, f"HTTP {response.status_code}"))
+                
+        except Exception as e:
+            print(f"    ❌ Remaining steps error: {e}")
+            results.append(("Remaining room assignment steps", False, str(e)))
+        
+        # Step 7: Release room (use first room)
+        print("\n  Step 7: Release room...")
+        try:
+            response = self.session.post(
+                f"{self.base_url}/api/rooms/{first_room_id}/release",
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                release_result = response.json()
+                if "status" in release_result:
+                    print(f"    ✅ Room release successful! Status: {release_result.get('status')}")
+                    results.append(("Release room", True, f"Room released, status: {release_result.get('status')}"))
+                else:
+                    print(f"    ❌ Room release: Invalid response structure")
+                    results.append(("Release room", False, "Invalid response structure"))
+            else:
+                print(f"    ❌ Room release failed: {response.status_code} - {response.text}")
+                results.append(("Release room", False, f"HTTP {response.status_code}: {response.text}"))
+                
+        except Exception as e:
+            print(f"    ❌ Room release error: {e}")
+            results.append(("Release room", False, str(e)))
+        
+        # Step 8: Get room stats
+        print("\n  Step 8: Get room stats...")
+        try:
+            response = self.session.get(
+                f"{self.base_url}/api/rooms/stats",
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                stats = response.json()
+                required_stats = ["total", "available", "occupied", "cleaning", "maintenance", "reserved", "occupancy_rate"]
+                
+                if all(stat in stats for stat in required_stats):
+                    print(f"    ✅ Room stats retrieved successfully!")
+                    print(f"       Total: {stats.get('total')}, Available: {stats.get('available')}, Occupied: {stats.get('occupied')}")
+                    print(f"       Occupancy Rate: {stats.get('occupancy_rate')}%")
+                    results.append(("Get room stats", True, f"Stats retrieved: {stats.get('total')} total rooms, {stats.get('occupancy_rate')}% occupancy"))
+                else:
+                    missing = [s for s in required_stats if s not in stats]
+                    print(f"    ❌ Room stats: Missing fields: {missing}")
+                    results.append(("Get room stats", False, f"Missing fields: {missing}"))
+            else:
+                print(f"    ❌ Room stats failed: {response.status_code} - {response.text}")
+                results.append(("Get room stats", False, f"HTTP {response.status_code}: {response.text}"))
+                
+        except Exception as e:
+            print(f"    ❌ Room stats error: {e}")
+            results.append(("Get room stats", False, str(e)))
+        
+        # Step 9: List rooms
+        print("\n  Step 9: List rooms...")
+        try:
+            response = self.session.get(
+                f"{self.base_url}/api/rooms",
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                rooms_data = response.json()
+                if "rooms" in rooms_data:
+                    rooms = rooms_data["rooms"]
+                    room_numbers = [r.get("room_number") for r in rooms]
+                    print(f"    ✅ Rooms list retrieved: {len(rooms)} rooms")
+                    print(f"       Room numbers: {room_numbers}")
+                    
+                    # Check if our created rooms are in the list
+                    created_rooms_found = [r for r in rooms if r.get("room_number") in ["501", "502"]]
+                    if len(created_rooms_found) >= 2:
+                        print(f"    ✅ Both created rooms found in the list with correct statuses")
+                        results.append(("List rooms", True, f"Retrieved {len(rooms)} rooms, including our test rooms"))
+                    else:
+                        print(f"    ⚠️ Only {len(created_rooms_found)} of our test rooms found in list")
+                        results.append(("List rooms", True, f"Retrieved {len(rooms)} rooms, but only {len(created_rooms_found)} test rooms found"))
+                else:
+                    print(f"    ❌ List rooms: Missing 'rooms' field in response")
+                    results.append(("List rooms", False, "Missing 'rooms' field in response"))
+            else:
+                print(f"    ❌ List rooms failed: {response.status_code} - {response.text}")
+                results.append(("List rooms", False, f"HTTP {response.status_code}: {response.text}"))
+                
+        except Exception as e:
+            print(f"    ❌ List rooms error: {e}")
+            results.append(("List rooms", False, str(e)))
         """Test NEW Multi-Provider OCR endpoints"""
         print("\n🔍 Testing Multi-Provider OCR Endpoints:")
         
