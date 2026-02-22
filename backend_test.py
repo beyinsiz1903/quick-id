@@ -295,10 +295,10 @@ class BackendTester:
                         
                 else:
                     print(f"    ❌ Second room creation: Missing id field")
-                    results.append(("Create room 502", False, "Missing id field"))
+                    results.append((f"Create room {room2_number}", False, "Missing id field"))
             else:
                 print(f"    ❌ Second room creation failed: {response.status_code}")
-                results.append(("Create room 502", False, f"HTTP {response.status_code}"))
+                results.append((f"Create room {room2_number}", False, f"HTTP {response.status_code}"))
                 
         except Exception as e:
             print(f"    ❌ Remaining steps error: {e}")
