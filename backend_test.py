@@ -1,16 +1,21 @@
 #!/usr/bin/env python3
 """
-Backend Testing for Quick ID Reader Hotel App v5.0
-Testing ONLY the NEW endpoints added in v5.0
+Backend Testing for Quick ID Reader Hotel App v5.1
+Testing FIXED Room Assignment endpoints (room_assignment.py rewritten)
 
 Auth credentials: admin@quickid.com / admin123
 Base URL: https://mrz-parser.preview.emergentagent.com
 
-NEW ENDPOINTS TO TEST:
-1. Multi-Provider OCR endpoints
-2. Enhanced Image Quality Control
-3. Enhanced OCR Status
-4. Verify /api/scan accepts new params
+ROOM ASSIGNMENT ENDPOINTS TO TEST:
+1. Create rooms (POST /api/rooms)  
+2. Create guests (POST /api/guests)
+3. Manual room assignment (POST /api/rooms/assign) - FIXED
+4. Auto room assignment (POST /api/rooms/auto-assign) - FIXED 
+5. Room release (POST /api/rooms/{id}/release)
+6. Room stats (GET /api/rooms/stats)
+7. List rooms (GET /api/rooms)
+
+Previous issue: ID mismatch between room_id UUID and MongoDB ObjectId - SHOULD BE FIXED NOW
 """
 import requests
 import json
