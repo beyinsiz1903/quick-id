@@ -305,9 +305,10 @@ class BackendTester:
             
             if response.status_code == 200:
                 release_result = response.json()
-                if "status" in release_result:
-                    print(f"    ✅ Room release successful! Status: {release_result.get('status')}")
-                    results.append(("Release room", True, f"Room released, status: {release_result.get('status')}"))
+                if "success" in release_result and "room" in release_result:
+                    room_status = release_result["room"].get("status")
+                    print(f"    ✅ Room release successful! Status: {room_status}")
+                    results.append(("Release room", True, f"Room released, status: {room_status}"))
                 else:
                     print(f"    ❌ Room release: Invalid response structure")
                     results.append(("Release room", False, "Invalid response structure"))
