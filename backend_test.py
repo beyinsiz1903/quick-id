@@ -257,9 +257,9 @@ class BackendTester:
                     )
                     
                     if response.status_code == 200:
-                        guest_data = response.json()
-                        if "guest" in guest_data and "id" in guest_data["guest"]:
-                            second_guest_id = guest_data["guest"]["id"]
+                        guest_response = response.json()
+                        if "success" in guest_response and "guest" in guest_response and "id" in guest_response["guest"]:
+                            second_guest_id = guest_response["guest"]["id"]
                             self.created_guests.append(second_guest_id)
                             print(f"    ✅ Guest 'Oto Atama' created: {second_guest_id}")
                             results.append(("Create guest Oto Atama", True, "Second guest created successfully"))
