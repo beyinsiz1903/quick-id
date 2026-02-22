@@ -33,6 +33,9 @@ class BackendTester:
         self.base_url = BASE_URL
         self.token = None
         self.session = requests.Session()
+        # Store created resources for cleanup
+        self.created_rooms = []
+        self.created_guests = []
         
     def login(self) -> bool:
         """Login and get JWT token"""
