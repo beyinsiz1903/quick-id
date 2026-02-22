@@ -749,8 +749,8 @@ if __name__ == "__main__":
     success = tester.run_all_tests()
     
     if success:
-        print("🎉 All v5.0 backend tests PASSED!")
+        print("🎉 All Room Assignment tests PASSED! The fixes are working!")
     else:
-        print("💥 Some v5.0 backend tests FAILED!")
+        print("💥 Some Room Assignment tests FAILED! Check the issues above.")
     
     exit(0 if success else 1)
