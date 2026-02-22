@@ -375,19 +375,18 @@ frontend:
 
 metadata:
   created_by: "main_agent"
-  version: "5.0"
-  test_sequence: 8
+  version: "5.1"
+  test_sequence: 9
   run_ui: true
 
 test_plan:
   current_focus:
-    - "ScanPage - Multi-Provider + Quality + MRZ"
+    - "Room Management CRUD + Auto-assign"
+    - "CI/CD Pipeline"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
 
 agent_communication:
     - agent: "main"
-    - message: "v5.0 - 4 ana özellik güncellendi: 1) Multi-Provider OCR: GPT-4o, GPT-4o-mini, Gemini Flash, Tesseract desteği. GET /api/scan/providers, GET /api/scan/cost-estimate/{id}. POST /api/scan artık provider ve smart_mode parametreleri kabul ediyor. 2) Geliştirilmiş Görüntü Kalite: parlama/yansıma, kenar, eğiklik tespiti + iyileştirme önerileri. 3) Geliştirilmiş MRZ: TD2 desteği, OCR hata düzeltme, fuzzy eşleşme, ICAO uyumluluk. 4) Geliştirilmiş OCR: OpenCV ön işleme, deskew, birden fazla PSM, güven puanı, otomatik fallback. Auth: admin@quickid.com / admin123. Test: GET /api/scan/providers (auth gerekli), GET /api/scan/ocr-status (public), POST /api/scan/quality-check (auth), GET /api/scan/cost-estimate/gpt-4o (auth)."
-    - agent: "testing"
-    - message: "v5.0 Backend Testing Complete: ✅ 10/11 tests PASSED. Multi-Provider OCR: All endpoints working (GET /api/scan/providers, 4x cost-estimate endpoints, provider/smart_mode params in /api/scan). Enhanced Image Quality: Working with all features (glare, edges, skew detection). Enhanced OCR Status: Working with new preprocessing field. Only minor issue: tesseract provider causes 520 error (expected since tesseract not available in deployment). Fixed numpy serialization bug. All NEW v5.0 features verified and working correctly."
+    - message: "v5.1 - Room assignment fix + CI/CD. room_assignment.py tamamen yeniden yazıldı: serialize_room(), find_room_by_any_id() 3 ID yöntemi. server.py endpoint'leri güncellendi. 23 unit test eklendi. Auth: admin@quickid.com / admin123. TEST: POST /api/rooms (admin, oda oluştur), POST /api/rooms/assign (room_id + guest_id), POST /api/rooms/auto-assign (guest_id), POST /api/rooms/{id}/release."
