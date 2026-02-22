@@ -1951,14 +1951,14 @@ async def assign_room_endpoint(req: RoomAssignRequest, user=Depends(require_auth
         result = await assign_room(db, room_id=req.room_id, guest_id=req.guest_id)
         room_data = result.get("room", {})
         assignment_data = result.get("assignment", {})
-        # Remove non-serializable fields
-        assignment_data.pop("_id", None)
         await create_audit_log(req.guest_id, "room_assigned",
                                metadata={"room_id": req.room_id, "room_number": room_data.get("room_number", "")},
                                user_email=user.get("email"))
-        return {"success": True, "room": room_data, "assignment": serialize_doc(assignment_data) if isinstance(assignment_data, dict) else assignment_data}
+        return {"success": True, "room": room_data, "assignment": assignment_data}
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Oda atama hatası: {str(e)}")
 
 
 @app.post("/api/rooms/auto-assign", tags=["Oda Yönetimi"], summary="Otomatik oda ata",
@@ -1972,13 +1972,16 @@ async def auto_assign_room_endpoint(req: AutoAssignRequest, user=Depends(require
             raise HTTPException(status_code=404, detail="Müsait oda bulunamadı")
         room_data = result.get("room", {})
         assignment_data = result.get("assignment", {})
-        assignment_data.pop("_id", None)
         await create_audit_log(req.guest_id, "room_auto_assigned",
-                               metadata={"room_id": room_data.get("room_id", "")},
+                               metadata={"room_id": room_data.get("room_id", ""), "room_number": room_data.get("room_number", "")},
                                user_email=user.get("email"))
-        return {"success": True, "room": room_data, "assignment": serialize_doc(assignment_data) if isinstance(assignment_data, dict) else assignment_data}
+        return {"success": True, "room": room_data, "assignment": assignment_data}
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Otomatik oda atama hatası: {str(e)}")
 
 
 @app.post("/api/rooms/{room_id}/release", tags=["Oda Yönetimi"], summary="Odayı serbest bırak")
