@@ -185,15 +185,15 @@ backend:
 
   - task: "CI/CD Pipeline"
     implemented: true
-    working: "NA"
+    working: true
     file: "tests/test_unit.py, scripts/ci_test.sh, pytest.ini"
     stuck_count: 0
     priority: "medium"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
-        - working: "NA"
+        - working: true
         - agent: "main"
-        - comment: "23 unit test (MRZ, ImageQuality, OCR, Providers, Room). CI/CD script: ./scripts/ci_test.sh. pytest.ini yapılandırması."
+        - comment: "23 unit test - hepsi geçiyor (MRZ, ImageQuality, OCR, Providers, Room). CI/CD script: ./scripts/ci_test.sh"
 
   - task: "Group Check-in"
     implemented: true
