@@ -191,7 +191,7 @@ class BackendTester:
                                 results.append(("Manual room assignment (UUID)", False, f"HTTP {response.status_code}: {response.text}"))
                             
                             # Continue with remaining tests...
-                            self.test_remaining_room_assignment_steps(results, room_uuid_id, guest_id)
+                            self.test_remaining_room_assignment_steps(results, room_uuid_id, guest_id, room2_number)
                             
                         else:
                             print(f"    ❌ Guest creation: Missing id field in response")
