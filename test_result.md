@@ -384,13 +384,11 @@ metadata:
 
 test_plan:
   current_focus:
-    - "CI/CD Pipeline"
+    - "ScanPage - Multi-Provider + Quality + MRZ"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
 
 agent_communication:
     - agent: "main"
-    - message: "v5.1 - Room assignment fix + CI/CD. room_assignment.py tamamen yeniden yazıldı: serialize_room(), find_room_by_any_id() 3 ID yöntemi. server.py endpoint'leri güncellendi. 23 unit test eklendi. Auth: admin@quickid.com / admin123. TEST: POST /api/rooms (admin, oda oluştur), POST /api/rooms/assign (room_id + guest_id), POST /api/rooms/auto-assign (guest_id), POST /api/rooms/{id}/release."
-    - agent: "testing"
-    - message: "🎉 ROOM ASSIGNMENT TESTING COMPLETE! All 10 test cases PASSED. The v5.1 fixes resolved all ID mismatch issues. Key findings: 1) Both UUID and ObjectId room identification working, 2) Manual assignment works with both ID types, 3) Auto-assign functioning properly, 4) Business logic correctly prevents assignment to cleaning rooms, 5) Room stats and listing APIs working. The main agent's room_assignment.py rewrite was successful - serialize_room() and find_room_by_any_id() functions fixed serialization issues."
+    - message: "v5.1 - Frontend testi isteniyor. ScanPage güncellendi: Provider seçici panel (5 provider: Akıllı Mod, GPT-4o, GPT-4o-mini, Gemini Flash, Offline OCR), geliştirilmiş kalite uyarıları (glare, kenar, eğiklik), iyileştirme önerileri, MRZ detay badge'leri (ICAO, OCR düzeltme, fuzzy), provider bilgi kartı. Auth: admin@quickid.com / admin123. URL: https://mrz-parser.preview.emergentagent.com. Test edilecek: 1) /scan sayfası yükleniyor mu, 2) Provider seçici butonu ve paneli var mı + çalışıyor mu, 3) Akıllı Mod varsayılan seçili mi, 4) 5 provider seçeneği görünüyor mu, 5) Provider seçince badge değişiyor mu (Offline OCR → amber badge, Auto → mor badge), 6) Kamera bölümü görünüyor mu. Daha önce çalışan sayfalar (Monitoring, Room, GroupCheckin, GuestDetail, Nav) test edilmesine gerek YOK."
