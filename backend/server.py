@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 import os
 import json
 import base64
+import logging
 from datetime import datetime, timezone, timedelta
 from typing import Optional, List
 from pydantic import BaseModel
@@ -16,6 +17,15 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 
 load_dotenv()
+
+# ===== Structured Logging Setup =====
+LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO").upper()
+logging.basicConfig(
+    level=getattr(logging, LOG_LEVEL, logging.INFO),
+    format="%(asctime)s | %(levelname)-8s | %(name)-20s | %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
+logger = logging.getLogger("quickid")
 
 from auth import (
     hash_password, verify_password, create_token,
