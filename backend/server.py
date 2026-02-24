@@ -266,17 +266,6 @@ class ScanRequest(BaseModel):
     provider: Optional[str] = None  # gpt-4o, gpt-4o-mini, gemini-flash, tesseract, auto
     smart_mode: Optional[bool] = True  # Akıllı yönlendirme
 
-    def model_validate(cls, v):
-        # Validate before pydantic processes the data
-        if isinstance(v, dict) and 'image_base64' in v:
-            if len(v['image_base64']) > MAX_IMAGE_BASE64_LENGTH:
-                from fastapi import HTTPException
-                raise HTTPException(
-                    status_code=413,
-                    detail=f"Görüntü boyutu çok büyük. Maksimum {MAX_IMAGE_BASE64_LENGTH // (1024*1024)}MB izin verilir."
-                )
-        return super().model_validate(v)
-
 class GuestCreate(BaseModel):
     first_name: Optional[str] = None
     last_name: Optional[str] = None
