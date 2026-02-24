@@ -876,7 +876,19 @@ async def reset_user_password(user_id: str, req: PasswordChange, user=Depends(re
         oid = ObjectId(user_id)
     except Exception:
         raise HTTPException(status_code=400)
-    await users_col.update_one({"_id": oid}, {"$set": {"password_hash": hash_password(req.new_password)}})
+    # Şifre güçlülük kontrolü
+    pwd_check = validate_password_strength(req.new_password)
+    if not pwd_check["valid"]:
+        raise HTTPException(status_code=400, detail={
+            "message": "Şifre gereksinimleri karşılanmadı",
+            "errors": pwd_check["errors"],
+            "strength": pwd_check["strength"],
+        })
+    await users_col.update_one({"_id": oid}, {"$set": {
+        "password_hash": hash_password(req.new_password),
+        "password_changed_at": datetime.now(timezone.utc),
+    }})
+    logger.info(f"🔑 Şifre sıfırlandı: user_id={user_id} - admin: {user.get('email')}")
     return {"success": True, "message": "Şifre sıfırlandı"}
 
 
