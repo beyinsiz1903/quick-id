@@ -40,22 +40,22 @@ export default function AppShell({ children }) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const navItems = [
-    { path: '/', label: 'Genel Bakış', icon: LayoutDashboard },
-    { path: '/scan', label: 'Tara', icon: ScanLine },
-    { path: '/bulk-scan', label: 'Toplu Tarama', icon: Layers },
-    { path: '/guests', label: 'Misafirler', icon: Users },
-    { path: '/group-checkin', label: 'Grup Check-in', icon: UsersRound },
-    { path: '/rooms', label: 'Oda Yönetimi', icon: DoorOpen },
-    { path: '/face-match', label: 'Yüz Eşleştirme', icon: UserCheck },
-    { path: '/tc-kimlik', label: 'TC Kimlik & Emniyet', icon: Fingerprint },
+    { path: '/', label: t('nav.overview'), icon: LayoutDashboard },
+    { path: '/scan', label: t('nav.scan'), icon: ScanLine },
+    { path: '/bulk-scan', label: t('nav.bulkScan'), icon: Layers },
+    { path: '/guests', label: t('nav.guests'), icon: Users },
+    { path: '/group-checkin', label: t('nav.groupCheckin'), icon: UsersRound },
+    { path: '/rooms', label: t('nav.rooms'), icon: DoorOpen },
+    { path: '/face-match', label: t('nav.faceMatch'), icon: UserCheck },
+    { path: '/tc-kimlik', label: t('nav.tcKimlik'), icon: Fingerprint },
     ...(isAdmin ? [
-      { path: '/monitoring', label: 'Monitoring', icon: BarChart3 },
-      { path: '/properties', label: 'Tesisler', icon: Building2 },
-      { path: '/kiosk', label: 'Kiosk & Offline', icon: Monitor },
-      { path: '/users', label: 'Kullanıcılar', icon: UserCog },
-      { path: '/settings', label: 'Ayarlar & KVKK', icon: Settings },
-      { path: '/kvkk', label: 'KVKK Uyumluluk', icon: Shield },
-      { path: '/api-docs', label: 'API Rehberi', icon: BookOpen },
+      { path: '/monitoring', label: t('nav.monitoring'), icon: BarChart3 },
+      { path: '/properties', label: t('nav.properties'), icon: Building2 },
+      { path: '/kiosk', label: t('nav.kiosk'), icon: Monitor },
+      { path: '/users', label: t('nav.users'), icon: UserCog },
+      { path: '/settings', label: t('nav.settings'), icon: Settings },
+      { path: '/kvkk', label: t('nav.kvkk'), icon: Shield },
+      { path: '/api-docs', label: t('nav.apiDocs'), icon: BookOpen },
     ] : []),
   ];
 
