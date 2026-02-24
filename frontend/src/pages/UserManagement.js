@@ -12,7 +12,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '../components/ui/table';
-import { Users, Plus, Edit3, Trash2, Key, Shield, User, Loader2 } from 'lucide-react';
+import PasswordStrength from '../components/PasswordStrength';
+import { Users, Plus, Edit3, Trash2, Key, Shield, User, Loader2, Unlock } from 'lucide-react';
 
 export default function UserManagement() {
   const { user: currentUser } = useAuth();
