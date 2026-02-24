@@ -68,6 +68,11 @@ from ocr_providers import (
     smart_scan, get_provider_stats, estimate_scan_cost,
     get_smart_provider_chain, update_provider_health, PROVIDERS,
 )
+from pdf_reports import generate_form_c_pdf, generate_guest_list_pdf
+from email_service import (
+    notify_checkin, notify_checkout, notify_kvkk_request,
+    get_email_log, get_email_status, send_email,
+)
 import qrcode
 import io
 
