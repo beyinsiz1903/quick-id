@@ -150,6 +150,20 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
 app.add_middleware(SecurityHeadersMiddleware)
 
+# --- Request Size Limit Middleware ---
+class RequestSizeLimitMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request, call_next):
+        if request.method == "POST" and request.url.path in ["/api/scan"]:
+            content_length = request.headers.get("content-length")
+            if content_length and int(content_length) > MAX_IMAGE_BASE64_LENGTH:
+                return JSONResponse(
+                    status_code=413,
+                    content={"detail": f"Görüntü boyutu çok büyük. Maksimum {MAX_IMAGE_BASE64_LENGTH // (1024*1024)}MB izin verilir."}
+                )
+        return await call_next(request)
+
+app.add_middleware(RequestSizeLimitMiddleware)
+
 # CORS - Secure whitelist configuration
 CORS_ORIGINS = os.environ.get("CORS_ORIGINS", "")
 if CORS_ORIGINS == "*":
