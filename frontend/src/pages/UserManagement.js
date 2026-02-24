@@ -65,12 +65,25 @@ export default function UserManagement() {
   };
 
   const handleResetPassword = async () => {
-    if (!newPassword || newPassword.length < 4) { toast.error('En az 4 karakter girin'); return; }
+    if (!newPassword || newPassword.length < 8) { toast.error('En az 8 karakter girin'); return; }
     try {
       await api.resetUserPassword(resetDialog, newPassword);
       toast.success('Şifre sıfırlandı');
       setResetDialog(null);
       setNewPassword('');
+    } catch (err) {
+      if (err.errors) {
+        toast.error(err.errors.join(', '));
+      } else {
+        toast.error(err.message);
+      }
+    }
+  };
+
+  const handleUnlockUser = async (userId) => {
+    try {
+      await api.unlockUser(userId);
+      toast.success('Hesap kilidi açıldı');
     } catch (err) { toast.error(err.message); }
   };
 
