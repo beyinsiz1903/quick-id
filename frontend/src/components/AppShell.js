@@ -23,6 +23,8 @@ import {
   DoorOpen,
   BarChart3,
   UsersRound,
+  Clock,
+  AlertTriangle,
 } from 'lucide-react';
 
 export default function AppShell({ children }) {
