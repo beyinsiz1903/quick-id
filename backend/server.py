@@ -158,9 +158,62 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         response.headers["Permissions-Policy"] = "camera=(self), microphone=()"
+        response.headers["Content-Security-Policy"] = "frame-ancestors 'none'"
         return response
 
 app.add_middleware(SecurityHeadersMiddleware)
+
+
+# --- CSRF Protection Middleware (Origin/Referer check) ---
+CSRF_SAFE_METHODS = {"GET", "HEAD", "OPTIONS"}
+CSRF_EXEMPT_PATHS = {"/api/auth/login", "/api/health", "/api/docs", "/api/redoc", "/api/openapi.json"}
+
+class CSRFProtectionMiddleware(BaseHTTPMiddleware):
+    """
+    CSRF koruması: POST/PATCH/DELETE isteklerinde Origin veya Referer header'ı kontrol eder.
+    JWT Bearer token kullanıldığı için bu ek bir güvenlik katmanıdır.
+    """
+    async def dispatch(self, request, call_next):
+        if request.method in CSRF_SAFE_METHODS:
+            return await call_next(request)
+
+        # Exempt paths (login, health, docs)
+        if request.url.path in CSRF_EXEMPT_PATHS:
+            return await call_next(request)
+
+        # Pre-check-in public endpoints are exempt
+        if request.url.path.startswith("/api/precheckin/"):
+            return await call_next(request)
+
+        origin = request.headers.get("origin", "")
+        referer = request.headers.get("referer", "")
+
+        # İzin verilen origin'ler
+        allowed_origins = set(cors_origins_list) if cors_origins_list else set()
+        allowed_origins.add("http://localhost:3000")
+        allowed_origins.add("http://127.0.0.1:3000")
+
+        # Origin veya Referer kontrolü
+        origin_ok = False
+        if origin:
+            origin_ok = any(origin.startswith(allowed.rstrip("/")) for allowed in allowed_origins if allowed != "*")
+        if not origin_ok and referer:
+            origin_ok = any(referer.startswith(allowed.rstrip("/")) for allowed in allowed_origins if allowed != "*")
+
+        # API istekleri Bearer token ile geliyorsa Origin kontrolü gevşetilir
+        auth_header = request.headers.get("authorization", "")
+        has_bearer = auth_header.startswith("Bearer ")
+
+        if not origin_ok and not has_bearer:
+            logger.warning(f"⚠️ CSRF check failed: {request.method} {request.url.path} (origin: {origin}, referer: {referer})")
+            return JSONResponse(
+                status_code=403,
+                content={"detail": "CSRF doğrulama hatası. İstek reddedildi."}
+            )
+
+        return await call_next(request)
+
+app.add_middleware(CSRFProtectionMiddleware)
 
 # --- Request Size Limit Middleware ---
 class RequestSizeLimitMiddleware(BaseHTTPMiddleware):
