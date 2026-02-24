@@ -777,6 +777,13 @@ async def anonymize_guest_endpoint(guest_id: str, user=Depends(require_admin)):
 @limiter.limit("15/minute")
 async def scan_id(request: Request, scan_req: ScanRequest, user=Depends(require_auth)):
     try:
+        # Step 0: Image size validation
+        if len(scan_req.image_base64) > MAX_IMAGE_BASE64_LENGTH:
+            raise HTTPException(
+                status_code=413,
+                detail=f"Görüntü boyutu çok büyük. Maksimum {MAX_IMAGE_BASE64_LENGTH // (1024*1024)}MB izin verilir."
+            )
+
         # Step 1: Image quality check (geliştirilmiş)
         quality = assess_image_quality(scan_req.image_base64)
         quality_score = quality.get("overall_score", 70)
