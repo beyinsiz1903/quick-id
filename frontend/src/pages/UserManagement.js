@@ -224,6 +224,7 @@ export default function UserManagement() {
           <div className="space-y-1.5">
             <Label>Yeni Şifre</Label>
             <Input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="Yeni şifre" />
+            <PasswordStrength password={newPassword} showRules={true} />
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setResetDialog(null)}>İptal</Button>
