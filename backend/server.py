@@ -1278,7 +1278,8 @@ async def export_guests_json(status: Optional[str] = None, date_from: Optional[s
 @app.get("/api/exports/guests.csv")
 async def export_guests_csv(status: Optional[str] = None, user=Depends(require_auth)):
     from fastapi.responses import StreamingResponse
-    import io, csv
+    import io
+    import csv
     query = {}
     if status: query["status"] = status
     cursor = guests_col.find(query).sort("created_at", -1)
