@@ -1517,6 +1517,12 @@ async def checkout_guest(guest_id: str, user=Depends(require_auth)):
     await create_audit_log(guest_id, "checked_out", {"status": {"old": old_doc.get("status"), "new": "checked_out"}}, metadata={"check_out_at": now.isoformat()}, user_email=user.get("email"))
     logger.info(f"📤 Check-out: Guest {guest_id} by {user.get('email')}")
     doc = await guests_col.find_one({"_id": oid})
+    # Email notification (async, non-blocking)
+    try:
+        guest_name = f"{doc.get('first_name', '')} {doc.get('last_name', '')}".strip()
+        await notify_checkout(guest_name, doc.get('room_number', ''), user.get('email'))
+    except Exception:
+        pass
     return {"success": True, "guest": serialize_doc(doc)}
 
 
