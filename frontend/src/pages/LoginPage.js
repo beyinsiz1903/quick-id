@@ -62,6 +62,15 @@ export default function LoginPage() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
+              {lockoutInfo && (
+                <div className="flex items-start gap-2 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700">
+                  <Lock className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                  <div className="text-sm">
+                    <p className="font-medium">Hesap Kilitlendi</p>
+                    <p className="text-xs mt-0.5">{lockoutInfo.message}</p>
+                  </div>
+                </div>
+              )}
               <div className="space-y-1.5">
                 <Label className="text-sm">E-posta</Label>
                 <Input
