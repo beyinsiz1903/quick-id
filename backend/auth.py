@@ -7,7 +7,11 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import os
 
-JWT_SECRET = os.environ.get("JWT_SECRET", "quickid-secret-key-2026")
+JWT_SECRET = os.environ.get("JWT_SECRET")
+if not JWT_SECRET:
+    import warnings
+    warnings.warn("JWT_SECRET ortam değişkeni ayarlanmadı! Güvenli bir secret kullanın.", stacklevel=2)
+    JWT_SECRET = "quickid-fallback-CHANGE-ME-IN-PRODUCTION"
 JWT_ALGORITHM = os.environ.get("JWT_ALGORITHM", "HS256")
 JWT_EXPIRE_HOURS = int(os.environ.get("JWT_EXPIRE_HOURS", "24"))
 
