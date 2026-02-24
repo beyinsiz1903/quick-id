@@ -734,10 +734,13 @@ async def get_rate_limits():
 async def login(request: Request, req: LoginRequest):
     user = await users_col.find_one({"email": req.email})
     if not user or not verify_password(req.password, user["password_hash"]):
+        logger.warning(f"🔒 Başarısız giriş denemesi: {req.email}")
         raise HTTPException(status_code=401, detail="Geçersiz e-posta veya şifre")
     if not user.get("is_active", True):
+        logger.warning(f"🔒 Devre dışı hesap ile giriş denemesi: {req.email}")
         raise HTTPException(status_code=403, detail="Hesap devre dışı")
     token = create_token({"sub": str(user["_id"]), "email": user["email"], "name": user["name"], "role": user["role"]})
+    logger.info(f"✅ Giriş başarılı: {req.email} (rol: {user['role']})")
     return {
         "token": token,
         "user": {"id": str(user["_id"]), "email": user["email"], "name": user["name"], "role": user["role"]}
