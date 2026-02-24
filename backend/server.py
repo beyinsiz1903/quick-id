@@ -258,10 +258,19 @@ def serialize_doc(doc):
 
 
 # --- Pydantic Models ---
+# Maximum image size: ~10MB base64 (approx 7.5MB raw)
+MAX_IMAGE_BASE64_LENGTH = 10 * 1024 * 1024  # 10MB
+
 class ScanRequest(BaseModel):
     image_base64: str
     provider: Optional[str] = None  # gpt-4o, gpt-4o-mini, gemini-flash, tesseract, auto
     smart_mode: Optional[bool] = True  # Akıllı yönlendirme
+
+    @classmethod
+    def validate_image_size(cls, v):
+        if len(v) > MAX_IMAGE_BASE64_LENGTH:
+            raise ValueError(f"Görüntü boyutu çok büyük. Maksimum {MAX_IMAGE_BASE64_LENGTH // (1024*1024)}MB izin verilir.")
+        return v
 
 class GuestCreate(BaseModel):
     first_name: Optional[str] = None
