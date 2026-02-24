@@ -2,6 +2,8 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from './components/ui/sonner';
 import { AuthProvider, useAuth } from './lib/AuthContext';
+import { ThemeProvider } from './lib/ThemeContext';
+import { LanguageProvider } from './lib/LanguageContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import AppShell from './components/AppShell';
 import LoginPage from './pages/LoginPage';
