@@ -68,12 +68,16 @@ function AppRoutes() {
 
 function App() {
   return (
-    <AuthProvider>
-      <Router>
-        <AppRoutes />
-        <Toaster richColors position="top-right" />
-      </Router>
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <Router>
+          <ErrorBoundary>
+            <AppRoutes />
+          </ErrorBoundary>
+          <Toaster richColors position="top-right" />
+        </Router>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }
 
