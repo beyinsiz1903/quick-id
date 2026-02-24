@@ -28,13 +28,43 @@ BASE_URL = "http://localhost:8001"
 ADMIN_EMAIL = "admin@quickid.com"
 ADMIN_PASSWORD = "admin123"
 
-class BackendTester:
+class SecurityTester:
     def __init__(self):
         self.base_url = BASE_URL
         self.token = None
         self.session = requests.Session()
+        self.admin_user_id = None
         
-    def test_health_check(self) -> tuple:
+    def login_admin(self) -> bool:
+        """Login as admin to get authentication token"""
+        print("\n🔐 Logging in as admin...")
+        
+        try:
+            response = self.session.post(
+                f"{self.base_url}/api/auth/login",
+                json={"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD},
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                self.token = data.get("token")
+                self.admin_user_id = data.get("user", {}).get("id")
+                self.session.headers.update({
+                    "Authorization": f"Bearer {self.token}",
+                    "Content-Type": "application/json"
+                })
+                print(f"    ✅ Admin login successful: {data.get('user', {}).get('email')}")
+                return True
+            else:
+                print(f"    ❌ Admin login failed: {response.status_code} - {response.text}")
+                return False
+                
+        except Exception as e:
+            print(f"    ❌ Admin login error: {str(e)}")
+            return False
+
+    def test_password_validation_api(self) -> list:
         """Test P0: Health Check with MongoDB connection"""
         print("\n🏥 Testing P0: Health Check with MongoDB")
         
