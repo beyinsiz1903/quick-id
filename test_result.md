@@ -491,15 +491,16 @@ metadata:
         - comment: "✅ P1 BACKGROUND SCHEDULER WORKING! Startup message confirmed in backend logs: '⏰ Zamanlanmış görevler başlatıldı (6 saatlik döngü)'. Scheduler runs auto-backup (24h), KVKK cleanup (6h), soft-deleted cleanup (30 days). Application startup successful with scheduler initialization."
 
 test_plan:
-  current_focus: []
+  current_focus:
+    - "Password Strength Validation"
+    - "Account Lockout"
+    - "CSRF Protection"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
 
 agent_communication:
     - agent: "main"
-    - message: "v5.3 - P1 Backend iyileştirmeleri. Test edilecek: 1) Soft Delete - DELETE /api/guests/{id} → status=deleted, 2) Restore - POST /api/guests/{id}/restore, 3) Permanent Delete - DELETE /api/guests/{id}?permanent=true (admin only), 4) include_deleted query parametresi, 5) Rate limiting genişletildi (check-dup 60/min, update 60/min, delete 30/min). Auth: admin@quickid.com / admin123."
+    - message: "v5.4 - Güvenlik sertleştirmesi. Test edilecek: 1) Şifre kuralları: POST /api/auth/validate-password weak şifre → errors, strong şifre → valid, 2) Kullanıcı oluşturma (POST /api/users) zayıf şifre reddedilmeli, 3) Şifre sıfırlama (POST /api/users/{id}/reset-password) zayıf şifre reddedilmeli, 4) Hesap kilitleme: 5 başarısız giriş → kilitlenme (423), kalan deneme uyarıları, 5) Admin kilit açma: POST /api/users/{id}/unlock, 6) CSRF: bilinmeyen origin ile POST isteği → 403, Bearer token ile → izin ver. Auth: admin@quickid.com / admin123. NOT: Rate limit 5/min login'de olduğu için lockout testinde çok hızlı istek gönderme."
     - agent: "testing"
-    - message: "✅ ALL P0 CRITICAL FIXES VERIFIED! Health Check, Login, Image Size, CORS, Rate Limiting all working."
-    - agent: "testing"
-    - message: "✅ ALL P1 BACKEND IMPROVEMENTS WORKING! Comprehensive testing completed: 1) Soft Delete working correctly - DELETE /api/guests/{id} returns action:'soft_deleted', hidden from normal search but visible with include_deleted=true, 2) Restore Guest working - POST /api/guests/{id}/restore changes status to 'pending' and makes guest visible again, 3) Permanent Delete working - DELETE /api/guests/{id}?permanent=true (admin only) completely removes guest, 4) Rate Limiting expanded correctly - check-duplicate (60/min), guest update (60/min) both trigger at request 61, 5) Background Scheduler confirmed in startup logs - '⏰ Zamanlanmış görevler başlatıldı (6 saatlik döngü)'. Created comprehensive test suite backend_p1_test.py. All P1 features functioning as specified in review request."
+    - message: "✅ ALL P1 BACKEND IMPROVEMENTS WORKING!"
