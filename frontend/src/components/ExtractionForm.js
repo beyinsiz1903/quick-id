@@ -144,34 +144,46 @@ export default function ExtractionForm({ data, onChange, onSave, loading, extrac
         {/* Name fields */}
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1.5">
-            <Label className="text-xs text-muted-foreground">Ad</Label>
+            <Label className="text-xs text-muted-foreground">Ad <span className="text-red-400">*</span></Label>
             <Input
               value={data.first_name || ''}
               onChange={(e) => handleChange('first_name', e.target.value)}
               placeholder="Ad"
               data-testid="guest-first-name-input"
+              className={showFieldError('first_name') ? 'border-red-300 focus:ring-red-200' : ''}
             />
+            {showFieldError('first_name') && (
+              <p className="text-xs text-red-500">Ad gerekli</p>
+            )}
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs text-muted-foreground">Soyad</Label>
+            <Label className="text-xs text-muted-foreground">Soyad <span className="text-red-400">*</span></Label>
             <Input
               value={data.last_name || ''}
               onChange={(e) => handleChange('last_name', e.target.value)}
               placeholder="Soyad"
               data-testid="guest-last-name-input"
+              className={showFieldError('last_name') ? 'border-red-300 focus:ring-red-200' : ''}
             />
+            {showFieldError('last_name') && (
+              <p className="text-xs text-red-500">Soyad gerekli</p>
+            )}
           </div>
         </div>
 
         {/* ID Number */}
         <div className="space-y-1.5">
-          <Label className="text-xs text-muted-foreground">TCKN / Pasaport No</Label>
+          <Label className="text-xs text-muted-foreground">TCKN / Pasaport No <span className="text-red-400">*</span></Label>
           <Input
             value={data.id_number || ''}
             onChange={(e) => handleChange('id_number', e.target.value)}
             placeholder="Kimlik numarası"
             data-testid="guest-document-number-input"
+            className={showFieldError('id_number') ? 'border-red-300 focus:ring-red-200' : ''}
           />
+          {showFieldError('id_number') && (
+            <p className="text-xs text-red-500">Kimlik numarası gerekli</p>
+          )}
         </div>
 
         {/* Birth Date & Gender */}
