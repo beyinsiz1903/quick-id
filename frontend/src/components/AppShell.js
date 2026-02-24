@@ -35,6 +35,8 @@ import {
 export default function AppShell({ children }) {
   const location = useLocation();
   const { user, logout, isAdmin, sessionWarning, sessionRemainingMinutes } = useAuth();
+  const { isDark, toggleTheme } = useTheme();
+  const { lang, t, changeLang } = useLanguage();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const navItems = [
