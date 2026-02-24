@@ -649,10 +649,12 @@ async def startup_tasks():
         # Login attempts - account lockout
         lockout_col = db["login_attempts"]
         await lockout_col.create_index("email", background=True)
-        await lockout_col.create_index("timestamp", background=True)
         await lockout_col.create_index([("email", 1), ("success", 1), ("timestamp", -1)], background=True)
         # TTL index: auto-delete old attempts after 24 hours
-        await lockout_col.create_index("timestamp", expireAfterSeconds=86400, background=True)
+        try:
+            await lockout_col.create_index("timestamp", name="ttl_cleanup", expireAfterSeconds=86400, background=True)
+        except Exception:
+            pass  # TTL index already exists or conflict
 
         # Rooms
         rooms_col = db["rooms"]
