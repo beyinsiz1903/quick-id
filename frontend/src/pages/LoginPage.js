@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Button } from '../components/ui/button';
-import { CreditCard, Loader2, LogIn } from 'lucide-react';
+import { CreditCard, Loader2, LogIn, Lock, AlertTriangle } from 'lucide-react';
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -15,18 +15,28 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [lockoutInfo, setLockoutInfo] = useState(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!email || !password) { toast.error('E-posta ve şifre gerekli'); return; }
     setLoading(true);
+    setLockoutInfo(null);
     try {
       const result = await api.login(email, password);
       login(result.token, result.user);
       toast.success(`Hoş geldiniz, ${result.user.name}!`);
       navigate('/');
     } catch (err) {
-      toast.error(err.message || 'Giriş başarısız');
+      if (err.locked) {
+        setLockoutInfo({
+          message: err.message,
+          remaining_minutes: err.remaining_minutes,
+        });
+        toast.error(err.message);
+      } else {
+        toast.error(err.message || 'Giriş başarısız');
+      }
     } finally {
       setLoading(false);
     }
