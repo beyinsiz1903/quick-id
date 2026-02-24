@@ -892,6 +892,41 @@ async def reset_user_password(user_id: str, req: PasswordChange, user=Depends(re
     return {"success": True, "message": "Şifre sıfırlandı"}
 
 
+# ===== Account Lockout Management (Admin) =====
+@app.post("/api/users/{user_id}/unlock", tags=["Kullanıcı Yönetimi"], summary="Hesap kilidini aç")
+async def unlock_user_account(user_id: str, user=Depends(require_admin)):
+    try:
+        oid = ObjectId(user_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Geçersiz kullanıcı ID")
+    target_user = await users_col.find_one({"_id": oid})
+    if not target_user:
+        raise HTTPException(status_code=404, detail="Kullanıcı bulunamadı")
+    result = await unlock_account(db, target_user["email"])
+    logger.info(f"🔓 Hesap kilidi açıldı: {target_user['email']} - admin: {user.get('email')}")
+    return {"success": True, "message": f"Hesap kilidi açıldı", "cleared_attempts": result["cleared_attempts"]}
+
+
+@app.get("/api/users/{user_id}/lockout-status", tags=["Kullanıcı Yönetimi"], summary="Hesap kilit durumu")
+async def get_lockout_status(user_id: str, user=Depends(require_admin)):
+    try:
+        oid = ObjectId(user_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Geçersiz kullanıcı ID")
+    target_user = await users_col.find_one({"_id": oid})
+    if not target_user:
+        raise HTTPException(status_code=404, detail="Kullanıcı bulunamadı")
+    status = await check_account_lockout(db, target_user["email"])
+    return {"email": target_user["email"], "lockout": status}
+
+
+@app.post("/api/auth/validate-password", tags=["Kimlik Doğrulama"], summary="Şifre güçlülük kontrolü")
+async def validate_password_endpoint(req: PasswordChange):
+    """Şifre güçlülük kurallarını kontrol eder (kayıt/değişiklik öncesi)"""
+    result = validate_password_strength(req.new_password)
+    return result
+
+
 # ===== KVKK / SETTINGS =====
 @app.get("/api/settings/kvkk")
 async def get_kvkk_settings(user=Depends(require_auth)):
