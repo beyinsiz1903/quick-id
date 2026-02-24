@@ -29,7 +29,7 @@ import {
 
 export default function AppShell({ children }) {
   const location = useLocation();
-  const { user, logout, isAdmin } = useAuth();
+  const { user, logout, isAdmin, sessionWarning, sessionRemainingMinutes } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const navItems = [
