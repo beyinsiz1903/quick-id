@@ -381,18 +381,21 @@ frontend:
 
 metadata:
   created_by: "main_agent"
-  version: "5.1"
-  test_sequence: 11
-  run_ui: true
+  version: "5.2"
+  test_sequence: 12
+  run_ui: false
 
 test_plan:
-  current_focus: []
+  current_focus:
+    - "MongoDB Indexes"
+    - "CORS Security Fix"
+    - "Image Size Validation"
+    - "Health Check MongoDB"
+    - "Error Boundary"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
 
 agent_communication:
     - agent: "main"
-    - message: "v5.1 - Frontend testi isteniyor. ScanPage güncellendi: Provider seçici panel (5 provider: Akıllı Mod, GPT-4o, GPT-4o-mini, Gemini Flash, Offline OCR), geliştirilmiş kalite uyarıları (glare, kenar, eğiklik), iyileştirme önerileri, MRZ detay badge'leri (ICAO, OCR düzeltme, fuzzy), provider bilgi kartı. Auth: admin@quickid.com / admin123. URL: https://improve-guide.preview.emergentagent.com. Test edilecek: 1) /scan sayfası yükleniyor mu, 2) Provider seçici butonu ve paneli var mı + çalışıyor mu, 3) Akıllı Mod varsayılan seçili mi, 4) 5 provider seçeneği görünüyor mu, 5) Provider seçince badge değişiyor mu (Offline OCR → amber badge, Auto → mor badge), 6) Kamera bölümü görünüyor mu. Daha önce çalışan sayfalar (Monitoring, Room, GroupCheckin, GuestDetail, Nav) test edilmesine gerek YOK."
-    - agent: "testing"
-    - message: "v5.1 - ScanPage Multi-Provider UI testi TAMAMLANDI. ✅ TÜM ÖZELLİKLER ÇALIŞIYOR: Provider seçici butonu (Akıllı Mod, brain+settings icon, purple), 5 provider paneli açılıyor (Akıllı Mod, GPT-4o, GPT-4o Mini, Gemini Flash, Offline OCR), seçim yapılınca panel kapanıyor ve buton güncelleniyor, cost badge'leri gösteriliyor ($0.003, $0.015, $0.004), Offline OCR seçilince AMBER badge 'Offline OCR - Düşük doğruluk' görünüyor, Akıllı Mod seçilince PURPLE badge 'Görüntü kalitesine göre otomatik seçim' görünüyor, mavi info box Akıllı Mod açıklaması içeriyor, Kapat butonu paneli kapatıyor, kamera bölümü render ediliyor (Yakala butonu var). Kamera 'NotFoundError' headless test ortamında NORMAL. Tüm test senaryoları GEÇTI. Main agent sonlandırma özeti oluşturabilir."
+    - message: "v5.2 - P0 Kritik düzeltmeler yapıldı. Test edilecek: 1) GET /api/health - database alanı olmalı, 2) POST /api/scan - 10MB üstü image_base64 ile 413 döndürülmeli, 3) POST /api/auth/login - hala çalışıyor mu, 4) CORS headers kontrol - wildcard yerine spesifik origin'ler. Backend'in sorunsuz başladığı doğrulandı."
