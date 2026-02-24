@@ -150,19 +150,27 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
 app.add_middleware(SecurityHeadersMiddleware)
 
-# CORS - Whitelist configuration
-CORS_ORIGINS = os.environ.get("CORS_ORIGINS", "*")
+# CORS - Secure whitelist configuration
+CORS_ORIGINS = os.environ.get("CORS_ORIGINS", "")
 if CORS_ORIGINS == "*":
+    # Production uyarısı: wildcard CORS güvenlik riski oluşturur
     cors_origins_list = ["*"]
-else:
+elif CORS_ORIGINS:
     cors_origins_list = [o.strip() for o in CORS_ORIGINS.split(",") if o.strip()]
+else:
+    # Varsayılan: bilinen güvenli originler
+    cors_origins_list = [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "https://improve-guide.preview.emergentagent.com",
+    ]
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=cors_origins_list,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "Accept"],
 )
 
 # MongoDB
