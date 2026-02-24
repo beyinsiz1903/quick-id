@@ -11,10 +11,23 @@ function authHeaders() {
 
 async function handleResponse(res) {
   if (res.status === 401) {
-    localStorage.removeItem('quickid_token');
-    localStorage.removeItem('quickid_user');
-    window.location.href = '/login';
-    throw new Error('Oturum süresi doldu');
+    // Don't redirect on login failures
+    if (!res.url.includes('/api/auth/login')) {
+      localStorage.removeItem('quickid_token');
+      localStorage.removeItem('quickid_user');
+      window.location.href = '/login';
+    }
+    const err = await res.json().catch(() => ({ detail: 'Oturum süresi doldu' }));
+    throw new Error(typeof err.detail === 'string' ? err.detail : 'Geçersiz e-posta veya şifre');
+  }
+  if (res.status === 423) {
+    // Account locked
+    const err = await res.json().catch(() => ({ detail: { message: 'Hesap kilitlendi' } }));
+    const detail = err.detail;
+    const error = new Error(typeof detail === 'object' ? detail.message : detail);
+    error.locked = true;
+    error.remaining_minutes = detail?.remaining_minutes;
+    throw error;
   }
   if (res.status === 429) {
     throw new Error('İstek limiti aşıldı. Lütfen biraz bekleyin ve tekrar deneyin.');
@@ -24,8 +37,11 @@ async function handleResponse(res) {
     const detail = err.detail;
     if (typeof detail === 'object' && detail.message) {
       const error = new Error(detail.message);
+      error.errors = detail.errors;
+      error.strength = detail.strength;
       error.fallback_guidance = detail.fallback_guidance;
       error.can_retry = detail.can_retry;
+      error.locked = detail.locked;
       throw error;
     }
     throw new Error(typeof detail === 'string' ? detail : 'İşlem başarısız');
