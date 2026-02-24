@@ -153,7 +153,7 @@ export default function AppShell({ children }) {
             data-testid="logout-button"
           >
             <LogOut className="w-4 h-4 mr-2" />
-            Çıkış Yap
+            {t('nav.logout')}
           </Button>
         </div>
       </aside>
