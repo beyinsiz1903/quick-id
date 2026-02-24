@@ -788,10 +788,19 @@ async def change_password(req: PasswordChange, user=Depends(require_auth)):
     if user.get("role") != "admin" and req.current_password:
         if not verify_password(req.current_password, db_user["password_hash"]):
             raise HTTPException(status_code=400, detail="Mevcut şifre yanlış")
+    # Şifre güçlülük kontrolü
+    pwd_check = validate_password_strength(req.new_password)
+    if not pwd_check["valid"]:
+        raise HTTPException(status_code=400, detail={
+            "message": "Şifre gereksinimleri karşılanmadı",
+            "errors": pwd_check["errors"],
+            "strength": pwd_check["strength"],
+        })
     await users_col.update_one(
         {"email": user["email"]},
-        {"$set": {"password_hash": hash_password(req.new_password), "updated_at": datetime.now(timezone.utc)}}
+        {"$set": {"password_hash": hash_password(req.new_password), "updated_at": datetime.now(timezone.utc), "password_changed_at": datetime.now(timezone.utc)}}
     )
+    logger.info(f"🔑 Şifre değiştirildi: {user['email']}")
     return {"success": True, "message": "Şifre güncellendi"}
 
 
