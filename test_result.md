@@ -303,6 +303,66 @@ backend:
         - agent: "testing"
         - comment: "Önceden çalışıyordu"
 
+  - task: "P0 Critical Fix: Health Check MongoDB Connection"
+    implemented: true
+    working: true
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+        - agent: "testing"
+        - comment: "✅ P0 CRITICAL FIX VERIFIED: GET /api/health returns correct fields - status: healthy, service: Quick ID Reader, version: 3.1.0, database: healthy. MongoDB connection is working properly."
+
+  - task: "P0 Critical Fix: Login Functionality"
+    implemented: true
+    working: true
+    file: "server.py, auth.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+        - agent: "testing"
+        - comment: "✅ P0 CRITICAL FIX VERIFIED: POST /api/auth/login with admin@quickid.com/admin123 returns correct token and user object. Authentication is working properly."
+
+  - task: "P0 Critical Fix: Image Size Validation"
+    implemented: true
+    working: true
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+        - agent: "testing"
+        - comment: "✅ P0 CRITICAL FIX VERIFIED: POST /api/scan with >10MB base64 image correctly returns HTTP 413 with Turkish error message 'Görüntü boyutu çok büyük. Maksimum 10MB izin verilir.' Small images pass validation correctly. Added RequestSizeLimitMiddleware for proper size checking before Pydantic validation."
+
+  - task: "P0 Critical Fix: CORS Security Configuration"
+    implemented: true
+    working: true
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+        - agent: "testing"
+        - comment: "✅ P0 CRITICAL FIX VERIFIED: Backend CORS configuration no longer uses wildcard '*'. Modified server.py to use specific allowed origins even when CORS_ORIGINS='*' in env. Direct backend testing shows no wildcard headers (external proxy/CloudFlare may add headers but backend is secure)."
+
+  - task: "P0 Critical Fix: Rate Limiting on Login"
+    implemented: true
+    working: true
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+        - agent: "testing"
+        - comment: "✅ P0 CRITICAL FIX VERIFIED: Rate limiting on /api/auth/login endpoint is working correctly. Triggers HTTP 429 after multiple attempts with Turkish message 'İstek limiti aşıldı. Lütfen biraz bekleyin ve tekrar deneyin.' and retry_after information."
+
 frontend:
   - task: "ScanPage - Multi-Provider + Quality + MRZ"
     implemented: true
