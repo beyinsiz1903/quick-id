@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
+import { useTheme } from '../lib/ThemeContext';
+import { useLanguage } from '../lib/LanguageContext';
 import { Button } from './ui/button';
 import { Sheet, SheetContent, SheetTrigger } from './ui/sheet';
 import { Badge } from './ui/badge';
@@ -25,6 +27,9 @@ import {
   UsersRound,
   Clock,
   AlertTriangle,
+  Moon,
+  Sun,
+  Globe,
 } from 'lucide-react';
 
 export default function AppShell({ children }) {
