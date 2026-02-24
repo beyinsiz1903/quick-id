@@ -646,6 +646,14 @@ async def startup_tasks():
         await audit_col.create_index("action", background=True)
         await audit_col.create_index([("guest_id", 1), ("created_at", -1)], background=True)
 
+        # Login attempts - account lockout
+        lockout_col = db["login_attempts"]
+        await lockout_col.create_index("email", background=True)
+        await lockout_col.create_index("timestamp", background=True)
+        await lockout_col.create_index([("email", 1), ("success", 1), ("timestamp", -1)], background=True)
+        # TTL index: auto-delete old attempts after 24 hours
+        await lockout_col.create_index("timestamp", expireAfterSeconds=86400, background=True)
+
         # Rooms
         rooms_col = db["rooms"]
         await rooms_col.create_index("room_number", unique=True, background=True)
