@@ -29,7 +29,9 @@ logger = logging.getLogger("quickid")
 
 from auth import (
     hash_password, verify_password, create_token,
-    require_auth, require_admin, get_current_user, security, decode_token
+    require_auth, require_admin, get_current_user, security, decode_token,
+    validate_password_strength, check_account_lockout, record_login_attempt,
+    unlock_account, ACCOUNT_LOCKOUT_THRESHOLD
 )
 from kvkk import get_settings, update_settings, run_data_cleanup, anonymize_guest
 from kvkk_compliance import (
