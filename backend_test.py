@@ -745,14 +745,14 @@ class SecurityTester:
 
 
 if __name__ == "__main__":
-    tester = BackendTester()
-    success = tester.run_p0_critical_tests()
+    tester = SecurityTester()
+    success = tester.run_security_hardening_tests()
     
     if success:
-        print("🎉 ALL P0 Critical Tests PASSED!")
-        print("The critical fixes are working correctly!")
+        print("🎉 ALL Security Hardening Tests PASSED!")
+        print("The security features are working correctly!")
     else:
-        print("💥 Some P0 Critical Tests FAILED!")
-        print("Critical issues need to be addressed!")
+        print("💥 Some Security Hardening Tests FAILED!")
+        print("Security issues need to be addressed!")
     
     exit(0 if success else 1)
