@@ -132,13 +132,7 @@ export default function GuestDetail() {
       const reader = new FileReader();
       reader.onload = async () => {
         try {
-          const token = localStorage.getItem('token');
-          const res = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/guests/${id}/photo`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-            body: JSON.stringify({ image_base64: reader.result }),
-          });
-          const data = await res.json();
+          const data = await api.uploadGuestPhoto(id, reader.result);
           if (data.success) {
             toast.success('Fotoğraf kaydedildi');
             setGuestPhoto(reader.result);
@@ -147,7 +141,7 @@ export default function GuestDetail() {
             toast.error('Fotoğraf yüklenemedi');
           }
         } catch (err) {
-          toast.error('Fotoğraf yükleme hatası');
+          toast.error(err.message || 'Fotoğraf yükleme hatası');
         }
         setPhotoCapturing(false);
       };
@@ -161,13 +155,7 @@ export default function GuestDetail() {
   const handleAutoAssignRoom = async () => {
     setRoomAssigning(true);
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/rooms/auto-assign`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ guest_id: id }),
-      });
-      const data = await res.json();
+      const data = await api.autoAssignRoom(id);
       if (data.success) {
         toast.success(`Oda ${data.room?.room_number} atandı!`);
         loadGuest();
@@ -175,7 +163,7 @@ export default function GuestDetail() {
         toast.error(data.detail || 'Müsait oda bulunamadı');
       }
     } catch (err) {
-      toast.error('Oda atama hatası');
+      toast.error(err.message || 'Oda atama hatası');
     }
     setRoomAssigning(false);
   };
