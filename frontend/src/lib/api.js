@@ -104,6 +104,27 @@ export const api = {
     return handleResponse(res);
   },
 
+  async unlockUser(id) {
+    const res = await fetch(`${BACKEND_URL}/api/users/${id}/unlock`, {
+      method: 'POST', headers: authHeaders(),
+    });
+    return handleResponse(res);
+  },
+
+  async getUserLockoutStatus(id) {
+    const res = await fetch(`${BACKEND_URL}/api/users/${id}/lockout-status`, { headers: authHeaders() });
+    return handleResponse(res);
+  },
+
+  async validatePassword(password) {
+    const res = await fetch(`${BACKEND_URL}/api/auth/validate-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ new_password: password }),
+    });
+    return handleResponse(res);
+  },
+
   // KVKK Settings
   async getKvkkSettings() {
     const res = await fetch(`${BACKEND_URL}/api/settings/kvkk`, { headers: authHeaders() });
