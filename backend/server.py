@@ -1170,7 +1170,8 @@ async def get_guests(
             {"id_number": {"$regex": search, "$options": "i"}},
             {"document_number": {"$regex": search, "$options": "i"}}
         ]
-    if status: query["status"] = status
+    if status:
+        query["status"] = status  # Explicit status overrides the $ne filter
     if nationality: query["nationality"] = {"$regex": nationality, "$options": "i"}
     if document_type: query["document_type"] = document_type
     if date_from:
