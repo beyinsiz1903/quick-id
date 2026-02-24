@@ -65,7 +65,6 @@ class SecurityTester:
             return False
 
     def test_password_validation_api(self) -> list:
-    def test_password_validation_api(self) -> list:
         """Test Password Validation API - POST /api/auth/validate-password"""
         print("\n🔒 Testing Password Validation API")
         
