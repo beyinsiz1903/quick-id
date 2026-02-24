@@ -1197,7 +1197,8 @@ async def get_guest(guest_id: str, user=Depends(require_auth)):
     return {"guest": serialize_doc(doc)}
 
 @app.patch("/api/guests/{guest_id}")
-async def update_guest(guest_id: str, update: GuestUpdate, user=Depends(require_auth)):
+@limiter.limit("60/minute")
+async def update_guest(request: Request, guest_id: str, update: GuestUpdate, user=Depends(require_auth)):
     try: oid = ObjectId(guest_id)
     except Exception: raise HTTPException(status_code=400)
     old_doc = await guests_col.find_one({"_id": oid})
