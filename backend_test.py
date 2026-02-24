@@ -4,7 +4,7 @@ Backend Testing for Quick ID Reader Hotel App v5.1
 Testing FIXED Room Assignment endpoints (room_assignment.py rewritten)
 
 Auth credentials: admin@quickid.com / admin123
-Base URL: https://mrz-parser.preview.emergentagent.com
+Base URL: https://improve-guide.preview.emergentagent.com
 
 ROOM ASSIGNMENT ENDPOINTS TO TEST:
 1. Create rooms (POST /api/rooms)  
@@ -24,7 +24,7 @@ import random
 from typing import Optional
 
 # Configuration
-BASE_URL = "https://mrz-parser.preview.emergentagent.com"
+BASE_URL = "https://improve-guide.preview.emergentagent.com"
 ADMIN_EMAIL = "admin@quickid.com"
 ADMIN_PASSWORD = "admin123"
 

@@ -8,7 +8,7 @@ import requests
 import json
 from datetime import datetime
 
-BASE_URL = "https://mrz-parser.preview.emergentagent.com/api"
+BASE_URL = "https://improve-guide.preview.emergentagent.com/api"
 ADMIN_EMAIL = "admin@quickid.com"
 ADMIN_PASSWORD = "admin123"
 
