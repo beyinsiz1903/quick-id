@@ -448,9 +448,6 @@ metadata:
 test_plan:
   current_focus:
     - "MongoDB Indexes"
-    - "CORS Security Fix"
-    - "Image Size Validation"
-    - "Health Check MongoDB"
     - "Error Boundary"
   stuck_tasks: []
   test_all: false
