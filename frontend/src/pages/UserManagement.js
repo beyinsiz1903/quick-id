@@ -151,6 +151,9 @@ export default function UserManagement() {
                       <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setResetDialog(u.id); setNewPassword(''); }}>
                         <Key className="w-3.5 h-3.5" />
                       </Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-amber-600" onClick={() => handleUnlockUser(u.id)} title="Hesap kilidini aç">
+                        <Unlock className="w-3.5 h-3.5" />
+                      </Button>
                       {u.email !== currentUser?.email && (
                         <Button variant="ghost" size="icon" className="h-8 w-8 text-[var(--brand-danger)]" onClick={() => handleDelete(u.id)}>
                           <Trash2 className="w-3.5 h-3.5" />
