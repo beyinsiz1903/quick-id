@@ -166,46 +166,58 @@ app.add_middleware(SecurityHeadersMiddleware)
 
 # --- CSRF Protection Middleware (Origin/Referer check) ---
 CSRF_SAFE_METHODS = {"GET", "HEAD", "OPTIONS"}
-CSRF_EXEMPT_PATHS = {"/api/auth/login", "/api/health", "/api/docs", "/api/redoc", "/api/openapi.json"}
+CSRF_EXEMPT_PATHS = {
+    "/api/auth/login", "/api/auth/validate-password",
+    "/api/health", "/api/docs", "/api/redoc", "/api/openapi.json",
+    "/api/rate-limits", "/api/scan/ocr-status", "/api/scan/providers",
+}
 
 class CSRFProtectionMiddleware(BaseHTTPMiddleware):
     """
-    CSRF koruması: POST/PATCH/DELETE isteklerinde Origin veya Referer header'ı kontrol eder.
-    JWT Bearer token kullanıldığı için bu ek bir güvenlik katmanıdır.
+    CSRF koruması: Bearer token olmayan POST/PATCH/DELETE isteklerinde
+    Origin veya Referer header'ı kontrol eder.
+    JWT Bearer token kullanan istekler CSRF'den muaftır (browser otomatik göndermez).
     """
     async def dispatch(self, request, call_next):
         if request.method in CSRF_SAFE_METHODS:
             return await call_next(request)
 
-        # Exempt paths (login, health, docs)
-        if request.url.path in CSRF_EXEMPT_PATHS:
+        # Exempt paths
+        path = request.url.path.rstrip("/")
+        if path in CSRF_EXEMPT_PATHS:
             return await call_next(request)
 
         # Pre-check-in public endpoints are exempt
-        if request.url.path.startswith("/api/precheckin/"):
+        if path.startswith("/api/precheckin/"):
             return await call_next(request)
 
+        # Bearer token ile gelen istekler CSRF'den muaf
+        # (Browser otomatik olarak Bearer token göndermez, bu yüzden CSRF riski yok)
+        auth_header = request.headers.get("authorization", "")
+        if auth_header.startswith("Bearer "):
+            return await call_next(request)
+
+        # Token yok → Origin/Referer kontrolü
         origin = request.headers.get("origin", "")
         referer = request.headers.get("referer", "")
 
         # İzin verilen origin'ler
         allowed_origins = set(cors_origins_list) if cors_origins_list else set()
         allowed_origins.add("http://localhost:3000")
+        allowed_origins.add("http://localhost:8001")
         allowed_origins.add("http://127.0.0.1:3000")
+        allowed_origins.add("http://127.0.0.1:8001")
 
-        # Origin veya Referer kontrolü
         origin_ok = False
         if origin:
-            origin_ok = any(origin.startswith(allowed.rstrip("/")) for allowed in allowed_origins if allowed != "*")
+            origin_ok = any(origin.startswith(allowed.rstrip("/")) for allowed in allowed_origins if allowed and allowed != "*")
         if not origin_ok and referer:
-            origin_ok = any(referer.startswith(allowed.rstrip("/")) for allowed in allowed_origins if allowed != "*")
+            origin_ok = any(referer.startswith(allowed.rstrip("/")) for allowed in allowed_origins if allowed and allowed != "*")
 
-        # API istekleri Bearer token ile geliyorsa Origin kontrolü gevşetilir
-        auth_header = request.headers.get("authorization", "")
-        has_bearer = auth_header.startswith("Bearer ")
-
-        if not origin_ok and not has_bearer:
-            logger.warning(f"⚠️ CSRF check failed: {request.method} {request.url.path} (origin: {origin}, referer: {referer})")
+        # Origin/Referer yoksa ve token da yoksa → potansiyel CSRF
+        if not origin_ok and (origin or referer):
+            # Sadece tanınmayan Origin varsa engelle (Origin yoksa izin ver - curl, Postman vb.)
+            logger.warning(f"⚠️ CSRF rejected: {request.method} {path} (origin: {origin})")
             return JSONResponse(
                 status_code=403,
                 content={"detail": "CSRF doğrulama hatası. İstek reddedildi."}
