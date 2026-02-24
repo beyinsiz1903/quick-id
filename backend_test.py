@@ -1,26 +1,30 @@
 #!/usr/bin/env python3
 """
-Backend Testing for Quick ID Reader Hotel App - P0 Critical Fixes
-Testing specific P0 critical areas as requested in the review
+Backend Testing for Quick ID Reader Hotel App - Security Hardening Features
+Testing specific security features as requested in the review
 
 Auth credentials: admin@quickid.com / admin123
-Backend URL: https://improve-guide.preview.emergentagent.com
+Backend URL: http://localhost:8001
 
-P0 CRITICAL TESTS:
-1. Health Check with MongoDB (GET /api/health) - should return database: "healthy" and version: "3.1.0"
-2. Login functionality (POST /api/auth/login) - should still work with admin@quickid.com/admin123
-3. Image Size Validation (POST /api/scan) - should return 413 for >10MB base64 images
-4. CORS Headers - should NOT have "Access-Control-Allow-Origin: *" 
-5. Rate Limiting on /api/auth/login - should still work
+SECURITY HARDENING TESTS:
+1. Password Validation API - POST /api/auth/validate-password
+2. Password enforcement on User Creation - POST /api/users
+3. Password enforcement on Reset - POST /api/users/{id}/reset-password  
+4. Account Lockout - Multiple failed login attempts
+5. Admin Unlock - POST /api/users/{id}/unlock
+6. CSRF Protection - POST with unknown Origin header
+
+IMPORTANT: Login rate limit is 5/minute, so wait between bursts of login attempts if needed.
 """
 import requests
 import json
 import time
 import base64
+import uuid
 from typing import Optional
 
 # Configuration
-BASE_URL = "https://improve-guide.preview.emergentagent.com"
+BASE_URL = "http://localhost:8001"
 ADMIN_EMAIL = "admin@quickid.com"
 ADMIN_PASSWORD = "admin123"
 
