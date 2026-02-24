@@ -6,30 +6,10 @@ import { Badge } from '../components/ui/badge';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '../components/ui/dialog';
+import { api } from '../lib/api';
 import {
   DoorOpen, Plus, RefreshCw, UserPlus, Check, X, Wrench, BedDouble,
 } from 'lucide-react';
-
-const BACKEND = process.env.REACT_APP_BACKEND_URL || '';
-function authHeaders() {
-  const token = localStorage.getItem('quickid_token');
-  return token ? { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } : { 'Content-Type': 'application/json' };
-}
-async function fetchJSON(path) {
-  const res = await fetch(`${BACKEND}${path}`, { headers: authHeaders() });
-  if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.detail || `HTTP ${res.status}`); }
-  return res.json();
-}
-async function postJSON(path, body) {
-  const res = await fetch(`${BACKEND}${path}`, { method: 'POST', headers: authHeaders(), body: JSON.stringify(body) });
-  if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.detail || `HTTP ${res.status}`); }
-  return res.json();
-}
-async function patchJSON(path, body) {
-  const res = await fetch(`${BACKEND}${path}`, { method: 'PATCH', headers: authHeaders(), body: JSON.stringify(body) });
-  if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.detail || `HTTP ${res.status}`); }
-  return res.json();
-}
 
 export default function RoomManagementPage() {
   const [rooms, setRooms] = useState([]);
@@ -46,10 +26,10 @@ export default function RoomManagementPage() {
     setLoading(true);
     try {
       const [roomsRes, statsRes, typesRes, guestsRes] = await Promise.allSettled([
-        fetchJSON('/api/rooms'),
-        fetchJSON('/api/rooms/stats'),
-        fetchJSON('/api/rooms/types'),
-        fetchJSON('/api/guests?status=pending&limit=100'),
+        api.getRooms(),
+        api.getRoomStats(),
+        api.getRoomTypes(),
+        api.getGuests({ status: 'pending', limit: 100 }),
       ]);
       if (roomsRes.status === 'fulfilled') setRooms(roomsRes.value.rooms || []);
       if (statsRes.status === 'fulfilled') setStats(statsRes.value);
@@ -65,7 +45,7 @@ export default function RoomManagementPage() {
 
   const handleCreateRoom = async () => {
     try {
-      await postJSON('/api/rooms', newRoom);
+      await api.createRoom(newRoom);
       setShowCreate(false);
       setNewRoom({ room_number: '', room_type: 'standard', floor: 1, capacity: 2 });
       fetchRooms();
@@ -77,7 +57,7 @@ export default function RoomManagementPage() {
   const handleAssignRoom = async () => {
     if (!selectedGuestId || !assignDialog.roomId) return;
     try {
-      await postJSON('/api/rooms/assign', { room_id: assignDialog.roomId, guest_id: selectedGuestId });
+      await api.assignRoom(assignDialog.roomId, selectedGuestId);
       setAssignDialog({ open: false, roomId: '' });
       setSelectedGuestId('');
       fetchRooms();
@@ -88,7 +68,7 @@ export default function RoomManagementPage() {
 
   const handleReleaseRoom = async (roomId) => {
     try {
-      await postJSON(`/api/rooms/${roomId}/release`, {});
+      await api.releaseRoom(roomId);
       fetchRooms();
     } catch (e) {
       alert(e.message || 'Hata');
@@ -97,7 +77,7 @@ export default function RoomManagementPage() {
 
   const handleStatusChange = async (roomId, newStatus) => {
     try {
-      await patchJSON(`/api/rooms/${roomId}`, { status: newStatus });
+      await api.updateRoom(roomId, { status: newStatus });
       fetchRooms();
     } catch (e) {
       alert(e.message || 'Hata');
