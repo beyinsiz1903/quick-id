@@ -168,7 +168,12 @@ app.add_middleware(RequestSizeLimitMiddleware)
 CORS_ORIGINS = os.environ.get("CORS_ORIGINS", "")
 if CORS_ORIGINS == "*":
     # Production uyarısı: wildcard CORS güvenlik riski oluşturur
-    cors_origins_list = ["*"]
+    # GÜVENLIK: Wildcard yerine spesifik origin'ler kullanıyoruz
+    cors_origins_list = [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "https://improve-guide.preview.emergentagent.com",
+    ]
 elif CORS_ORIGINS:
     cors_origins_list = [o.strip() for o in CORS_ORIGINS.split(",") if o.strip()]
 else:
