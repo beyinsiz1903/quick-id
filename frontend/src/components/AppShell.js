@@ -104,8 +104,30 @@ export default function AppShell({ children }) {
         <div className="flex-1 p-3 overflow-y-auto">
           <NavLinks />
         </div>
-        {/* User info + logout */}
+        {/* User info + controls */}
         <div className="p-4 border-t border-[hsl(var(--border))]">
+          {/* Theme + Language controls */}
+          <div className="flex items-center gap-1 mb-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleTheme}
+              className="h-8 w-8"
+              title={isDark ? t('theme.light') : t('theme.dark')}
+            >
+              {isDark ? <Sun className="w-4 h-4 text-yellow-500" /> : <Moon className="w-4 h-4 text-gray-500" />}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => changeLang(lang === 'tr' ? 'en' : 'tr')}
+              className="h-8 px-2 text-xs gap-1"
+              title="Dil / Language"
+            >
+              <Globe className="w-3.5 h-3.5" />
+              {lang === 'tr' ? 'TR' : 'EN'}
+            </Button>
+          </div>
           {user && (
             <div className="flex items-center gap-2 mb-3">
               <div className="w-8 h-8 rounded-full bg-[var(--brand-sky-soft)] flex items-center justify-center">
