@@ -646,6 +646,57 @@ async def startup_tasks():
             "created_at": datetime.now(timezone.utc)
         })
 
+    # ===== Background Scheduler: Auto-Backup & KVKK Cleanup =====
+    import asyncio
+
+    async def scheduled_tasks():
+        """Arka planda çalışan zamanlanmış görevler"""
+        while True:
+            try:
+                await asyncio.sleep(6 * 3600)  # Her 6 saatte bir çalış
+
+                # 1) Otomatik KVKK Temizliği
+                settings = await get_settings(db)
+                if settings.get("auto_cleanup_enabled"):
+                    try:
+                        result = await run_data_cleanup(db)
+                        logger.info(f"🧹 Otomatik KVKK temizliği: {result}")
+                    except Exception as e:
+                        logger.error(f"❌ KVKK temizlik hatası: {e}")
+
+                # 2) Otomatik Yedekleme (günde 1 kez - 24 saatte bir)
+                last_backup_check = getattr(scheduled_tasks, '_last_backup', None)
+                now = datetime.now(timezone.utc)
+                if last_backup_check is None or (now - last_backup_check).total_seconds() > 24 * 3600:
+                    try:
+                        backup_result = await create_backup(db, created_by="system_auto", description="Otomatik günlük yedek")
+                        scheduled_tasks._last_backup = now
+                        logger.info(f"💾 Otomatik yedekleme tamamlandı: {backup_result.get('backup_id', 'unknown')}")
+                    except Exception as e:
+                        logger.error(f"❌ Otomatik yedekleme hatası: {e}")
+
+                # 3) Eski soft-deleted misafirleri temizle (30 günden eski)
+                try:
+                    cutoff = now - timedelta(days=30)
+                    deleted_result = await guests_col.delete_many({
+                        "status": "deleted",
+                        "deleted_at": {"$lt": cutoff}
+                    })
+                    if deleted_result.deleted_count > 0:
+                        logger.info(f"🗑️ {deleted_result.deleted_count} eski silinen misafir kalıcı olarak temizlendi")
+                except Exception as e:
+                    logger.error(f"❌ Silinen misafir temizlik hatası: {e}")
+
+            except asyncio.CancelledError:
+                break
+            except Exception as e:
+                logger.error(f"❌ Zamanlanmış görev hatası: {e}")
+                await asyncio.sleep(60)  # Hata durumunda 1 dakika bekle
+
+    # Background task başlat
+    asyncio.create_task(scheduled_tasks())
+    logger.info("⏰ Zamanlanmış görevler başlatıldı (6 saatlik döngü)")
+
 
 # ===== AUTH ROUTES =====
 @app.get("/api/health", tags=["Sağlık"], summary="Sistem sağlık kontrolü")
