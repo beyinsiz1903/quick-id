@@ -1324,6 +1324,7 @@ async def checkin_guest(guest_id: str, user=Depends(require_auth)):
     now = datetime.now(timezone.utc)
     await guests_col.update_one({"_id": oid}, {"$set": {"status": "checked_in", "check_in_at": now, "updated_at": now}})
     await create_audit_log(guest_id, "checked_in", {"status": {"old": old_doc.get("status"), "new": "checked_in"}}, metadata={"check_in_at": now.isoformat()}, user_email=user.get("email"))
+    logger.info(f"📥 Check-in: Guest {guest_id} by {user.get('email')}")
     doc = await guests_col.find_one({"_id": oid})
     return {"success": True, "guest": serialize_doc(doc)}
 
