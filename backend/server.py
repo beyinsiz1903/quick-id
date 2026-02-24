@@ -818,16 +818,26 @@ async def create_user(req: UserCreate, user=Depends(require_admin)):
         raise HTTPException(status_code=400, detail="Bu e-posta zaten kayıtlı")
     if req.role not in ("admin", "reception"):
         raise HTTPException(status_code=400, detail="Geçersiz rol")
+    # Şifre güçlülük kontrolü
+    pwd_check = validate_password_strength(req.password)
+    if not pwd_check["valid"]:
+        raise HTTPException(status_code=400, detail={
+            "message": "Şifre gereksinimleri karşılanmadı",
+            "errors": pwd_check["errors"],
+            "strength": pwd_check["strength"],
+        })
     user_doc = {
         "email": req.email,
         "password_hash": hash_password(req.password),
         "name": req.name,
         "role": req.role,
         "is_active": True,
-        "created_at": datetime.now(timezone.utc)
+        "created_at": datetime.now(timezone.utc),
+        "password_changed_at": datetime.now(timezone.utc),
     }
     result = await users_col.insert_one(user_doc)
     user_doc["_id"] = result.inserted_id
+    logger.info(f"👤 Yeni kullanıcı oluşturuldu: {req.email} (rol: {req.role}) - oluşturan: {user.get('email')}")
     return {"success": True, "user": serialize_doc(user_doc)}
 
 @app.patch("/api/users/{user_id}")
