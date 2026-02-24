@@ -521,7 +521,69 @@ def compute_field_diffs(old_data, new_data):
 
 # ===== STARTUP: Create default admin =====
 @app.on_event("startup")
-async def create_default_admin():
+async def startup_tasks():
+    """Startup: create indexes + default users"""
+    # ===== MongoDB Indexes =====
+    import logging
+    logger = logging.getLogger("quickid.startup")
+
+    try:
+        # Users - email unique index
+        await users_col.create_index("email", unique=True, background=True)
+
+        # Guests - performance indexes
+        await guests_col.create_index("id_number", background=True)
+        await guests_col.create_index("status", background=True)
+        await guests_col.create_index("created_at", background=True)
+        await guests_col.create_index([("first_name", 1), ("last_name", 1)], background=True)
+        await guests_col.create_index([("status", 1), ("created_at", -1)], background=True)
+
+        # Scans - performance indexes
+        await scans_col.create_index("created_at", background=True)
+        await scans_col.create_index("status", background=True)
+        await scans_col.create_index("scanned_by", background=True)
+        await scans_col.create_index("review_status", background=True)
+        await scans_col.create_index([("created_at", -1), ("status", 1)], background=True)
+
+        # Audit logs - performance indexes
+        await audit_col.create_index("guest_id", background=True)
+        await audit_col.create_index("created_at", background=True)
+        await audit_col.create_index("action", background=True)
+        await audit_col.create_index([("guest_id", 1), ("created_at", -1)], background=True)
+
+        # Rooms
+        rooms_col = db["rooms"]
+        await rooms_col.create_index("room_number", unique=True, background=True)
+        await rooms_col.create_index("status", background=True)
+        await rooms_col.create_index("property_id", background=True)
+
+        # Properties
+        await db["properties"].create_index("name", background=True)
+
+        # Emniyet bildirimleri
+        await db["emniyet_bildirimleri"].create_index("guest_id", background=True)
+        await db["emniyet_bildirimleri"].create_index("created_at", background=True)
+
+        # KVKK rights requests
+        await db["kvkk_rights_requests"].create_index("status", background=True)
+        await db["kvkk_rights_requests"].create_index("created_at", background=True)
+
+        # AI cost tracking
+        await db["ai_cost_tracking"].create_index("created_at", background=True)
+        await db["ai_cost_tracking"].create_index("model", background=True)
+
+        # Biometric matches
+        await db["biometric_matches"].create_index("created_at", background=True)
+
+        # Offline sync
+        await db["offline_sync"].create_index("status", background=True)
+        await db["offline_sync"].create_index("property_id", background=True)
+
+        logger.info("✅ MongoDB indexes created successfully")
+    except Exception as e:
+        logger.warning(f"⚠️ Index creation warning: {e}")
+
+    # ===== Default Users =====
     existing = await users_col.find_one({"email": "admin@quickid.com"})
     if not existing:
         await users_col.insert_one({
