@@ -1156,9 +1156,13 @@ async def get_guests(
     search: Optional[str] = None, status: Optional[str] = None,
     nationality: Optional[str] = None, document_type: Optional[str] = None,
     date_from: Optional[str] = None, date_to: Optional[str] = None,
+    include_deleted: bool = Query(False, description="Silinen misafirleri de göster"),
     user=Depends(require_auth)
 ):
     query = {}
+    # Soft-deleted olanları varsayılan olarak gizle
+    if not include_deleted:
+        query["status"] = {"$ne": "deleted"}
     if search:
         query["$or"] = [
             {"first_name": {"$regex": search, "$options": "i"}},
