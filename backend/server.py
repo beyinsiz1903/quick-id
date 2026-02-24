@@ -1206,14 +1206,51 @@ async def update_guest(guest_id: str, update: GuestUpdate, user=Depends(require_
     return {"success": True, "guest": serialize_doc(doc)}
 
 @app.delete("/api/guests/{guest_id}")
-async def delete_guest(guest_id: str, user=Depends(require_auth)):
+async def delete_guest(guest_id: str, permanent: bool = Query(False, description="Kalıcı silme (true = geri alınamaz)"), user=Depends(require_auth)):
     try: oid = ObjectId(guest_id)
-    except Exception: raise HTTPException(status_code=400)
+    except Exception: raise HTTPException(status_code=400, detail="Geçersiz misafir ID")
     doc = await guests_col.find_one({"_id": oid})
-    if not doc: raise HTTPException(status_code=404)
-    await create_audit_log(guest_id, "deleted", old_data=serialize_doc(doc), user_email=user.get("email"))
-    await guests_col.delete_one({"_id": oid})
-    return {"success": True}
+    if not doc: raise HTTPException(status_code=404, detail="Misafir bulunamadı")
+
+    if permanent:
+        # Kalıcı silme - admin gerektirir
+        if user.get("role") != "admin":
+            raise HTTPException(status_code=403, detail="Kalıcı silme için admin yetkisi gerekiyor")
+        await create_audit_log(guest_id, "permanently_deleted", old_data=serialize_doc(doc), user_email=user.get("email"))
+        await guests_col.delete_one({"_id": oid})
+        logger.info(f"Guest {guest_id} permanently deleted by {user.get('email')}")
+        return {"success": True, "action": "permanently_deleted"}
+    else:
+        # Soft delete - geri alınabilir
+        now = datetime.now(timezone.utc)
+        await guests_col.update_one({"_id": oid}, {"$set": {
+            "status": "deleted",
+            "deleted_at": now,
+            "deleted_by": user.get("email"),
+            "updated_at": now,
+        }})
+        await create_audit_log(guest_id, "soft_deleted", old_data=serialize_doc(doc), user_email=user.get("email"))
+        logger.info(f"Guest {guest_id} soft-deleted by {user.get('email')}")
+        return {"success": True, "action": "soft_deleted", "message": "Misafir silindi. Geri almak için admin ile iletişime geçin."}
+
+@app.post("/api/guests/{guest_id}/restore", tags=["Misafirler"], summary="Silinen misafiri geri getir")
+async def restore_guest(guest_id: str, user=Depends(require_admin)):
+    try: oid = ObjectId(guest_id)
+    except Exception: raise HTTPException(status_code=400, detail="Geçersiz misafir ID")
+    doc = await guests_col.find_one({"_id": oid})
+    if not doc: raise HTTPException(status_code=404, detail="Misafir bulunamadı")
+    if doc.get("status") != "deleted":
+        raise HTTPException(status_code=400, detail="Bu misafir silinmiş durumda değil")
+
+    now = datetime.now(timezone.utc)
+    await guests_col.update_one({"_id": oid}, {
+        "$set": {"status": "pending", "updated_at": now},
+        "$unset": {"deleted_at": "", "deleted_by": ""},
+    })
+    await create_audit_log(guest_id, "restored", metadata={"restored_by": user.get("email")}, user_email=user.get("email"))
+    doc = await guests_col.find_one({"_id": oid})
+    logger.info(f"Guest {guest_id} restored by {user.get('email')}")
+    return {"success": True, "guest": serialize_doc(doc)}
 
 @app.post("/api/guests/{guest_id}/checkin")
 async def checkin_guest(guest_id: str, user=Depends(require_auth)):
