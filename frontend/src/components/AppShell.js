@@ -87,7 +87,7 @@ export default function AppShell({ children }) {
   return (
     <div className="min-h-screen bg-[hsl(var(--background))] noise-bg">
       {/* Desktop Sidebar */}
-      <aside className="hidden lg:fixed lg:flex lg:flex-col lg:w-64 lg:h-screen border-r border-[hsl(var(--border))] bg-white z-20">
+      <aside className="hidden lg:fixed lg:flex lg:flex-col lg:w-64 lg:h-screen border-r border-[hsl(var(--border))] bg-white dark:bg-[hsl(222,47%,11%)] z-20">
         <div className="p-5 border-b border-[hsl(var(--border))]">
           <Link to="/" className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-xl bg-[var(--brand-sky)] flex items-center justify-center">
