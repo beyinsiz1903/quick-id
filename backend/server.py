@@ -734,15 +734,39 @@ async def get_rate_limits():
 @app.post("/api/auth/login")
 @limiter.limit("5/minute")
 async def login(request: Request, req: LoginRequest):
+    client_ip = request.client.host if request.client else "unknown"
+
+    # Hesap kilidi kontrolü
+    lockout = await check_account_lockout(db, req.email)
+    if lockout.get("locked"):
+        logger.warning(f"🔒 Kilitli hesaba giriş denemesi: {req.email} (IP: {client_ip})")
+        raise HTTPException(status_code=423, detail={
+            "message": lockout["message"],
+            "locked": True,
+            "remaining_minutes": lockout["remaining_minutes"],
+        })
+
     user = await users_col.find_one({"email": req.email})
     if not user or not verify_password(req.password, user["password_hash"]):
-        logger.warning(f"🔒 Başarısız giriş denemesi: {req.email}")
-        raise HTTPException(status_code=401, detail="Geçersiz e-posta veya şifre")
+        # Başarısız denemeyi kaydet
+        await record_login_attempt(db, req.email, success=False, ip_address=client_ip)
+        remaining = lockout.get("remaining_attempts", ACCOUNT_LOCKOUT_THRESHOLD) - 1
+        logger.warning(f"🔒 Başarısız giriş denemesi: {req.email} (kalan: {remaining}, IP: {client_ip})")
+        detail_msg = "Geçersiz e-posta veya şifre"
+        if remaining <= 2 and remaining > 0:
+            detail_msg += f". {remaining} deneme hakkınız kaldı."
+        elif remaining <= 0:
+            detail_msg = f"Hesap kilitlendi. 15 dakika sonra tekrar deneyin."
+        raise HTTPException(status_code=401, detail=detail_msg)
+
     if not user.get("is_active", True):
         logger.warning(f"🔒 Devre dışı hesap ile giriş denemesi: {req.email}")
         raise HTTPException(status_code=403, detail="Hesap devre dışı")
+
+    # Başarılı giriş - denemeleri temizle
+    await record_login_attempt(db, req.email, success=True, ip_address=client_ip)
     token = create_token({"sub": str(user["_id"]), "email": user["email"], "name": user["name"], "role": user["role"]})
-    logger.info(f"✅ Giriş başarılı: {req.email} (rol: {user['role']})")
+    logger.info(f"✅ Giriş başarılı: {req.email} (rol: {user['role']}, IP: {client_ip})")
     return {
         "token": token,
         "user": {"id": str(user["_id"]), "email": user["email"], "name": user["name"], "role": user["role"]}
