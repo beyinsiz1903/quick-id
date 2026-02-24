@@ -441,20 +441,21 @@ frontend:
 
 metadata:
   created_by: "main_agent"
-  version: "5.2"
-  test_sequence: 12
+  version: "5.3"
+  test_sequence: 13
   run_ui: false
 
 test_plan:
   current_focus:
-    - "MongoDB Indexes"
-    - "Error Boundary"
+    - "Soft Delete + Restore"
+    - "Rate Limiting Expansion"
+    - "Background Scheduler"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
 
 agent_communication:
     - agent: "main"
-    - message: "v5.2 - P0 Kritik düzeltmeler yapıldı. Test edilecek: 1) GET /api/health - database alanı olmalı, 2) POST /api/scan - 10MB üstü image_base64 ile 413 döndürülmeli, 3) POST /api/auth/login - hala çalışıyor mu, 4) CORS headers kontrol - wildcard yerine spesifik origin'ler. Backend'in sorunsuz başladığı doğrulandı."
+    - message: "v5.3 - P1 Backend iyileştirmeleri. Test edilecek: 1) Soft Delete - DELETE /api/guests/{id} → status=deleted, 2) Restore - POST /api/guests/{id}/restore, 3) Permanent Delete - DELETE /api/guests/{id}?permanent=true (admin only), 4) include_deleted query parametresi, 5) Rate limiting genişletildi (check-dup 60/min, update 60/min, delete 30/min). Auth: admin@quickid.com / admin123."
     - agent: "testing"
-    - message: "✅ ALL P0 CRITICAL FIXES VERIFIED! Comprehensive testing completed: 1) Health Check MongoDB: Returns database: healthy and version: 3.1.0 correctly, 2) Login Functionality: Works with admin@quickid.com/admin123 returning proper token/user, 3) Image Size Validation: >10MB images return HTTP 413 correctly, small images pass (added RequestSizeLimitMiddleware), 4) CORS Security: Backend no longer uses wildcard (fixed server.py logic), 5) Rate Limiting: Works on login endpoint with Turkish error messages. Backend testing indicates all critical security fixes are operational."
+    - message: "✅ ALL P0 CRITICAL FIXES VERIFIED! Health Check, Login, Image Size, CORS, Rate Limiting all working."
