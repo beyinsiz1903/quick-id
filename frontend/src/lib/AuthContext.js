@@ -1,6 +1,19 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 
 const AuthContext = createContext(null);
+
+// JWT token'dan expiry süresini çıkar
+function getTokenExpiry(token) {
+  if (!token) return null;
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return payload.exp ? payload.exp * 1000 : null; // ms cinsinden
+  } catch {
+    return null;
+  }
+}
+
+const SESSION_WARNING_MINUTES = 5; // Son 5 dakikada uyarı göster
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {
@@ -11,12 +24,20 @@ export function AuthProvider({ children }) {
   });
   const [token, setToken] = useState(() => localStorage.getItem('quickid_token'));
   const [loading, setLoading] = useState(false);
+  const [sessionExpiry, setSessionExpiry] = useState(null);
+  const [sessionWarning, setSessionWarning] = useState(false);
+  const [sessionRemainingMinutes, setSessionRemainingMinutes] = useState(null);
+  const timerRef = useRef(null);
 
   const login = useCallback((tokenStr, userData) => {
     localStorage.setItem('quickid_token', tokenStr);
     localStorage.setItem('quickid_user', JSON.stringify(userData));
     setToken(tokenStr);
     setUser(userData);
+    setSessionWarning(false);
+
+    const expiry = getTokenExpiry(tokenStr);
+    setSessionExpiry(expiry);
   }, []);
 
   const logout = useCallback(() => {
@@ -24,13 +45,64 @@ export function AuthProvider({ children }) {
     localStorage.removeItem('quickid_user');
     setToken(null);
     setUser(null);
+    setSessionExpiry(null);
+    setSessionWarning(false);
+    setSessionRemainingMinutes(null);
+    if (timerRef.current) clearInterval(timerRef.current);
   }, []);
+
+  const extendSession = useCallback(() => {
+    // Token yenileme yapılamaz (JWT stateless), sadece uyarıyı kapat
+    setSessionWarning(false);
+  }, []);
+
+  // Oturum süresini kontrol et
+  useEffect(() => {
+    if (!token) {
+      if (timerRef.current) clearInterval(timerRef.current);
+      return;
+    }
+
+    const expiry = getTokenExpiry(token);
+    setSessionExpiry(expiry);
+
+    if (!expiry) return;
+
+    const checkSession = () => {
+      const now = Date.now();
+      const remaining = expiry - now;
+      const remainingMinutes = Math.ceil(remaining / 60000);
+
+      setSessionRemainingMinutes(remainingMinutes);
+
+      if (remaining <= 0) {
+        // Oturum süresi doldu
+        logout();
+        window.location.href = '/login';
+        return;
+      }
+
+      if (remaining <= SESSION_WARNING_MINUTES * 60 * 1000) {
+        setSessionWarning(true);
+      }
+    };
+
+    checkSession();
+    timerRef.current = setInterval(checkSession, 30000); // Her 30 saniyede kontrol
+
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [token, logout]);
 
   const isAdmin = user?.role === 'admin';
   const isAuthenticated = !!token && !!user;
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, isAdmin, isAuthenticated, loading }}>
+    <AuthContext.Provider value={{
+      user, token, login, logout, isAdmin, isAuthenticated, loading,
+      sessionExpiry, sessionWarning, sessionRemainingMinutes, extendSession,
+    }}>
       {children}
     </AuthContext.Provider>
   );
