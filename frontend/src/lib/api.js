@@ -452,4 +452,145 @@ export const api = {
     const res = await fetch(`${BACKEND_URL}/api/scan/cost-estimate/${providerId}`, { headers: authHeaders() });
     return handleResponse(res);
   },
+
+  // ===== Room Management =====
+  async getRooms(params = {}) {
+    const query = new URLSearchParams();
+    Object.entries(params).forEach(([k, v]) => { if (v !== null && v !== undefined && v !== '') query.set(k, v); });
+    const res = await fetch(`${BACKEND_URL}/api/rooms?${query.toString()}`, { headers: authHeaders() });
+    return handleResponse(res);
+  },
+
+  async getRoomStats(propertyId = null) {
+    const query = propertyId ? `?property_id=${propertyId}` : '';
+    const res = await fetch(`${BACKEND_URL}/api/rooms/stats${query}`, { headers: authHeaders() });
+    return handleResponse(res);
+  },
+
+  async getRoomTypes() {
+    const res = await fetch(`${BACKEND_URL}/api/rooms/types`, { headers: authHeaders() });
+    return handleResponse(res);
+  },
+
+  async createRoom(data) {
+    const res = await fetch(`${BACKEND_URL}/api/rooms`, {
+      method: 'POST', headers: authHeaders(), body: JSON.stringify(data),
+    });
+    return handleResponse(res);
+  },
+
+  async updateRoom(roomId, data) {
+    const res = await fetch(`${BACKEND_URL}/api/rooms/${roomId}`, {
+      method: 'PATCH', headers: authHeaders(), body: JSON.stringify(data),
+    });
+    return handleResponse(res);
+  },
+
+  async assignRoom(roomId, guestId) {
+    const res = await fetch(`${BACKEND_URL}/api/rooms/assign`, {
+      method: 'POST', headers: authHeaders(),
+      body: JSON.stringify({ room_id: roomId, guest_id: guestId }),
+    });
+    return handleResponse(res);
+  },
+
+  async autoAssignRoom(guestId, propertyId = null, preferredType = null) {
+    const body = { guest_id: guestId };
+    if (propertyId) body.property_id = propertyId;
+    if (preferredType) body.preferred_type = preferredType;
+    const res = await fetch(`${BACKEND_URL}/api/rooms/auto-assign`, {
+      method: 'POST', headers: authHeaders(), body: JSON.stringify(body),
+    });
+    return handleResponse(res);
+  },
+
+  async releaseRoom(roomId, guestId = null) {
+    const query = guestId ? `?guest_id=${guestId}` : '';
+    const res = await fetch(`${BACKEND_URL}/api/rooms/${roomId}/release${query}`, {
+      method: 'POST', headers: authHeaders(),
+    });
+    return handleResponse(res);
+  },
+
+  // ===== Monitoring =====
+  async getMonitoringDashboard() {
+    const res = await fetch(`${BACKEND_URL}/api/monitoring/dashboard`, { headers: authHeaders() });
+    return handleResponse(res);
+  },
+
+  async getScanStatistics(days = 30) {
+    const res = await fetch(`${BACKEND_URL}/api/monitoring/scan-stats?days=${days}`, { headers: authHeaders() });
+    return handleResponse(res);
+  },
+
+  async getErrorLog(params = {}) {
+    const query = new URLSearchParams();
+    Object.entries(params).forEach(([k, v]) => { if (v !== null && v !== undefined) query.set(k, v); });
+    const res = await fetch(`${BACKEND_URL}/api/monitoring/error-log?${query.toString()}`, { headers: authHeaders() });
+    return handleResponse(res);
+  },
+
+  async getAiCostReport(days = 30) {
+    const res = await fetch(`${BACKEND_URL}/api/monitoring/ai-costs?days=${days}`, { headers: authHeaders() });
+    return handleResponse(res);
+  },
+
+  // ===== Backup =====
+  async createBackup(description = '') {
+    const res = await fetch(`${BACKEND_URL}/api/admin/backup`, {
+      method: 'POST', headers: authHeaders(), body: JSON.stringify({ description }),
+    });
+    return handleResponse(res);
+  },
+
+  async getBackups() {
+    const res = await fetch(`${BACKEND_URL}/api/admin/backups`, { headers: authHeaders() });
+    return handleResponse(res);
+  },
+
+  async restoreBackup(backupId) {
+    const res = await fetch(`${BACKEND_URL}/api/admin/restore`, {
+      method: 'POST', headers: authHeaders(), body: JSON.stringify({ backup_id: backupId }),
+    });
+    return handleResponse(res);
+  },
+
+  async getBackupSchedule() {
+    const res = await fetch(`${BACKEND_URL}/api/admin/backup-schedule`, { headers: authHeaders() });
+    return handleResponse(res);
+  },
+
+  // ===== Compliance =====
+  async getComplianceReports() {
+    const res = await fetch(`${BACKEND_URL}/api/compliance/reports`, { headers: authHeaders() });
+    return handleResponse(res);
+  },
+
+  // ===== Guest Photo =====
+  async uploadGuestPhoto(guestId, imageBase64) {
+    const res = await fetch(`${BACKEND_URL}/api/guests/${guestId}/photo`, {
+      method: 'POST', headers: authHeaders(),
+      body: JSON.stringify({ image_base64: imageBase64 }),
+    });
+    return handleResponse(res);
+  },
+
+  async getGuestPhoto(guestId) {
+    const res = await fetch(`${BACKEND_URL}/api/guests/${guestId}/photo`, { headers: authHeaders() });
+    return handleResponse(res);
+  },
+
+  // ===== Form-C =====
+  async getFormC(guestId) {
+    const res = await fetch(`${BACKEND_URL}/api/tc-kimlik/form-c/${guestId}`, { headers: authHeaders() });
+    return handleResponse(res);
+  },
+
+  // ===== Guest Restore =====
+  async restoreGuest(guestId) {
+    const res = await fetch(`${BACKEND_URL}/api/guests/${guestId}/restore`, {
+      method: 'POST', headers: authHeaders(),
+    });
+    return handleResponse(res);
+  },
 };
