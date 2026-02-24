@@ -267,15 +267,30 @@ export default function ExtractionForm({ data, onChange, onSave, loading, extrac
           />
         </div>
 
+        {/* Validation Summary */}
+        {!validation.valid && data.first_name !== undefined && (
+          <div className="flex items-start gap-2 p-2.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-700 text-xs">
+            <AlertCircle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="font-medium">Eksik alanlar ({validation.filledCount}/{validation.totalRequired})</p>
+              {validation.errors.slice(0, 3).map((err, i) => (
+                <p key={i} className="mt-0.5">{err}</p>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Save button */}
         <Button
           onClick={onSave}
-          disabled={loading || !data.first_name}
+          disabled={loading || !validation.valid}
           className="w-full bg-[var(--brand-sky)] hover:bg-[#094C6E] text-white mt-2"
           data-testid="scan-save-button"
         >
           {loading ? (
             <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Kaydediliyor...</>
+          ) : validation.valid ? (
+            <><CheckCircle2 className="w-4 h-4 mr-2" /> Misafir Olarak Kaydet</>
           ) : (
             <><Save className="w-4 h-4 mr-2" /> Misafir Olarak Kaydet</>
           )}
