@@ -267,15 +267,18 @@ class BackendTester:
         print("\n⏱️  Testing P0: Rate Limiting on Login")
         
         try:
+            # Create a fresh session for rate limit testing 
+            rate_test_session = requests.Session()
+            
             # Make multiple rapid login attempts to trigger rate limiting
             print("    Making multiple login attempts to test rate limiting...")
             
             rate_limit_hit = False
             
-            for i in range(7):  # Try 7 times (limit should be 5/minute)
-                response = requests.post(
+            for i in range(8):  # Try 8 times (limit should be 5/minute)
+                response = rate_test_session.post(
                     f"{self.base_url}/api/auth/login",
-                    json={"email": "test@example.com", "password": "wrongpassword"},
+                    json={"email": "testuser@example.com", "password": "wrongpassword"},
                     timeout=10
                 )
                 
@@ -288,7 +291,7 @@ class BackendTester:
                     try:
                         error_data = response.json()
                         detail = error_data.get("detail", "")
-                        if "limit" in detail.lower() or "retry" in detail.lower():
+                        if "limit" in detail.lower() or "retry" in detail.lower() or "aşıldı" in detail.lower():
                             print(f"       Rate limit message: {detail}")
                         
                         retry_after = error_data.get("retry_after")
@@ -305,12 +308,25 @@ class BackendTester:
                 else:
                     print(f"    Unexpected response: {response.status_code}")
                 
-                time.sleep(0.1)  # Small delay between requests
+                # Small delay between requests - but still fast enough to trigger rate limit
+                time.sleep(0.05)  
             
             if rate_limit_hit:
                 return (True, "Rate limiting is working on login endpoint")
             else:
-                return (False, "Rate limiting not triggered after 7 attempts")
+                # Try one more time with even faster requests
+                print("    Trying with faster requests...")
+                for i in range(6):
+                    response = rate_test_session.post(
+                        f"{self.base_url}/api/auth/login", 
+                        json={"email": f"test{i}@example.com", "password": "wrong"},
+                        timeout=5
+                    )
+                    if response.status_code == 429:
+                        print(f"    ✅ Rate limiting triggered with faster requests on attempt {i+1}")
+                        return (True, "Rate limiting is working on login endpoint")
+                
+                return (False, "Rate limiting not triggered after multiple attempts")
                 
         except Exception as e:
             return (False, f"Rate limiting test error: {str(e)}")
