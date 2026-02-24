@@ -630,4 +630,43 @@ export const api = {
     });
     return handleResponse(res);
   },
+
+  // ===== PDF Reports =====
+  getFormCPdfUrl(guestId) {
+    return `${BACKEND_URL}/api/reports/form-c/${guestId}/pdf`;
+  },
+
+  getGuestListPdfUrl(params = {}) {
+    const query = new URLSearchParams();
+    Object.entries(params).forEach(([k, v]) => { if (v) query.set(k, v); });
+    return `${BACKEND_URL}/api/reports/guests/pdf?${query.toString()}`;
+  },
+
+  async downloadPdf(url) {
+    const token = getToken();
+    const res = await fetch(url, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) throw new Error('PDF indirilemedi');
+    const blob = await res.blob();
+    return blob;
+  },
+
+  // ===== Email Status =====
+  async getEmailStatus() {
+    const res = await fetch(`${BACKEND_URL}/api/admin/email-status`, { headers: authHeaders() });
+    return handleResponse(res);
+  },
+
+  async getEmailLog(limit = 50) {
+    const res = await fetch(`${BACKEND_URL}/api/admin/email-log?limit=${limit}`, { headers: authHeaders() });
+    return handleResponse(res);
+  },
+
+  async sendTestEmail() {
+    const res = await fetch(`${BACKEND_URL}/api/admin/email-test`, {
+      method: 'POST', headers: authHeaders(),
+    });
+    return handleResponse(res);
+  },
 };
