@@ -6,25 +6,10 @@ import { Badge } from '../components/ui/badge';
 import { Checkbox } from '../components/ui/checkbox';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
+import { api } from '../lib/api';
 import {
   UsersRound, RefreshCw, CheckCircle2, XCircle, Search, DoorOpen,
 } from 'lucide-react';
-
-const BACKEND = process.env.REACT_APP_BACKEND_URL || '';
-function authHeaders() {
-  const token = localStorage.getItem('quickid_token');
-  return token ? { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } : { 'Content-Type': 'application/json' };
-}
-async function fetchJSON(path) {
-  const res = await fetch(`${BACKEND}${path}`, { headers: authHeaders() });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return res.json();
-}
-async function postJSON(path, body) {
-  const res = await fetch(`${BACKEND}${path}`, { method: 'POST', headers: authHeaders(), body: JSON.stringify(body) });
-  if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.detail || `HTTP ${res.status}`); }
-  return res.json();
-}
 
 export default function GroupCheckinPage() {
   const [guests, setGuests] = useState([]);
@@ -40,8 +25,8 @@ export default function GroupCheckinPage() {
     setLoading(true);
     try {
       const [guestsRes, roomsRes] = await Promise.allSettled([
-        fetchJSON('/api/guests?status=pending&limit=100'),
-        fetchJSON('/api/rooms?status=available'),
+        api.getGuests({ status: 'pending', limit: 100 }),
+        api.getRooms({ status: 'available' }),
       ]);
       if (guestsRes.status === 'fulfilled') setGuests(guestsRes.value.guests || []);
       if (roomsRes.status === 'fulfilled') setRooms(roomsRes.value.rooms || []);
@@ -68,7 +53,15 @@ export default function GroupCheckinPage() {
         guest_ids: selectedGuests,
         ...(selectedRoom ? { room_id: selectedRoom } : {}),
       };
-      const data = await postJSON('/api/guests/group-checkin', payload);
+      const res = await fetch(`${process.env.REACT_APP_BACKEND_URL || ''}/api/guests/group-checkin`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('quickid_token')}`,
+        },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
       setResult(data);
       setSelectedGuests([]);
       fetchData();
