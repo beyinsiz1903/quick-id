@@ -1214,7 +1214,8 @@ async def update_guest(request: Request, guest_id: str, update: GuestUpdate, use
     return {"success": True, "guest": serialize_doc(doc)}
 
 @app.delete("/api/guests/{guest_id}")
-async def delete_guest(guest_id: str, permanent: bool = Query(False, description="Kalıcı silme (true = geri alınamaz)"), user=Depends(require_auth)):
+@limiter.limit("30/minute")
+async def delete_guest(request: Request, guest_id: str, permanent: bool = Query(False, description="Kalıcı silme (true = geri alınamaz)"), user=Depends(require_auth)):
     try: oid = ObjectId(guest_id)
     except Exception: raise HTTPException(status_code=400, detail="Geçersiz misafir ID")
     doc = await guests_col.find_one({"_id": oid})
