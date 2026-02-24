@@ -2145,6 +2145,10 @@ async def group_checkin(req: GroupCheckinRequest, user=Depends(require_auth)):
           description="Check-in sırasında misafir fotoğrafı çeker ve kaydeder")
 @limiter.limit("20/minute")
 async def upload_guest_photo(request: Request, guest_id: str, req: GuestPhotoRequest, user=Depends(require_auth)):
+    # Image size validation
+    if len(req.image_base64) > MAX_IMAGE_BASE64_LENGTH:
+        raise HTTPException(status_code=413, detail=f"Fotoğraf boyutu çok büyük. Maksimum {MAX_IMAGE_BASE64_LENGTH // (1024*1024)}MB izin verilir.")
+
     try:
         oid = ObjectId(guest_id)
     except Exception:
