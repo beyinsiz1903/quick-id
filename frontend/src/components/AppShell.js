@@ -169,6 +169,27 @@ export default function AppShell({ children }) {
 
       {/* Main Content */}
       <main className="lg:ml-64 min-h-screen relative z-10">
+        {/* Session Timeout Warning */}
+        {sessionWarning && (
+          <div className="sticky top-0 z-50 bg-amber-50 border-b border-amber-200 px-4 py-2">
+            <div className="max-w-[1400px] mx-auto flex items-center justify-between">
+              <div className="flex items-center gap-2 text-amber-800">
+                <Clock className="w-4 h-4" />
+                <span className="text-sm font-medium">
+                  Oturum süreniz dolmak üzere{sessionRemainingMinutes ? ` (${sessionRemainingMinutes} dakika kaldı)` : ''}.
+                </span>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={logout}
+                className="text-amber-700 border-amber-300 hover:bg-amber-100 text-xs h-7"
+              >
+                Tekrar Giriş Yap
+              </Button>
+            </div>
+          </div>
+        )}
         <div className="max-w-[1400px] mx-auto p-4 sm:p-6">
           {children}
         </div>
