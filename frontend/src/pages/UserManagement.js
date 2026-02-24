@@ -190,6 +190,7 @@ export default function UserManagement() {
               <div className="space-y-1.5">
                 <Label>Şifre</Label>
                 <Input type="password" value={form.password} onChange={e => setForm(p => ({...p, password: e.target.value}))} placeholder="••••••" />
+                <PasswordStrength password={form.password} showRules={true} />
               </div>
             )}
             <div className="space-y-1.5">
