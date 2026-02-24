@@ -10,22 +10,6 @@ import {
   CheckCircle2, XCircle, Clock, Database, HardDrive, Shield, Download,
 } from 'lucide-react';
 
-const BACKEND = process.env.REACT_APP_BACKEND_URL || '';
-function authHeaders() {
-  const token = localStorage.getItem('quickid_token');
-  return token ? { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } : { 'Content-Type': 'application/json' };
-}
-async function fetchJSON(path) {
-  const res = await fetch(`${BACKEND}${path}`, { headers: authHeaders() });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return res.json();
-}
-async function postJSON(path, body) {
-  const res = await fetch(`${BACKEND}${path}`, { method: 'POST', headers: authHeaders(), body: JSON.stringify(body) });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return res.json();
-}
-
 export default function MonitoringPage() {
   const [dashboard, setDashboard] = useState(null);
   const [scanStats, setScanStats] = useState(null);
@@ -40,12 +24,12 @@ export default function MonitoringPage() {
     setLoading(true);
     try {
       const [dashRes, scanRes, errorRes, costRes, backupRes, scheduleRes] = await Promise.allSettled([
-        fetchJSON('/api/monitoring/dashboard'),
-        fetchJSON('/api/monitoring/scan-stats?days=30'),
-        fetchJSON('/api/monitoring/error-log?days=7&limit=20'),
-        fetchJSON('/api/monitoring/ai-costs?days=30'),
-        fetchJSON('/api/admin/backups'),
-        fetchJSON('/api/admin/backup-schedule'),
+        api.getMonitoringDashboard(),
+        api.getScanStatistics(30),
+        api.getErrorLog({ days: 7, limit: 20 }),
+        api.getAiCostReport(30),
+        api.getBackups(),
+        api.getBackupSchedule(),
       ]);
       if (dashRes.status === 'fulfilled') setDashboard(dashRes.value);
       if (scanRes.status === 'fulfilled') setScanStats(scanRes.value);
@@ -64,8 +48,8 @@ export default function MonitoringPage() {
   const handleCreateBackup = async () => {
     setBackupLoading(true);
     try {
-      await postJSON('/api/admin/backup', { description: 'Manuel yedekleme' });
-      const data = await fetchJSON('/api/admin/backups');
+      await api.createBackup('Manuel yedekleme');
+      const data = await api.getBackups();
       setBackups(data.backups || []);
     } catch (e) {
       console.error('Backup error:', e);
