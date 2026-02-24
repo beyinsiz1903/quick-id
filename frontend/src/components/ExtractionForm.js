@@ -65,6 +65,42 @@ export default function ExtractionForm({ data, onChange, onSave, loading, extrac
     }
   };
 
+  // Form validation
+  const validation = useMemo(() => {
+    if (!data) return { valid: false, errors: [], filledCount: 0, totalRequired: 3 };
+    const errors = [];
+    
+    if (!data.first_name?.trim()) errors.push('Ad gerekli');
+    if (!data.last_name?.trim()) errors.push('Soyad gerekli');
+    if (!data.id_number?.trim()) errors.push('Kimlik numarası gerekli');
+    
+    // Optional validation
+    if (data.birth_date && !/^\d{4}-\d{2}-\d{2}$/.test(data.birth_date)) {
+      errors.push('Doğum tarihi formatı geçersiz (YYYY-MM-DD)');
+    }
+    if (data.expiry_date && !/^\d{4}-\d{2}-\d{2}$/.test(data.expiry_date)) {
+      errors.push('Geçerlilik tarihi formatı geçersiz');
+    }
+    if (data.id_number?.trim() && data.document_type === 'tc_kimlik' && data.id_number.trim().length !== 11) {
+      errors.push('TC Kimlik No 11 haneli olmalı');
+    }
+
+    const filledFields = [data.first_name, data.last_name, data.id_number].filter(v => v?.trim()).length;
+
+    return {
+      valid: errors.length === 0 && filledFields >= 3,
+      errors,
+      filledCount: filledFields,
+      totalRequired: 3,
+    };
+  }, [data]);
+
+  const showFieldError = (field) => {
+    if (!data) return false;
+    // Only show error after user has interacted (field exists but empty)
+    return data[field] !== undefined && data[field] !== null && !data[field]?.toString().trim();
+  };
+
   return (
     <Card className="bg-white">
       <CardHeader className="pb-3">
