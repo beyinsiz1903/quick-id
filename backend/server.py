@@ -627,7 +627,20 @@ async def startup_tasks():
 # ===== AUTH ROUTES =====
 @app.get("/api/health", tags=["Sağlık"], summary="Sistem sağlık kontrolü")
 async def health():
-    return {"status": "healthy", "service": "Quick ID Reader", "version": "3.0.0"}
+    # MongoDB bağlantı kontrolü
+    db_status = "healthy"
+    try:
+        await client.admin.command("ping")
+    except Exception:
+        db_status = "unhealthy"
+
+    status = "healthy" if db_status == "healthy" else "degraded"
+    return {
+        "status": status,
+        "service": "Quick ID Reader",
+        "version": "3.1.0",
+        "database": db_status,
+    }
 
 @app.get("/api/rate-limits", tags=["Sağlık"], summary="Rate limit bilgileri")
 async def get_rate_limits():
