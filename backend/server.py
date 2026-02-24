@@ -1101,7 +1101,9 @@ async def update_scan_review(scan_id: str, review_status: str = Query(..., descr
 
 # ===== GUEST ENDPOINTS =====
 @app.get("/api/guests/check-duplicate")
+@limiter.limit("60/minute")
 async def check_duplicate(
+    request: Request,
     id_number: Optional[str] = None,
     first_name: Optional[str] = None,
     last_name: Optional[str] = None,
