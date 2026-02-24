@@ -88,9 +88,9 @@ export default function LoginPage() {
             </form>
 
             <div className="mt-6 p-3 rounded-lg bg-[hsl(var(--secondary))] text-xs text-muted-foreground">
-              <p className="font-medium mb-1">Varsayılan Hesaplar:</p>
-              <p>Admin: admin@quickid.com / admin123</p>
-              <p>Resepsiyon: resepsiyon@quickid.com / resepsiyon123</p>
+              <p className="font-medium mb-1">Yardım:</p>
+              <p>Giriş bilgilerinizi sistem yöneticinizden alabilirsiniz.</p>
+              <p className="mt-1">Şifrenizi unuttuysanız yöneticinize başvurun.</p>
             </div>
           </CardContent>
         </Card>
