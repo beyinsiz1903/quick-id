@@ -2322,8 +2322,7 @@ async def get_compliance_reports(user=Depends(require_admin)):
     
     # Foreign guests without notification
     foreign_guests = await guests_col.count_documents({
-        "nationality": {"$nin": ["TC", "TR", "Türkiye", "Turkey", "Türk", "Turkish", "T.C."]},
-        "nationality": {"$ne": None, "$exists": True},
+        "nationality": {"$nin": ["TC", "TR", "Türkiye", "Turkey", "Türk", "Turkish", "T.C."], "$ne": None, "$exists": True},
     })
     
     return {
