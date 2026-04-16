@@ -28,7 +28,8 @@ A professional hotel reception and guest management system for automating identi
 
 ## Environment Variables Needed
 - `OPENAI_API_KEY`: For GPT-4o Vision ID scanning (direct OpenAI SDK, no wrapper)
-- `MONGO_URL`: MongoDB connection (defaults to `mongodb://localhost:27017`)
+- `MONGO_URL`: MongoDB Atlas connection string (stored as secret, includes credentials)
+- `DB_NAME`: MongoDB database name (stored as secret)
 - `JWT_SECRET`: Secret for JWT token signing
 - `CORS_ORIGINS`: Comma-separated allowed origins (defaults to localhost + Replit domain)
 
@@ -58,5 +59,5 @@ A professional hotel reception and guest management system for automating identi
 ## Dependency Notes
 - AI scanning uses OpenAI SDK directly (`openai` package) via `backend/llm_client.py` helper module
 - The frontend has complex ajv versioning requirements - some packages need ajv@6, others ajv@8. Manually patched nested `node_modules` structure to resolve conflicts.
-- MongoDB is installed via Nix and started locally via `start_backend.sh`
+- MongoDB: kullanıcının kendi MongoDB Atlas cluster'ı kullanılıyor (uzak). Yerel mongod artık başlatılmıyor. `start_backend.sh` sadece backend sunucusunu başlatır.
 - `DISABLE_ESLINT_PLUGIN=true` set in frontend/.env to avoid ajv version conflicts in webpack
