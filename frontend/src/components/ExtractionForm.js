@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
@@ -7,7 +7,7 @@ import { Textarea } from './ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Badge } from './ui/badge';
 import { Skeleton } from './ui/skeleton';
-import { Save, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Save, Loader2, AlertCircle, CheckCircle2, ChevronDown, ChevronUp } from 'lucide-react';
 
 const DOC_TYPES = [
   { value: 'tc_kimlik', label: 'TC Kimlik' },
@@ -23,7 +23,8 @@ const GENDER_OPTIONS = [
 ];
 
 export default function ExtractionForm({ data, onChange, onSave, loading, extracting, warnings }) {
-  // Form validation - MUST be before early returns (React hooks rule)
+  const [showDetails, setShowDetails] = useState(false);
+
   const validation = useMemo(() => {
     if (!data) return { valid: false, errors: [], filledCount: 0, totalRequired: 3 };
     const errors = [];
@@ -32,7 +33,6 @@ export default function ExtractionForm({ data, onChange, onSave, loading, extrac
     if (!data.last_name?.trim()) errors.push('Soyad gerekli');
     if (!data.id_number?.trim()) errors.push('Kimlik numarası gerekli');
     
-    // Optional validation
     if (data.birth_date && !/^\d{4}-\d{2}-\d{2}$/.test(data.birth_date)) {
       errors.push('Doğum tarihi formatı geçersiz (YYYY-MM-DD)');
     }
@@ -59,11 +59,11 @@ export default function ExtractionForm({ data, onChange, onSave, loading, extrac
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
             <Loader2 className="w-4 h-4 animate-spin text-[var(--brand-sky)]" />
-            AI Çıkarım Yapılıyor...
+            Kimlik okunuyor...
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {Array.from({ length: 6 }).map((_, i) => (
+          {Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="space-y-1.5">
               <Skeleton className="h-3 w-20" />
               <Skeleton className="h-9 w-full" />
@@ -82,7 +82,7 @@ export default function ExtractionForm({ data, onChange, onSave, loading, extrac
             <AlertCircle className="w-8 h-8 text-muted-foreground" />
           </div>
           <p className="text-sm text-muted-foreground text-center">
-            Kimlik kartı fotoğrafı çekin,<br />bilgiler otomatik çıkarılacak.
+            Kimlik kartını kameraya gösterin,<br />bilgiler otomatik okunacak.
           </p>
         </CardContent>
       </Card>
@@ -100,6 +100,8 @@ export default function ExtractionForm({ data, onChange, onSave, loading, extrac
     return data[field] !== undefined && data[field] !== null && !data[field]?.toString().trim();
   };
 
+  const hasDetailData = data.birth_place || data.issue_date || data.expiry_date || data.mother_name || data.father_name || data.notes || data.document_number;
+
   return (
     <Card className="bg-white">
       <CardHeader className="pb-3">
@@ -107,7 +109,7 @@ export default function ExtractionForm({ data, onChange, onSave, loading, extrac
           <CardTitle className="text-base">Kimlik Bilgileri</CardTitle>
           {data.is_valid === false && (
             <Badge variant="outline" className="bg-[var(--brand-warning-soft)] text-[var(--brand-warning)] border-[#FED7AA]">
-              İnceleme Gerekli
+              Kontrol Edin
             </Badge>
           )}
         </div>
@@ -122,7 +124,6 @@ export default function ExtractionForm({ data, onChange, onSave, loading, extrac
         )}
       </CardHeader>
       <CardContent className="space-y-3">
-        {/* Document Type */}
         <div className="space-y-1.5">
           <Label className="text-xs text-muted-foreground">Belge Türü</Label>
           <Select
@@ -140,7 +141,6 @@ export default function ExtractionForm({ data, onChange, onSave, loading, extrac
           </Select>
         </div>
 
-        {/* Name fields */}
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1.5">
             <Label className="text-xs text-muted-foreground">Ad <span className="text-red-400">*</span></Label>
@@ -151,9 +151,6 @@ export default function ExtractionForm({ data, onChange, onSave, loading, extrac
               data-testid="guest-first-name-input"
               className={showFieldError('first_name') ? 'border-red-300 focus:ring-red-200' : ''}
             />
-            {showFieldError('first_name') && (
-              <p className="text-xs text-red-500">Ad gerekli</p>
-            )}
           </div>
           <div className="space-y-1.5">
             <Label className="text-xs text-muted-foreground">Soyad <span className="text-red-400">*</span></Label>
@@ -164,13 +161,9 @@ export default function ExtractionForm({ data, onChange, onSave, loading, extrac
               data-testid="guest-last-name-input"
               className={showFieldError('last_name') ? 'border-red-300 focus:ring-red-200' : ''}
             />
-            {showFieldError('last_name') && (
-              <p className="text-xs text-red-500">Soyad gerekli</p>
-            )}
           </div>
         </div>
 
-        {/* ID Number */}
         <div className="space-y-1.5">
           <Label className="text-xs text-muted-foreground">TCKN / Pasaport No <span className="text-red-400">*</span></Label>
           <Input
@@ -180,12 +173,8 @@ export default function ExtractionForm({ data, onChange, onSave, loading, extrac
             data-testid="guest-document-number-input"
             className={showFieldError('id_number') ? 'border-red-300 focus:ring-red-200' : ''}
           />
-          {showFieldError('id_number') && (
-            <p className="text-xs text-red-500">Kimlik numarası gerekli</p>
-          )}
         </div>
 
-        {/* Birth Date & Gender */}
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1.5">
             <Label className="text-xs text-muted-foreground">Doğum Tarihi</Label>
@@ -214,7 +203,6 @@ export default function ExtractionForm({ data, onChange, onSave, loading, extrac
           </div>
         </div>
 
-        {/* Nationality */}
         <div className="space-y-1.5">
           <Label className="text-xs text-muted-foreground">Uyruk</Label>
           <Input
@@ -225,48 +213,84 @@ export default function ExtractionForm({ data, onChange, onSave, loading, extrac
           />
         </div>
 
-        {/* Birth place */}
-        <div className="space-y-1.5">
-          <Label className="text-xs text-muted-foreground">Doğum Yeri</Label>
-          <Input
-            value={data.birth_place || ''}
-            onChange={(e) => handleChange('birth_place', e.target.value)}
-            placeholder="Doğum yeri"
-          />
-        </div>
+        <button
+          type="button"
+          onClick={() => setShowDetails(!showDetails)}
+          className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-[var(--brand-ink)] transition-colors w-full py-1"
+        >
+          {showDetails ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+          {showDetails ? 'Detayları gizle' : 'Diğer bilgiler'}
+          {hasDetailData && !showDetails && (
+            <Badge variant="outline" className="text-[10px] ml-1 px-1.5 py-0 text-muted-foreground">dolu</Badge>
+          )}
+        </button>
 
-        {/* Expiry & Issue dates */}
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1.5">
-            <Label className="text-xs text-muted-foreground">Veriliş Tarihi</Label>
-            <Input
-              type="date"
-              value={data.issue_date || ''}
-              onChange={(e) => handleChange('issue_date', e.target.value)}
-            />
+        {showDetails && (
+          <div className="space-y-3 pt-1 border-t border-dashed">
+            <div className="space-y-1.5">
+              <Label className="text-xs text-muted-foreground">Belge No</Label>
+              <Input
+                value={data.document_number || ''}
+                onChange={(e) => handleChange('document_number', e.target.value)}
+                placeholder="Belge numarası"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs text-muted-foreground">Doğum Yeri</Label>
+              <Input
+                value={data.birth_place || ''}
+                onChange={(e) => handleChange('birth_place', e.target.value)}
+                placeholder="Doğum yeri"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">Anne Adı</Label>
+                <Input
+                  value={data.mother_name || ''}
+                  onChange={(e) => handleChange('mother_name', e.target.value)}
+                  placeholder="Anne adı"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">Baba Adı</Label>
+                <Input
+                  value={data.father_name || ''}
+                  onChange={(e) => handleChange('father_name', e.target.value)}
+                  placeholder="Baba adı"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">Veriliş Tarihi</Label>
+                <Input
+                  type="date"
+                  value={data.issue_date || ''}
+                  onChange={(e) => handleChange('issue_date', e.target.value)}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">Geçerlilik Tarihi</Label>
+                <Input
+                  type="date"
+                  value={data.expiry_date || ''}
+                  onChange={(e) => handleChange('expiry_date', e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs text-muted-foreground">Not</Label>
+              <Textarea
+                value={data.notes || ''}
+                onChange={(e) => handleChange('notes', e.target.value)}
+                placeholder="Ek notlar..."
+                rows={2}
+              />
+            </div>
           </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs text-muted-foreground">Geçerlilik Tarihi</Label>
-            <Input
-              type="date"
-              value={data.expiry_date || ''}
-              onChange={(e) => handleChange('expiry_date', e.target.value)}
-            />
-          </div>
-        </div>
+        )}
 
-        {/* Notes */}
-        <div className="space-y-1.5">
-          <Label className="text-xs text-muted-foreground">Not</Label>
-          <Textarea
-            value={data.notes || ''}
-            onChange={(e) => handleChange('notes', e.target.value)}
-            placeholder="Ek notlar..."
-            rows={2}
-          />
-        </div>
-
-        {/* Validation Summary */}
         {!validation.valid && data.first_name !== undefined && (
           <div className="flex items-start gap-2 p-2.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-700 text-xs">
             <AlertCircle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
@@ -279,7 +303,6 @@ export default function ExtractionForm({ data, onChange, onSave, loading, extrac
           </div>
         )}
 
-        {/* Save button */}
         <Button
           onClick={onSave}
           disabled={loading || !validation.valid}
@@ -289,9 +312,9 @@ export default function ExtractionForm({ data, onChange, onSave, loading, extrac
           {loading ? (
             <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Kaydediliyor...</>
           ) : validation.valid ? (
-            <><CheckCircle2 className="w-4 h-4 mr-2" /> Misafir Olarak Kaydet</>
+            <><CheckCircle2 className="w-4 h-4 mr-2" /> Kaydet ve Oda Ata</>
           ) : (
-            <><Save className="w-4 h-4 mr-2" /> Misafir Olarak Kaydet</>
+            <><Save className="w-4 h-4 mr-2" /> Kaydet ve Oda Ata</>
           )}
         </Button>
       </CardContent>

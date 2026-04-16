@@ -38,7 +38,9 @@ A professional hotel reception and guest management system for automating identi
 
 ## Key Features
 - AI-powered ID document scanning (Turkish and international)
+- Streamlined scan-to-room flow: Scan → Review → Save → Assign Room (all on one page)
 - Guest check-in/check-out management
+- Room management with quick assignment grid
 - KVKK (Turkish Data Protection Law) compliance
 - Multi-property support
 - Biometric face matching
@@ -46,6 +48,12 @@ A professional hotel reception and guest management system for automating identi
 - Offline/kiosk mode support
 - PDF report generation
 - Audit trail
+
+## UI Design Notes
+- ScanPage simplified: provider selection, image quality details, MRZ info removed from default view (auto mode used by default)
+- ExtractionForm: essential fields shown by default (name, ID, DOB, gender, nationality), optional fields (birth place, parents, dates, notes) collapsible under "Diğer bilgiler"
+- RoomQuickAssign component: shown inline after guest save, displays available rooms as clickable grid
+- Save button reads "Kaydet ve Oda Ata" to signal the combined flow
 
 ## Dependency Notes
 - `emergentintegrations` package is used for AI scanning but is not on PyPI - AI scanning will use the OpenAI SDK directly as fallback
