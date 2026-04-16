@@ -212,6 +212,15 @@ export const api = {
     return handleResponse(res);
   },
 
+  async groupCheckin(data) {
+    const res = await fetch(`${BACKEND_URL}/api/guests/group-checkin`, {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify(data),
+    });
+    return handleResponse(res);
+  },
+
   // Audit Trail
   async getGuestAudit(guestId) {
     const res = await fetch(`${BACKEND_URL}/api/guests/${guestId}/audit`, { headers: authHeaders() });

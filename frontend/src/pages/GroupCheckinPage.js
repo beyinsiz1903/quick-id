@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useAuth } from '../lib/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
@@ -53,15 +52,7 @@ export default function GroupCheckinPage() {
         guest_ids: selectedGuests,
         ...(selectedRoom ? { room_id: selectedRoom } : {}),
       };
-      const res = await fetch(`${process.env.REACT_APP_BACKEND_URL || ''}/api/guests/group-checkin`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('quickid_token')}`,
-        },
-        body: JSON.stringify(payload),
-      });
-      const data = await res.json();
+      const data = await api.groupCheckin(payload);
       setResult(data);
       setSelectedGuests([]);
       fetchData();
