@@ -107,7 +107,7 @@ def preprocess_image_cv2(img_bytes: bytes) -> Optional[bytes]:
         return None
 
 
-def deskew_image(img: np.ndarray) -> np.ndarray:
+def deskew_image(img: object) -> object:
     """Görüntü eğrilik düzeltme (deskew)"""
     if not CV2_AVAILABLE:
         return img

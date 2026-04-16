@@ -248,23 +248,22 @@ app.add_middleware(RequestSizeLimitMiddleware)
 
 # CORS - Secure whitelist configuration
 CORS_ORIGINS = os.environ.get("CORS_ORIGINS", "")
+REPLIT_DEV_DOMAIN = os.environ.get("REPLIT_DEV_DOMAIN", "")
 if CORS_ORIGINS == "*":
-    # Production uyarısı: wildcard CORS güvenlik riski oluşturur
-    # GÜVENLIK: Wildcard yerine spesifik origin'ler kullanıyoruz
-    cors_origins_list = [
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        "https://improve-guide.preview.emergentagent.com",
-    ]
+    cors_origins_list = ["*"]
 elif CORS_ORIGINS:
     cors_origins_list = [o.strip() for o in CORS_ORIGINS.split(",") if o.strip()]
 else:
-    # Varsayılan: bilinen güvenli originler
     cors_origins_list = [
         "http://localhost:3000",
+        "http://localhost:5000",
+        "http://0.0.0.0:5000",
         "http://127.0.0.1:3000",
-        "https://improve-guide.preview.emergentagent.com",
+        "http://127.0.0.1:5000",
     ]
+    if REPLIT_DEV_DOMAIN:
+        cors_origins_list.append(f"https://{REPLIT_DEV_DOMAIN}")
+        cors_origins_list.append(f"https://{REPLIT_DEV_DOMAIN.replace('-00-', '-00-')}")
 
 app.add_middleware(
     CORSMiddleware,
@@ -2919,4 +2918,5 @@ async def send_test_email(user=Depends(require_admin)):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8001)
+    port = int(os.environ.get("BACKEND_PORT", "8000"))
+    uvicorn.run(app, host="localhost", port=port)

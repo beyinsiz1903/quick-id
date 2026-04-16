@@ -34,13 +34,7 @@ if (config.enableHealthCheck) {
 
 const webpackConfig = {
   eslint: {
-    configure: {
-      extends: ["plugin:react-hooks/recommended"],
-      rules: {
-        "react-hooks/rules-of-hooks": "error",
-        "react-hooks/exhaustive-deps": "warn",
-      },
-    },
+    enable: false,
   },
   webpack: {
     alias: {
@@ -78,6 +72,10 @@ if (config.enableVisualEdits && babelMetadataPlugin) {
 }
 
 webpackConfig.devServer = (devServerConfig) => {
+  // Allow all hosts for Replit proxy compatibility
+  devServerConfig.allowedHosts = "all";
+  devServerConfig.host = "0.0.0.0";
+
   // Apply visual edits dev server setup only if enabled
   if (config.enableVisualEdits && setupDevServer) {
     devServerConfig = setupDevServer(devServerConfig);

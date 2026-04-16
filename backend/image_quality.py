@@ -21,6 +21,7 @@ try:
     CV2_AVAILABLE = True
 except ImportError:
     CV2_AVAILABLE = False
+    np = None
 
 try:
     from PIL import Image, ImageEnhance, ImageFilter
@@ -29,7 +30,7 @@ except ImportError:
     PIL_AVAILABLE = False
 
 
-def decode_base64_image(image_base64: str) -> Optional[np.ndarray]:
+def decode_base64_image(image_base64: str) -> Optional[object]:
     """Base64 görüntüyü numpy array'e çevir"""
     if not CV2_AVAILABLE:
         return None
@@ -44,7 +45,7 @@ def decode_base64_image(image_base64: str) -> Optional[np.ndarray]:
         return None
 
 
-def check_blur(img: np.ndarray, threshold: float = 100.0) -> dict:
+def check_blur(img: object, threshold: float = 100.0) -> dict:
     """Bulanıklık kontrolü - Laplacian variance yöntemi"""
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     laplacian_var = cv2.Laplacian(gray, cv2.CV_64F).var()
@@ -76,7 +77,7 @@ def check_blur(img: np.ndarray, threshold: float = 100.0) -> dict:
     }
 
 
-def check_brightness(img: np.ndarray) -> dict:
+def check_brightness(img: object) -> dict:
     """Aydınlatma kontrolü"""
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     mean_brightness = np.mean(gray)
@@ -116,7 +117,7 @@ def check_brightness(img: np.ndarray) -> dict:
     }
 
 
-def check_resolution(img: np.ndarray, min_width: int = 640, min_height: int = 480) -> dict:
+def check_resolution(img: object, min_width: int = 640, min_height: int = 480) -> dict:
     """Çözünürlük kontrolü"""
     height, width = img.shape[:2]
     is_ok = width >= min_width and height >= min_height
@@ -140,7 +141,7 @@ def check_resolution(img: np.ndarray, min_width: int = 640, min_height: int = 48
     }
 
 
-def check_contrast(img: np.ndarray) -> dict:
+def check_contrast(img: object) -> dict:
     """Kontrast kontrolü"""
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     contrast = float(np.std(gray))
@@ -170,7 +171,7 @@ def check_contrast(img: np.ndarray) -> dict:
     }
 
 
-def check_glare(img: np.ndarray) -> dict:
+def check_glare(img: object) -> dict:
     """Parlama/yansıma (glare) tespiti"""
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
@@ -218,7 +219,7 @@ def check_glare(img: np.ndarray) -> dict:
     }
 
 
-def check_document_edges(img: np.ndarray) -> dict:
+def check_document_edges(img: object) -> dict:
     """Belge kenar tespiti - belgenin tam görünüp görünmediğini kontrol et"""
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     height, width = gray.shape
@@ -284,7 +285,7 @@ def check_document_edges(img: np.ndarray) -> dict:
     }
 
 
-def check_skew(img: np.ndarray) -> dict:
+def check_skew(img: object) -> dict:
     """Eğiklik/rotasyon tespiti"""
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     edges = cv2.Canny(gray, 50, 150, apertureSize=3)
