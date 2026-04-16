@@ -285,8 +285,7 @@ scans_col = db["scans"]
 audit_col = db["audit_logs"]
 users_col = db["users"]
 
-# Emergent LLM Key
-EMERGENT_LLM_KEY = os.environ.get("EMERGENT_LLM_KEY", "")
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
 
 # System prompt for ID extraction
 ID_EXTRACTION_PROMPT = """You are an expert ID document reader for a hotel check-in system. You analyze images of identity documents (ID cards, passports, driver's licenses) and extract structured information.
@@ -536,41 +535,18 @@ class BackupRestoreRequest(BaseModel):
 
 async def extract_id_data(image_base64: str) -> dict:
     """Extract data from one or more ID documents in an image using OpenAI Vision"""
-    from emergentintegrations.llm.chat import LlmChat, UserMessage, ImageContent
-    chat = LlmChat(
-        api_key=EMERGENT_LLM_KEY,
-        session_id=f"scan-{uuid.uuid4().hex[:8]}",
-        system_message=ID_EXTRACTION_PROMPT
+    from llm_client import chat_with_vision_json
+
+    result = await chat_with_vision_json(
+        system_message=ID_EXTRACTION_PROMPT,
+        user_text="Analyze ALL identity documents visible in this image. There may be 1 or more documents. Extract data from EACH document separately and return them in the documents array. Return ONLY the JSON structure, no markdown.",
+        images_base64=[image_base64],
+        model="gpt-4o",
     )
-    chat.with_model("openai", "gpt-4o")
-    if "," in image_base64:
-        image_base64 = image_base64.split(",")[1]
-    image_content = ImageContent(image_base64=image_base64)
-    user_message = UserMessage(
-        text="Analyze ALL identity documents visible in this image. There may be 1 or more documents. Extract data from EACH document separately and return them in the documents array. Return ONLY the JSON structure, no markdown.",
-        file_contents=[image_content]
-    )
-    response = await chat.send_message(user_message)
-    json_str = response.strip()
-    if json_str.startswith("```"):
-        lines = json_str.split("\n")
-        json_str = "\n".join(lines[1:-1]) if len(lines) > 2 else json_str[3:-3]
-        json_str = json_str.strip()
-    try:
-        result = json.loads(json_str)
-    except json.JSONDecodeError:
-        start = json_str.find("{")
-        end = json_str.rfind("}") + 1
-        if start >= 0 and end > start:
-            result = json.loads(json_str[start:end])
-        else:
-            raise ValueError(f"Could not parse JSON from response: {json_str[:200]}")
-    
-    # Normalize: ensure we always have a "documents" array
+
     if "documents" in result and isinstance(result["documents"], list):
         return result
     else:
-        # Old format (single document) - wrap in array
         return {
             "document_count": 1,
             "documents": [result]

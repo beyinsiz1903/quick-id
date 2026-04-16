@@ -4,7 +4,7 @@ Backend P1 Testing for Quick ID Reader Hotel App
 Testing P1 backend improvements as requested in the review
 
 Auth credentials: admin@quickid.com / admin123
-Backend URL: https://improve-guide.preview.emergentagent.com
+Backend URL: http://localhost:8000
 
 P1 FEATURES TO TEST:
 1. Soft Delete - DELETE /api/guests/{id} (without permanent=true)
@@ -20,7 +20,7 @@ import uuid
 from typing import Optional, Dict, Any
 
 # Configuration
-BASE_URL = "https://improve-guide.preview.emergentagent.com"
+BASE_URL = "http://localhost:8000"
 ADMIN_EMAIL = "admin@quickid.com"
 ADMIN_PASSWORD = "admin123"
 

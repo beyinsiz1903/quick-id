@@ -12,9 +12,6 @@ import json
 import os
 import random
 
-EMERGENT_LLM_KEY = os.environ.get("EMERGENT_LLM_KEY", "")
-
-# Liveness challenges
 LIVENESS_CHALLENGES = [
     {"challenge_id": "turn_right", "instruction": "Lütfen yüzünüzü sağa çevirin", "instruction_en": "Please turn your face to the right"},
     {"challenge_id": "turn_left", "instruction": "Lütfen yüzünüzü sola çevirin", "instruction_en": "Please turn your face to the left"},
@@ -110,108 +107,51 @@ Return ONLY valid JSON:
 
 async def compare_faces(document_image_b64: str, selfie_image_b64: str) -> dict:
     """İki yüzü karşılaştır: belge fotoğrafı vs canlı fotoğraf"""
-    from emergentintegrations.llm.chat import LlmChat, UserMessage, ImageContent
-    
-    chat = LlmChat(
-        api_key=EMERGENT_LLM_KEY,
-        session_id=f"face-match-{uuid.uuid4().hex[:8]}",
-        system_message=FACE_COMPARISON_PROMPT
-    )
-    chat.with_model("openai", "gpt-4o")
-    
-    # Clean base64
-    if "," in document_image_b64:
-        document_image_b64 = document_image_b64.split(",")[1]
-    if "," in selfie_image_b64:
-        selfie_image_b64 = selfie_image_b64.split(",")[1]
-    
-    doc_image = ImageContent(image_base64=document_image_b64)
-    selfie_image = ImageContent(image_base64=selfie_image_b64)
-    
-    user_message = UserMessage(
-        text="Compare the faces in these two images. First image is from an identity document, second is a live selfie. Determine if they are the same person. Return ONLY JSON.",
-        file_contents=[doc_image, selfie_image]
-    )
-    
-    response = await chat.send_message(user_message)
-    json_str = response.strip()
-    
-    # Clean markdown if present
-    if json_str.startswith("```"):
-        lines = json_str.split("\n")
-        json_str = "\n".join(lines[1:-1]) if len(lines) > 2 else json_str[3:-3]
-        json_str = json_str.strip()
-    
+    from llm_client import chat_with_vision_json
+
     try:
-        result = json.loads(json_str)
-    except json.JSONDecodeError:
-        start = json_str.find("{")
-        end = json_str.rfind("}") + 1
-        if start >= 0 and end > start:
-            result = json.loads(json_str[start:end])
-        else:
-            result = {
-                "match": False,
-                "confidence_score": 0,
-                "confidence_level": "low",
-                "notes": "Yüz karşılaştırma analizi başarısız",
-                "warnings": ["AI yanıtı ayrıştırılamadı"],
-            }
-    
-    return result
+        result = await chat_with_vision_json(
+            system_message=FACE_COMPARISON_PROMPT,
+            user_text="Compare the faces in these two images. First image is from an identity document, second is a live selfie. Determine if they are the same person. Return ONLY JSON.",
+            images_base64=[document_image_b64, selfie_image_b64],
+            model="gpt-4o",
+        )
+        return result
+    except Exception:
+        return {
+            "match": False,
+            "confidence_score": 0,
+            "confidence_level": "low",
+            "notes": "Yüz karşılaştırma analizi başarısız",
+            "warnings": ["AI yanıtı ayrıştırılamadı"],
+        }
 
 
 async def check_liveness(image_b64: str, challenge_id: str) -> dict:
     """Canlılık testi: fotoğraf/video spoofing kontrolü"""
-    from emergentintegrations.llm.chat import LlmChat, UserMessage, ImageContent
-    
-    # Find challenge instruction
+    from llm_client import chat_with_vision_json
+
     challenge_instruction = "Yüzünüzü kameraya gösterin"
     for c in LIVENESS_CHALLENGES:
         if c["challenge_id"] == challenge_id:
             challenge_instruction = c["instruction"]
             break
-    
+
     prompt = LIVENESS_CHECK_PROMPT.format(challenge_instruction=challenge_instruction)
-    
-    chat = LlmChat(
-        api_key=EMERGENT_LLM_KEY,
-        session_id=f"liveness-{uuid.uuid4().hex[:8]}",
-        system_message=prompt
-    )
-    chat.with_model("openai", "gpt-4o")
-    
-    if "," in image_b64:
-        image_b64 = image_b64.split(",")[1]
-    
-    image = ImageContent(image_base64=image_b64)
-    user_message = UserMessage(
-        text=f"Check if this is a live person performing the action: '{challenge_instruction}'. Detect any spoofing attempts. Return ONLY JSON.",
-        file_contents=[image]
-    )
-    
-    response = await chat.send_message(user_message)
-    json_str = response.strip()
-    
-    if json_str.startswith("```"):
-        lines = json_str.split("\n")
-        json_str = "\n".join(lines[1:-1]) if len(lines) > 2 else json_str[3:-3]
-        json_str = json_str.strip()
-    
+
     try:
-        result = json.loads(json_str)
-    except json.JSONDecodeError:
-        start = json_str.find("{")
-        end = json_str.rfind("}") + 1
-        if start >= 0 and end > start:
-            result = json.loads(json_str[start:end])
-        else:
-            result = {
-                "is_live": False,
-                "challenge_completed": False,
-                "confidence_score": 0,
-                "notes": "Canlılık analizi başarısız",
-                "spoof_indicators": ["AI yanıtı ayrıştırılamadı"],
-            }
-    
-    return result
+        result = await chat_with_vision_json(
+            system_message=prompt,
+            user_text=f"Check if this is a live person performing the action: '{challenge_instruction}'. Detect any spoofing attempts. Return ONLY JSON.",
+            images_base64=[image_b64],
+            model="gpt-4o",
+        )
+        return result
+    except Exception:
+        return {
+            "is_live": False,
+            "challenge_completed": False,
+            "confidence_score": 0,
+            "notes": "Canlılık analizi başarısız",
+            "spoof_indicators": ["AI yanıtı ayrıştırılamadı"],
+        }

@@ -13,7 +13,7 @@ import asyncio
 from typing import Optional
 from datetime import datetime, timezone
 
-EMERGENT_LLM_KEY = os.environ.get("EMERGENT_LLM_KEY", "")
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
 
 # Provider tanımları
 PROVIDERS = {
@@ -230,58 +230,25 @@ async def extract_with_provider(provider_id: str, image_base64: str) -> dict:
         from ocr_fallback import ocr_scan_document
         return ocr_scan_document(image_base64)
 
-    # AI providers via emergentintegrations
-    from emergentintegrations.llm.chat import LlmChat, UserMessage, ImageContent
+    from llm_client import chat_with_vision_json
 
     start_time = time.time()
 
     try:
-        chat = LlmChat(
-            api_key=EMERGENT_LLM_KEY,
-            session_id=f"scan-{uuid.uuid4().hex[:8]}",
-            system_message=ID_EXTRACTION_PROMPT
+        result = await chat_with_vision_json(
+            system_message=ID_EXTRACTION_PROMPT,
+            user_text="Analyze ALL identity documents visible in this image. There may be 1 or more documents. Extract data from EACH document separately and return them in the documents array. Return ONLY the JSON structure, no markdown.",
+            images_base64=[image_base64],
+            model=provider["model"],
         )
 
-        chat.with_model(provider["provider_type"], provider["model"])
-
-        if "," in image_base64:
-            image_base64_clean = image_base64.split(",")[1]
-        else:
-            image_base64_clean = image_base64
-
-        image_content = ImageContent(image_base64=image_base64_clean)
-        user_message = UserMessage(
-            text="Analyze ALL identity documents visible in this image. There may be 1 or more documents. Extract data from EACH document separately and return them in the documents array. Return ONLY the JSON structure, no markdown.",
-            file_contents=[image_content]
-        )
-
-        response = await chat.send_message(user_message)
         elapsed = time.time() - start_time
 
-        # Parse response
-        json_str = response.strip()
-        if json_str.startswith("```"):
-            lines = json_str.split("\n")
-            json_str = "\n".join(lines[1:-1]) if len(lines) > 2 else json_str[3:-3]
-            json_str = json_str.strip()
-
-        try:
-            result = json.loads(json_str)
-        except json.JSONDecodeError:
-            start = json_str.find("{")
-            end = json_str.rfind("}") + 1
-            if start >= 0 and end > start:
-                result = json.loads(json_str[start:end])
-            else:
-                raise ValueError(f"JSON parse hatası: {json_str[:200]}")
-
-        # Normalize
         if "documents" in result and isinstance(result["documents"], list):
             pass
         else:
             result = {"document_count": 1, "documents": [result]}
 
-        # Update health
         update_provider_health(provider_id, True, elapsed)
 
         return {

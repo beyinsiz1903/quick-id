@@ -24,7 +24,7 @@ import uuid
 from typing import Optional
 
 # Configuration
-BASE_URL = "https://improve-guide.preview.emergentagent.com"  # Use the actual backend URL
+BASE_URL = "http://localhost:8000"  # Use the actual backend URL
 ADMIN_EMAIL = "admin@quickid.com"
 ADMIN_PASSWORD = "admin123"
 

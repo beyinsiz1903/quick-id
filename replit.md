@@ -27,7 +27,7 @@ A professional hotel reception and guest management system for automating identi
 - `backend/server.py`: Main API server with CORS, auth, MongoDB configuration
 
 ## Environment Variables Needed
-- `OPENAI_API_KEY`: For GPT-4o Vision ID scanning
+- `OPENAI_API_KEY`: For GPT-4o Vision ID scanning (direct OpenAI SDK, no wrapper)
 - `MONGO_URL`: MongoDB connection (defaults to `mongodb://localhost:27017`)
 - `JWT_SECRET`: Secret for JWT token signing
 - `CORS_ORIGINS`: Comma-separated allowed origins (defaults to localhost + Replit domain)
@@ -56,6 +56,7 @@ A professional hotel reception and guest management system for automating identi
 - Save button reads "Kaydet ve Oda Ata" to signal the combined flow
 
 ## Dependency Notes
-- `emergentintegrations` package is used for AI scanning but is not on PyPI - AI scanning will use the OpenAI SDK directly as fallback
+- AI scanning uses OpenAI SDK directly (`openai` package) via `backend/llm_client.py` helper module
 - The frontend has complex ajv versioning requirements - some packages need ajv@6, others ajv@8. Manually patched nested `node_modules` structure to resolve conflicts.
 - MongoDB is installed via Nix and started locally via `start_backend.sh`
+- `DISABLE_ESLINT_PLUGIN=true` set in frontend/.env to avoid ajv version conflicts in webpack
