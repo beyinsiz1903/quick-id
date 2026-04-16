@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { useAuth } from '../lib/AuthContext';
+import { useState, useEffect, useCallback } from 'react';
+
 import { api } from '../lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -7,7 +7,7 @@ import { Badge } from '../components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import {
   BarChart3, Activity, AlertTriangle, DollarSign, RefreshCw, TrendingUp,
-  CheckCircle2, XCircle, Clock, Database, HardDrive, Shield, Download,
+  CheckCircle2, Clock, Database, HardDrive, Shield, Download,
 } from 'lucide-react';
 
 export default function MonitoringPage() {

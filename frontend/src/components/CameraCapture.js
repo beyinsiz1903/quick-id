@@ -1,7 +1,7 @@
-import React, { useRef, useState, useCallback, useEffect } from 'react';
+import { useRef, useState, useCallback, useEffect } from 'react';
 import { Card } from './ui/card';
 import { Button } from './ui/button';
-import { Camera, RefreshCcw, SwitchCamera, AlertTriangle, Upload, FileImage, X } from 'lucide-react';
+import { Camera, RefreshCcw, SwitchCamera, AlertTriangle, Upload, FileImage } from 'lucide-react';
 
 const MAX_FILE_SIZE_MB = 10;
 const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'];

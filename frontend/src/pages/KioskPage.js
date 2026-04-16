@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { api } from '../lib/api';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
-import { Monitor, Wifi, WifiOff, Loader2, Play, RefreshCw, Upload, Clock, CheckCircle, Database, AlertTriangle } from 'lucide-react';
+import { Monitor, Wifi, WifiOff, Loader2, Play, RefreshCw, Upload, Clock, Database, AlertTriangle } from 'lucide-react';
 
 export default function KioskPage() {
   const [tab, setTab] = useState('kiosk');

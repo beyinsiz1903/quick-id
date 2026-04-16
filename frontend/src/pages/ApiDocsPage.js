@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -7,15 +7,12 @@ import { Skeleton } from '../components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { api } from '../lib/api';
 import {
-  BookOpen,
   ExternalLink,
   Copy,
   CheckCircle,
-  Code,
   Shield,
   Zap,
   Server,
-  ChevronRight,
   Lock,
   AlertTriangle,
 } from 'lucide-react';

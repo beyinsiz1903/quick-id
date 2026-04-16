@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
 import { useTheme } from '../lib/ThemeContext';
@@ -26,7 +26,6 @@ import {
   BarChart3,
   UsersRound,
   Clock,
-  AlertTriangle,
   Moon,
   Sun,
   Globe,

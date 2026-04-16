@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
-import { Badge } from '../components/ui/badge';
+
 import { Skeleton } from '../components/ui/skeleton';
 import { Tabs, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { StatusBadge, DocTypeBadge, GenderBadge } from '../components/StatusBadges';
@@ -30,7 +30,6 @@ import {
   LogIn,
   LogOut,
   Trash2,
-  Download,
   ChevronLeft,
   ChevronRight,
   Users,

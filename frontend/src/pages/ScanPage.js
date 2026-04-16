@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import CameraCapture from '../components/CameraCapture';
@@ -10,8 +10,8 @@ import { Badge } from '../components/ui/badge';
 import { Card, CardContent } from '../components/ui/card';
 import { api } from '../lib/api';
 import {
-  Loader2, ChevronLeft, ChevronRight, Users, CheckCircle2,
-  Camera, Plus, UserCheck,
+  Loader2, ChevronLeft, ChevronRight, Users,
+  Plus, UserCheck,
 } from 'lucide-react';
 
 export default function ScanPage() {

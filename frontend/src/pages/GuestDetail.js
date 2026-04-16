@@ -1,15 +1,15 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
-import { Label } from '../components/ui/label';
+
 import { Badge } from '../components/ui/badge';
 import { Skeleton } from '../components/ui/skeleton';
 import { Textarea } from '../components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
-import { StatusBadge, DocTypeBadge, GenderBadge } from '../components/StatusBadges';
+import { StatusBadge, DocTypeBadge } from '../components/StatusBadges';
 import AuditTrail from '../components/AuditTrail';
 import { api } from '../lib/api';
 import {
@@ -26,7 +26,6 @@ import {
   MapPin,
   Globe,
   Loader2,
-  History,
   FileText,
   Camera,
   DoorOpen,

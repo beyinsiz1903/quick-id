@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { Skeleton } from './ui/skeleton';
 import { api } from '../lib/api';
-import { History, Edit3, LogIn, LogOut, Trash2, Plus, ArrowRight, ArrowLeft } from 'lucide-react';
+import { History, Edit3, LogIn, LogOut, Trash2, Plus, ArrowRight } from 'lucide-react';
 
 const ACTION_MAP = {
   created: { label: 'Oluşturuldu', icon: Plus, color: 'var(--brand-sky)', bg: 'var(--brand-sky-soft)' },

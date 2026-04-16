@@ -1,4 +1,3 @@
-import React, { useState, useEffect } from 'react';
 import { CheckCircle2, XCircle, Shield, ShieldAlert, ShieldCheck } from 'lucide-react';
 
 const PASSWORD_RULES = [

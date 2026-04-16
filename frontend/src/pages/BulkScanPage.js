@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import CameraCapture from '../components/CameraCapture';
@@ -10,7 +10,7 @@ import { Badge } from '../components/ui/badge';
 import { Switch } from '../components/ui/switch';
 import { Label } from '../components/ui/label';
 import { api } from '../lib/api';
-import { Layers, Undo2, Check, Loader2, Users, Keyboard, Zap, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Undo2, Check, Loader2, Users, Keyboard, Zap, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export default function BulkScanPage() {
   const navigate = useNavigate();

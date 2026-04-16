@@ -1,12 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { api } from '../lib/api';
 import { Button } from '../components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
+import { Card, CardContent } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { Input } from '../components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
-import { Building2, Plus, MapPin, Phone, Hash, Loader2, Settings, CheckCircle, XCircle, QrCode, Smartphone, Globe } from 'lucide-react';
+import { Building2, Plus, MapPin, Phone, Hash, Loader2, CheckCircle, XCircle, QrCode, Smartphone } from 'lucide-react';
 
 export default function PropertiesPage() {
   const [tab, setTab] = useState('properties');

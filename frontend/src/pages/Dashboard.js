@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
-import { Badge } from '../components/ui/badge';
+
 import { Skeleton } from '../components/ui/skeleton';
 import { StatusBadge, DocTypeBadge } from '../components/StatusBadges';
 import { api } from '../lib/api';
@@ -17,7 +17,7 @@ import {
   Layers,
   TrendingUp,
 } from 'lucide-react';
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
+import { XAxis, YAxis, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
 
 export default function Dashboard() {
   const [stats, setStats] = useState(null);
