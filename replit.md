@@ -64,3 +64,12 @@ A professional hotel reception and guest management system for automating identi
 - `DISABLE_ESLINT_PLUGIN=true` set in frontend/.env to avoid ajv version conflicts in webpack
 - `frontend/.npmrc` contains `legacy-peer-deps=true` so CI (GitHub Actions, vb.) `npm install` peer dependency çakışmalarında düşmez. Yerel kurulumlar da bu ayarı otomatik kullanır.
 - `date-fns` ve `react-day-picker` paketleri kaldırıldı — uygulamada hiç kullanılmıyorlardı (sadece kullanılmayan `ui/calendar.jsx` import ediyordu, o da silindi). Bu, react-day-picker@8 ↔ date-fns@4 peer çakışmasını ortadan kaldırdı.
+
+## CI/CD (GitHub Actions)
+- `.github/workflows/main.yml` — `Quick-ID CI/CD` workflow'u 6 paralel job içerir, her biri GitHub PR/commit sayfasında ayrı bir check olarak görünür:
+  1. **Backend Tests** — pytest (MongoDB service container ile)
+  2. **Backend Lint & Syntax** — `python -m compileall`
+  3. **Frontend Build** — `npm ci && npm run build`
+  4. **Frontend Lint** — ESLint (flat config: `frontend/eslint.config.js`)
+  5. **Security Scan** — `pip-audit` + `npm audit` (uyarı modunda, engelleyici değil)
+  6. **Quality Gate Summary** — diğer 5 job'ın sonucunu özetler; `backend-tests`, `backend-lint`, `frontend-build` başarısız olursa toplam başarısız sayılır
