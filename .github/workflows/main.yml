@@ -23,8 +23,9 @@ jobs:
     env:
       MONGO_URL: mongodb://localhost:27017
       DB_NAME: quick_id_test
-      JWT_SECRET: test-secret
+      JWT_SECRET: test-secret-key-for-ci-only-do-not-use-in-prod
       OPENAI_API_KEY: test-key
+      BACKEND_PORT: "8001"
 
     steps:
       - name: Kodu indir
@@ -42,6 +43,26 @@ jobs:
           pip install pytest
           if [ -f backend/requirements.txt ]; then pip install -r backend/requirements.txt; fi
 
+      - name: Backend'i arka planda başlat (port 8001)
+        run: |
+          cd backend
+          nohup python server.py > /tmp/backend.log 2>&1 &
+          echo $! > /tmp/backend.pid
+          echo "Backend PID: $(cat /tmp/backend.pid)"
+
+      - name: Backend hazır olana kadar bekle (max 30s)
+        run: |
+          for i in $(seq 1 30); do
+            if curl -fsS http://localhost:8001/api/health > /dev/null 2>&1; then
+              echo "✅ Backend hazır ($i. saniye)"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "❌ Backend 30 saniyede hazır olmadı. Log:"
+          cat /tmp/backend.log
+          exit 1
+
       - name: Pytest çalıştır
         run: |
           if [ -d backend/tests ]; then
@@ -49,6 +70,13 @@ jobs:
           else
             echo "backend/tests klasörü yok, test atlandı."
           fi
+
+      - name: Backend log (test sonrası)
+        if: always()
+        run: |
+          echo "=== Backend log ==="
+          tail -100 /tmp/backend.log || true
+          if [ -f /tmp/backend.pid ]; then kill $(cat /tmp/backend.pid) 2>/dev/null || true; fi
 
   # ============================================================
   # 2) Backend Lint & Syntax — python compileall
