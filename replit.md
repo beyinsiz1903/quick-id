@@ -58,8 +58,8 @@ A professional hotel reception and guest management system for automating identi
 
 ## Dependency Notes
 - AI scanning uses OpenAI SDK directly (`openai` package) via `backend/llm_client.py` helper module
-- The frontend has complex ajv versioning requirements - some packages need ajv@6, others ajv@8. Manually patched nested `node_modules` structure to resolve conflicts.
-- ⚠️ ajv patch: `npm install` çalıştırıldığında nested `frontend/node_modules/ajv-keywords/node_modules/ajv@^8` patch'i kaybolabilir. Eğer "Cannot find module 'ajv/dist/compile/codegen'" hatası alırsanız, `cd frontend/node_modules/ajv-keywords && npm install ajv@^8.0.0 --no-save --no-package-lock` ile geri yükleyin.
+- The frontend has complex ajv versioning requirements - some packages need ajv@6 (eslint, ajv-keywords@3 nested under babel-loader/file-loader/fork-ts-checker), others need ajv@8 (ajv-keywords@5 hoisted via @pmmmwh/react-refresh-webpack-plugin → schema-utils@4). 
+- ✅ Kalıcı çözüm: `ajv@^8.12.0` `frontend/package.json` içinde **doğrudan top-level dependency** olarak eklendi. Bu sayede npm her install'da (yerel veya CI) ajv@8'i top-level'e koyar, ajv-keywords@5 onu deduped olarak bulur, eslint kendi nested ajv@6'sını ayrıca kurar. Hiçbir manuel post-install patch'e gerek yok.
 - MongoDB: kullanıcının kendi MongoDB Atlas cluster'ı kullanılıyor (uzak). Yerel mongod artık başlatılmıyor. `start_backend.sh` sadece backend sunucusunu başlatır.
 - `DISABLE_ESLINT_PLUGIN=true` set in frontend/.env to avoid ajv version conflicts in webpack
 - `frontend/.npmrc` contains `legacy-peer-deps=true` so CI (GitHub Actions, vb.) `npm install` peer dependency çakışmalarında düşmez. Yerel kurulumlar da bu ayarı otomatik kullanır.
