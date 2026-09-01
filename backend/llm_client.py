@@ -5,8 +5,11 @@ from openai import AsyncOpenAI
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
 
 
-def _get_client():
-    return AsyncOpenAI(api_key=OPENAI_API_KEY)
+def _get_client(api_key: str | None = None):
+    key = (api_key or OPENAI_API_KEY).strip()
+    if not key:
+        raise RuntimeError("OpenAI API anahtarı yapılandırılmamış")
+    return AsyncOpenAI(api_key=key)
 
 
 def _clean_base64(image_base64: str) -> str:
@@ -36,8 +39,9 @@ async def chat_with_vision(
     user_text: str,
     images_base64: list[str],
     model: str = "gpt-4o",
+    api_key: str | None = None,
 ) -> str:
-    client = _get_client()
+    client = _get_client(api_key)
 
     content = [{"type": "text", "text": user_text}]
     for img_b64 in images_base64:
@@ -64,6 +68,7 @@ async def chat_with_vision_json(
     user_text: str,
     images_base64: list[str],
     model: str = "gpt-4o",
+    api_key: str | None = None,
 ) -> dict:
-    text = await chat_with_vision(system_message, user_text, images_base64, model)
+    text = await chat_with_vision(system_message, user_text, images_base64, model, api_key)
     return _parse_json_response(text)

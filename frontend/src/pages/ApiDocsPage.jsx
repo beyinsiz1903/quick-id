@@ -17,7 +17,7 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || '';
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || '';
 
 export default function ApiDocsPage() {
   const [guide, setGuide] = useState(null);
@@ -124,8 +124,8 @@ export default function ApiDocsPage() {
 Content-Type: application/json
 
 {
-  "email": "admin@quickid.com",
-  "password": "admin123"
+  "email": "your-admin@example.com",
+  "password": "<your-strong-password>"
 }
 
 // Yanıt:
@@ -298,7 +298,7 @@ Content-Type: application/json
 const login = await fetch('/api/auth/login', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ email: 'admin@quickid.com', password: 'admin123' })
+  body: JSON.stringify({ email: 'your-admin@example.com', password: '<your-strong-password>' })
 });
 const { token } = await login.json();
 
