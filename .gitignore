@@ -63,6 +63,10 @@ chainlit.md
 
 # Data and databases
 agenthub/agents/youtube/db
+backups/
+backend/test_images/
+*.bson
+*.sqlite*
 
 # Archive files and large assets
 **/*.zip
@@ -77,36 +81,9 @@ agenthub/agents/youtube/db
 .cache/
 
 # Mobile development
-android-sdk/ frontend/node_modules/.cache/default-development/4.pack
-frontend/node_modules/.cache/default-development/4.pack
-frontend/node_modules/.cache/default-development/0.pack
-frontend/node_modules/.cache/default-development/5.pack
-frontend/node_modules/.cache/default-development/1.pack
-frontend/node_modules/.cache/default-development/2.pack
-frontend/node_modules/.cache/default-development/3.pack
-frontend/node_modules/.cache/default-development/8.pack
-frontend/node_modules/.cache/default-development/9.pack
--e 
+android-sdk/
+
 # Environment files
 *.env
 *.env.*
--e 
-# Environment files
-*.env
-*.env.*
--e 
-# Environment files
-*.env
-*.env.*
--e 
-# Environment files
-*.env
-*.env.*
--e 
-# Environment files
-*.env
-*.env.*
--e 
-# Environment files
-*.env
-*.env.*
+!.env.example

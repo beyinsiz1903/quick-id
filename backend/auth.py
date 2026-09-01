@@ -1,21 +1,26 @@
 """Authentication & authorization utilities"""
 from datetime import datetime, timezone, timedelta
 from typing import Optional
-from jose import JWTError, jwt
-from passlib.context import CryptContext
-from fastapi import Depends, HTTPException, status
+import jwt
+from jwt import InvalidTokenError as JWTError
+import bcrypt
+from fastapi import Depends, Header, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import os
 import re
 import logging
+import hmac
+import secrets
 
 logger = logging.getLogger("quickid.auth")
 
 JWT_SECRET = os.environ.get("JWT_SECRET")
 if not JWT_SECRET:
-    import warnings
-    warnings.warn("JWT_SECRET ortam değişkeni ayarlanmadı! Güvenli bir secret kullanın.", stacklevel=2)
-    JWT_SECRET = "quickid-fallback-CHANGE-ME-IN-PRODUCTION"
+    environment = os.environ.get("APP_ENV", os.environ.get("ENVIRONMENT", "development")).lower()
+    if environment in {"production", "prod", "staging"}:
+        raise RuntimeError("JWT_SECRET production/staging ortamında zorunludur")
+    JWT_SECRET = secrets.token_urlsafe(48)
+    logger.warning("JWT_SECRET ayarlanmadı; yalnız bu süreç için geçici development anahtarı üretildi")
 JWT_ALGORITHM = os.environ.get("JWT_ALGORITHM", "HS256")
 JWT_EXPIRE_HOURS = int(os.environ.get("JWT_EXPIRE_HOURS", "24"))
 
@@ -26,7 +31,6 @@ ACCOUNT_LOCKOUT_THRESHOLD = 5      # Başarısız deneme sayısı
 ACCOUNT_LOCKOUT_DURATION_MINUTES = 15  # Kilitleme süresi (dakika)
 ACCOUNT_LOCKOUT_WINDOW_MINUTES = 15    # Deneme penceresi (dakika)
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 security = HTTPBearer(auto_error=False)
 
 
@@ -94,11 +98,14 @@ def validate_password_strength(password: str) -> dict:
 
 
 def hash_password(password: str) -> str:
-    return pwd_context.hash(password)
+    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
 
 
 def verify_password(plain: str, hashed: str) -> bool:
-    return pwd_context.verify(plain, hashed)
+    try:
+        return bcrypt.checkpw(plain.encode("utf-8"), hashed.encode("utf-8"))
+    except (TypeError, ValueError):
+        return False
 
 
 def create_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
@@ -134,6 +141,35 @@ async def require_auth(credentials: HTTPAuthorizationCredentials = Depends(secur
     if not payload:
         raise HTTPException(status_code=401, detail="Geçersiz veya süresi dolmuş token")
     return payload
+
+
+async def require_user_or_service(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    x_service_key: Optional[str] = Header(default=None, alias="X-Service-Key"),
+    x_acting_user: Optional[str] = Header(default=None, alias="X-Acting-User"),
+):
+    """Accept a normal user JWT or the PMS service-to-service credential.
+
+    The shared service key is deliberately opt-in: if QUICKID_SERVICE_KEY is not
+    configured, service authentication is disabled instead of accepting an
+    empty/default value.
+    """
+    if credentials:
+        payload = decode_token(credentials.credentials)
+        if payload:
+            return payload
+        raise HTTPException(status_code=401, detail="Geçersiz veya süresi dolmuş token")
+
+    configured_key = os.environ.get("QUICKID_SERVICE_KEY", "").strip()
+    supplied_key = (x_service_key or "").strip()
+    if configured_key and supplied_key and hmac.compare_digest(configured_key, supplied_key):
+        return {
+            "email": (x_acting_user or "pms-service")[:254],
+            "role": "service",
+            "auth_type": "service_key",
+        }
+
+    raise HTTPException(status_code=401, detail="Geçerli kullanıcı veya servis kimlik bilgisi gerekiyor")
 
 
 async def require_admin(credentials: HTTPAuthorizationCredentials = Depends(security)):

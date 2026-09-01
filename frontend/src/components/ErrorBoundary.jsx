@@ -41,7 +41,7 @@ class ErrorBoundary extends React.Component {
               Beklenmeyen bir hata meydana geldi. Sayfayı yenilemeyi veya ana sayfaya dönmeyi deneyin.
             </p>
 
-            {process.env.NODE_ENV === 'development' && this.state.error && (
+            {import.meta.env.DEV && this.state.error && (
               <div className="mb-6 p-3 bg-red-50 rounded-lg text-left">
                 <p className="text-xs font-mono text-red-700 break-all">
                   {this.state.error.toString()}

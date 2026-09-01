@@ -29,7 +29,7 @@ logger = logging.getLogger("quickid")
 
 from auth import (
     hash_password, verify_password, create_token,
-    require_auth, require_admin, get_current_user, security, decode_token,
+    require_auth, require_user_or_service, require_admin, get_current_user, security, decode_token,
     validate_password_strength, check_account_lockout, record_login_attempt,
     unlock_account, ACCOUNT_LOCKOUT_THRESHOLD
 )
@@ -109,9 +109,8 @@ Tüm korumalı endpoint'ler Bearer token gerektirir:
 Authorization: Bearer <jwt_token>
 ```
 
-### Varsayılan Hesaplar:
-- **Admin**: admin@quickid.com / admin123
-- **Resepsiyon**: resepsiyon@quickid.com / resepsiyon123
+Kullanıcılar yönetici tarafından oluşturulur. PMS entegrasyonu yalnız sunucular
+arasında paylaşılan `X-Service-Key` ile çalışır; bu anahtar tarayıcıya verilmez.
     """,
     version="3.0.0",
     docs_url="/api/docs",
@@ -609,7 +608,7 @@ def compute_field_diffs(old_data, new_data):
 # ===== STARTUP: Create default admin =====
 @app.on_event("startup")
 async def startup_tasks():
-    """Startup: create indexes + default users"""
+    """Startup: create indexes and an explicitly configured bootstrap admin."""
     # ===== MongoDB Indexes =====
     import logging
     logger = logging.getLogger("quickid.startup")
@@ -680,28 +679,21 @@ async def startup_tasks():
     except Exception as e:
         logger.warning(f"⚠️ Index creation warning: {e}")
 
-    # ===== Default Users =====
-    existing = await users_col.find_one({"email": "admin@quickid.com"})
-    if not existing:
-        await users_col.insert_one({
-            "email": "admin@quickid.com",
-            "password_hash": hash_password("admin123"),
-            "name": "Admin",
-            "role": "admin",
-            "is_active": True,
-            "created_at": datetime.now(timezone.utc)
-        })
-    # Also create default reception user
-    existing_rec = await users_col.find_one({"email": "resepsiyon@quickid.com"})
-    if not existing_rec:
-        await users_col.insert_one({
-            "email": "resepsiyon@quickid.com",
-            "password_hash": hash_password("resepsiyon123"),
-            "name": "Resepsiyon",
-            "role": "reception",
-            "is_active": True,
-            "created_at": datetime.now(timezone.utc)
-        })
+    bootstrap_email = os.environ.get("QUICKID_BOOTSTRAP_ADMIN_EMAIL", "").strip().lower()
+    bootstrap_password = os.environ.get("QUICKID_BOOTSTRAP_ADMIN_PASSWORD", "")
+    if bootstrap_email or bootstrap_password:
+        if not bootstrap_email or not validate_password_strength(bootstrap_password)["valid"]:
+            raise RuntimeError("Bootstrap admin için geçerli e-posta ve güçlü parola birlikte verilmelidir")
+        if not await users_col.find_one({"email": bootstrap_email}):
+            await users_col.insert_one({
+                "email": bootstrap_email,
+                "password_hash": hash_password(bootstrap_password),
+                "name": "Bootstrap Admin",
+                "role": "admin",
+                "is_active": True,
+                "created_at": datetime.now(timezone.utc),
+            })
+            logger.warning("Bootstrap admin oluşturuldu; bootstrap ortam değişkenlerini kaldırın")
 
     # ===== Background Scheduler: Auto-Backup & KVKK Cleanup =====
     import asyncio
@@ -839,10 +831,10 @@ async def change_password(req: PasswordChange, user=Depends(require_auth)):
     db_user = await users_col.find_one({"email": user["email"]})
     if not db_user:
         raise HTTPException(status_code=404)
-    # Admin can change without current password, others need it
-    if user.get("role") != "admin" and req.current_password:
-        if not verify_password(req.current_password, db_user["password_hash"]):
-            raise HTTPException(status_code=400, detail="Mevcut şifre yanlış")
+    # Non-admin users must always prove knowledge of the current password.
+    if user.get("role") != "admin":
+        if not req.current_password or not verify_password(req.current_password, db_user["password_hash"]):
+            raise HTTPException(status_code=400, detail="Mevcut şifre gerekli veya yanlış")
     # Şifre güçlülük kontrolü
     pwd_check = validate_password_strength(req.new_password)
     if not pwd_check["valid"]:
@@ -1012,8 +1004,12 @@ async def anonymize_guest_endpoint(guest_id: str, user=Depends(require_admin)):
 @app.post("/api/scan", tags=["Tarama"], summary="Kimlik belgesi tara (çoklu provider)",
           description="AI ile kimlik belgesini tarayıp bilgi çıkarır. Provider seçimi: gpt-4o, gpt-4o-mini, gemini-flash, tesseract, auto. Görüntü kalite kontrolü + MRZ parsing + Confidence score.")
 @limiter.limit("15/minute")
-async def scan_id(request: Request, scan_req: ScanRequest, user=Depends(require_auth)):
+async def scan_id(request: Request, scan_req: ScanRequest, user=Depends(require_user_or_service)):
     try:
+        provider_keys = {
+            "openai": request.headers.get("X-OpenAI-Key", "").strip(),
+            "gemini": request.headers.get("X-Gemini-Key", "").strip(),
+        }
         # Step 0: Image size validation
         if len(scan_req.image_base64) > MAX_IMAGE_BASE64_LENGTH:
             raise HTTPException(
@@ -1037,7 +1033,10 @@ async def scan_id(request: Request, scan_req: ScanRequest, user=Depends(require_
             # Doğrudan Tesseract OCR kullan
             ocr_result = ocr_scan_document(scan_req.image_base64)
             if not ocr_result.get("success"):
-                raise Exception(ocr_result.get("error", "OCR hatası"))
+                raise HTTPException(
+                    status_code=422,
+                    detail=ocr_result.get("error", "Görüntüde okunabilir kimlik belgesi bulunamadı"),
+                )
 
             documents = ocr_result.get("documents", [])
             extracted = {"documents": documents, "document_count": len(documents)}
@@ -1049,6 +1048,7 @@ async def scan_id(request: Request, scan_req: ScanRequest, user=Depends(require_
             scan_result = await smart_scan(
                 scan_req.image_base64,
                 quality_score=quality_score,
+                provider_keys=provider_keys,
             )
             if not scan_result.get("success"):
                 raise Exception(scan_result.get("error", "Tüm AI sağlayıcılar başarısız"))
@@ -1070,7 +1070,9 @@ async def scan_id(request: Request, scan_req: ScanRequest, user=Depends(require_
             response_time = scan_result.get("response_time", 0)
         elif requested_provider and requested_provider in PROVIDERS:
             # Belirli provider kullan
-            scan_result = await extract_with_provider(requested_provider, scan_req.image_base64)
+            scan_result = await extract_with_provider(
+                requested_provider, scan_req.image_base64, provider_keys=provider_keys
+            )
             extracted = {
                 "documents": scan_result.get("documents", []),
                 "document_count": scan_result.get("document_count", 0),
@@ -1085,7 +1087,16 @@ async def scan_id(request: Request, scan_req: ScanRequest, user=Depends(require_
             response_time = scan_result.get("response_time", 0)
         else:
             # Varsayılan: eski yöntem (GPT-4o)
-            extracted = await extract_id_data(scan_req.image_base64)
+            from llm_client import chat_with_vision_json
+            extracted = await chat_with_vision_json(
+                system_message=ID_EXTRACTION_PROMPT,
+                user_text="Analyze all visible identity documents and return only the requested JSON.",
+                images_base64=[scan_req.image_base64],
+                model="gpt-4o",
+                api_key=provider_keys.get("openai") or None,
+            )
+            if "documents" not in extracted:
+                extracted = {"document_count": 1, "documents": [extracted]}
             documents = extracted.get("documents", [])
             used_provider = "gpt-4o"
             provider_info = {"name": "GPT-4o", "cost": 0.015}
@@ -1167,6 +1178,8 @@ async def scan_id(request: Request, scan_req: ScanRequest, user=Depends(require_
             "provider": used_provider,
             "provider_info": provider_info,
         }
+    except HTTPException:
+        raise
     except Exception as e:
         error_str = str(e)
 
@@ -2781,7 +2794,7 @@ async def ocr_system_status():
 
 @app.get("/api/scan/providers", tags=["OCR"], summary="Kullanılabilir AI sağlayıcıları",
          description="Kimlik tarama için kullanılabilir AI sağlayıcılarını listeler")
-async def get_scan_providers():
+async def get_scan_providers(user=Depends(require_user_or_service)):
     providers = list_providers()
     stats = get_provider_stats()
     return {

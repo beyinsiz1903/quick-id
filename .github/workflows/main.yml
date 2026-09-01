@@ -24,6 +24,9 @@ jobs:
       MONGO_URL: mongodb://localhost:27017
       DB_NAME: quick_id_test
       JWT_SECRET: test-secret-key-for-ci-only-do-not-use-in-prod
+      QUICKID_SERVICE_KEY: test-service-key-for-ci-only-32-chars
+      QUICKID_BOOTSTRAP_ADMIN_EMAIL: ci-admin@quickid.invalid
+      QUICKID_BOOTSTRAP_ADMIN_PASSWORD: CI-Only-Strong-Password-2026!
       OPENAI_API_KEY: test-key
       BACKEND_PORT: "8001"
 
@@ -107,7 +110,7 @@ jobs:
     env:
       CI: false
       DISABLE_ESLINT_PLUGIN: "true"
-      REACT_APP_BACKEND_URL: http://localhost:8000
+      VITE_BACKEND_URL: http://localhost:8000
 
     steps:
       - name: Kodu indir
@@ -161,13 +164,10 @@ jobs:
             npm install
           fi
 
-      - name: ESLint çalıştır
+      - name: ESLint çalıştır (yeni hata eklenmesini engelle)
         run: |
           cd frontend
-          npx eslint "src/**/*.{js,jsx}" --max-warnings 0 || {
-            echo "::warning::Lint uyarıları/hataları bulundu (engelleyici değil)"
-            exit 0
-          }
+          npm run lint
 
   # ============================================================
   # 5) Security Scan — npm audit + pip-audit
@@ -196,17 +196,13 @@ jobs:
       - name: Backend güvenlik taraması (pip-audit)
         run: |
           if [ -f backend/requirements.txt ]; then
-            pip-audit -r backend/requirements.txt --desc --ignore-vuln GHSA-4xh5-x5gv-qwph || \
-              echo "::warning::pip-audit bulguları var (engelleyici değil)"
+            pip-audit -r backend/requirements.txt --desc --ignore-vuln GHSA-4xh5-x5gv-qwph
           fi
-        continue-on-error: true
 
       - name: Frontend güvenlik taraması (npm audit)
         run: |
           cd frontend
-          npm audit --audit-level=high || \
-            echo "::warning::npm audit bulguları var (engelleyici değil)"
-        continue-on-error: true
+          npm audit --omit=dev --audit-level=high
 
   # ============================================================
   # 6) Quality Gate Summary — tüm job sonuçlarını topla

@@ -14,10 +14,10 @@ import sys
 BASE_URL = "http://localhost:8001"
 
 # Test credentials
-ADMIN_EMAIL = "admin@quickid.com"
-ADMIN_PASSWORD = "admin123"
-RECEPTION_EMAIL = "resepsiyon@quickid.com"
-RECEPTION_PASSWORD = "resepsiyon123"
+ADMIN_EMAIL = os.environ.get("QUICKID_BOOTSTRAP_ADMIN_EMAIL", "ci-admin@quickid.invalid")
+ADMIN_PASSWORD = os.environ.get("QUICKID_BOOTSTRAP_ADMIN_PASSWORD", "CI-Only-Strong-Password-2026!")
+RECEPTION_EMAIL = os.environ.get("QUICKID_TEST_RECEPTION_EMAIL", "reception-test@quickid.invalid")
+RECEPTION_PASSWORD = os.environ.get("QUICKID_TEST_RECEPTION_PASSWORD", "Reception-Test-Password-2026!")
 
 
 @pytest.fixture(scope="module")
@@ -49,6 +49,23 @@ def reception_token():
 
 def auth_headers(token):
     return {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+
+
+@pytest.fixture(scope="module", autouse=True)
+def ensure_reception_user(admin_token):
+    """Create the non-admin test account explicitly; production has no defaults."""
+    with httpx.Client(base_url=BASE_URL) as client:
+        response = client.post(
+            "/api/users",
+            headers=auth_headers(admin_token),
+            json={
+                "email": RECEPTION_EMAIL,
+                "password": RECEPTION_PASSWORD,
+                "name": "Reception Test",
+                "role": "reception",
+            },
+        )
+        assert response.status_code in (200, 400)
 
 
 # ============== Health & Public Tests ==============
